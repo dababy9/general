@@ -46,8 +46,8 @@ class World:
         result = square
         if a == 'N': result = [square[0]-1, square[1]]
         if a == 'S': result = [square[0]+1, square[1]]
-        if a == 'E': result = [square[0], square[1]-1]
-        if a == 'W': result = [square[0], square[1]+1]
+        if a == 'E': result = [square[0], square[1]+1]
+        if a == 'W': result = [square[0], square[1]-1]
         return result if result[0] >= 0 and result[0] < self.rows and result[1] >= 0 and result[1] < self.cols else square
             
     def __hash(self, p):
