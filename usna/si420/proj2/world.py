@@ -18,7 +18,7 @@ class World:
             self.policy[s[0]][s[1]] = '.'
     
     def valueIteration(self, n):
-        for _ in range(n):
+        for x in range(n):
             newValue = copy.deepcopy(self.values)
             for r in range(self.rows):
                 for c in range(self.cols):
@@ -43,12 +43,12 @@ class World:
         return reward + self.g * self.values[square[0]][square[1]]
     
     def __move(self, square, a):
-        result = square
-        if a == 'N': result = [square[0]-1, square[1]]
-        if a == 'S': result = [square[0]+1, square[1]]
-        if a == 'E': result = [square[0], square[1]+1]
-        if a == 'W': result = [square[0], square[1]-1]
-        return result if result[0] >= 0 and result[0] < self.rows and result[1] >= 0 and result[1] < self.cols else square
+        r = square
+        if a == 'N': r = [square[0]-1, square[1]]
+        if a == 'S': r = [square[0]+1, square[1]]
+        if a == 'E': r = [square[0], square[1]+1]
+        if a == 'W': r = [square[0], square[1]-1]
+        return r if r[0] >= 0 and r[0] < self.rows and r[1] >= 0 and r[1] < self.cols and [r[0], r[1]] not in self.bl else square
             
     def __hash(self, p):
         return p[0] * self.cols + p[1]
