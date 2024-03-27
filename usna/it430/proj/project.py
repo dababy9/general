@@ -44,7 +44,7 @@ def pad2(data):
     return bytes(result)
 
 def unpad2(data):
-    padlen = data[-1], error = False
+    padlen, error = data[-1], False
     if padlen > 16 or padlen < 1: error = True
     elif len(data) % 16 != 0: error = True
     else:
@@ -54,6 +54,3 @@ def unpad2(data):
         print("padding error!")
         return None
     return data[0:-padlen]
-
-#part 4 msg is: known plaintext atk CTR
-
