@@ -8,9 +8,9 @@ def minCost(n):
     if n not in memo:
         best = -1
         for x in offers:
-            if x <= n:
-                cost = offers[n] + minCost(n-x)
-                if cost < best or best == -1: best = cost
+            cost = offers[x] + minCost(n-x)
+            if cost < best or best == -1: best = cost
+        memo[n] = best
     return memo[n]
 
 while True:
