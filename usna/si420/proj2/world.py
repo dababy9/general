@@ -52,4 +52,3 @@ class World:
             
     def __hash(self, p):
         return p[0] * self.cols + p[1]
-    
