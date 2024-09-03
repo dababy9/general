@@ -1,0 +1,22 @@
+;;; SI 413 Lab 2
+;;; MIDN Caleb Walker
+
+;;; Start of lab
+
+;;; 1
+(define (get-rate cur)
+  (cond ((eqv? cur 'euro) 0.76)
+        ((eqv? cur 'yen) 98.18)
+        ((eqv? cur 'won) 1109.85)))
+(define (to-usdollar amt cur)
+  (/ amt (get-rate cur)))
+
+;;; 2
+(define (from-usdollar amt cur)
+  (* amt (get-rate cur)))
+
+;;; 3
+(define (convert amt fromCur toCur)
+  (from-usdollar (to-usdollar amt fromCur) toCur))
+
+;;; 4
