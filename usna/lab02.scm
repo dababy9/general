@@ -66,5 +66,51 @@
       '()
       (let ((num-set (uniquefy (cdr L))))
         (if (contains? num-set (car L))
-            (cons (car L) num-set)
-            num-set))))
+            num-set
+            (cons (car L) num-set)))))
+
+;;; 9
+(define (test-sin x)
+  (let ((e (+ (* (sin x) (sin x)) 1)))
+    (+ (/ 1 e) (- (sqrt e) (* e e)))))
+
+;;; 10
+(define (dist f1 i1 f2 i2)
+  (let ((L1 (+ i1 (* f1 12)))
+        (L2 (+ i2 (* f2 12))))
+    (abs (- L1 L2))))
+
+;;; 11
+(define (fd-at g n)
+  (- (g (+ n 1)) (g n)))
+
+;;; Given helper function (returns list of integers from 1 to n)
+(define (range a b)
+  (if (> a b)
+      '()
+      (cons a (range (+ a 1) b))))
+
+;;; 12
+(define (sqrt-prod n)
+  (apply * (map sqrt (range 1 n))))
+
+;;; 13
+(define (special-nums n)
+  (filter (lambda (x) (and (= 0 (modulo x 3))
+                           (integer? (sqrt x))))
+          (range 1 n)))
+
+;;; 14
+(define P1 '((3 5) (9 2) (11 6) (8 8) (4 6)))
+(define (repeat x k)
+  (if (= k 0)
+      '()
+      (cons x (repeat x (- k 1)))))
+(define (translate-point p d)
+  (map + p d))
+(define (generate-lists d k)
+  (if (null? d)
+      (repeat '() k)
+      (map cons (repeat (car d) k) (generate-lists (cdr d) k))))
+(define (translate p d)
+  (map translate-point (generate-lists d (length p)) p))
