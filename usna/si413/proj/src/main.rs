@@ -59,7 +59,7 @@ fn factor(num: &u32, primes: &Vec<u32>) -> String {
 fn generate_primes(n:u32) -> Vec<u32> {
     let mut primes = Vec::new();
     let mut sieve = HashSet::new();
-    for i in 2..n+1 {
+    for i in 2..=n {
         if !sieve.contains(&i) {
             primes.push(i);
             let mut inc = i;
