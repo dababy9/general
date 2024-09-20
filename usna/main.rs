@@ -1,9 +1,13 @@
+// have to use cargo with rand crate as there is no built-in randomness with rust
 extern crate rand;
+
+// libraries and/or specific methods to include
 use std::{thread, time};
 use std::io::{self, Write};
 use std::fs::{self, OpenOptions};
 use std::collections::HashSet;
 
+// specify implemented methods for Lyrics trait
 trait Lyrics {
     fn bottles(self, primes:&Vec<u32>, n:u32) -> Self;
     fn take(self) -> Self;
@@ -12,7 +16,10 @@ trait Lyrics {
     fn end(self) -> Self;
 }
 
+// define implemented methods
 impl Lyrics for String {
+
+    // each method is called on a String, and by returning the String with new text added, we are transferring ownership through the chain as each method adds its part
     fn bottles(mut self, primes:&Vec<u32>, n:u32) -> String {
         self.push_str(&format!("{0} line{1} of text", factor(&n, primes), if n == 1 {""} else {"s"}));
         self
@@ -39,25 +46,40 @@ impl Lyrics for String {
     }
 }
 
+// takes a number and a list of primes, and returns the factored String '(x*y*z...)'
 fn factor(num:&u32, primes:&Vec<u32>) -> String {
     let mut n = *num; 
     let mut s = String::from("(");
+
+    // dividing our number down to 1
     while n > 1 {
+
+        // loop through primes until we find one that current remainder is divisible by
         for p in primes {
             if n % p == 0 {
+
+                // when we find the prime, add it to the String and divide current number by it
                 s.push_str(&p.to_string());
                 n /= p;
+
+                // formatting to not include an extra '*' at the end
                 if !(n == 1) {
                     s.push_str("*");
                 }
+
+                // method should factor primes in increasing order, so restart the search through primes when we divide one out
                 break;
             }
         }
     }
+
+    // add closing parentheses and return the String
     s.push_str(")");
     s
 }
 
+// takes a number and returns an ordered vector of all primes up to the given number
+// just an implementation of the Sieve of Eratosthenes
 fn generate_primes(n:u32) -> Vec<u32> {
     let mut primes = Vec::new();
     let mut sieve = HashSet::new();
@@ -74,10 +96,12 @@ fn generate_primes(n:u32) -> Vec<u32> {
     primes
 }
 
+// shorthand for this long chain of methods
 fn generate_lyric(n:u32, inc:u32, primes:&Vec<u32>) -> String {
     String::from("").bottles(primes, n).wall().mid().bottles(primes, n).end().take().bottles(primes, n+inc).wall().end()
 }
 
+// main method
 fn main() {
 
     // get random number to increment by
@@ -97,7 +121,11 @@ fn main() {
     // generate primes up to n
     let primes = generate_primes(n + inc);
 
-    // create copies to pass to thread
+    // create copies to pass to thread ->
+    // one of the biggest focuses of Rust is memory management
+    // this is accomplished by 'ownership'
+    // threads do capture a closure, but the problem is that certain references may have been dropped in the original environment
+    // thus, we can just create copies of relevant variables and actually transfer ownership with 'move' keyword
     let primes_copy = primes.clone();
     let n_copy = n.clone();
     let inc_copy = inc.clone();
