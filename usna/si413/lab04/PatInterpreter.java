@@ -46,12 +46,122 @@ public class PatInterpreter {
      * each successfully-parsed statement, instead of just sayiing "Parse OK".
      */
     public void prog() throws PatError {
-        // TODO YOU FILL THIS IN
+        switch (lexer.peek().getType()) {
+            case NAME: case SYM: case LB:
+                List<String> result = seq();
+                lexer.match(PatToken.Type.STOP);
+                System.out.println(String.join(" ", result));
+                prog();
+                break;
+            case EOF:
+                lexer.match(PatToken.Type.EOF);
+                break;
+            default:
+                error("prog");
+        }
     }
 
-    // TODO You will write bunch of helper methods for each non-terminal in the
-    // grammar. Unlike in PatParser where they all return void, most of these should
-    // return a List<String> for the resulting pattern sequence.
+    private List<String> seq() throws PatError {
+        switch (lexer.peek().getType()) {
+            case NAME: case SYM: case LB:
+                return seqtail(catseq());
+            default:
+                error("seq");
+                return null;
+        }
+    }
+
+    private List<String> seqtail(List<String> lhs) throws PatError {
+        switch (lexer.peek().getType()) {
+            case FOLD:
+                lexer.match(PatToken.Type.FOLD);
+                return seqtail(fold(lhs, catseq()));
+            case STOP: case RB:
+                return lhs;
+            default:
+                error("seqtail");
+                return null;
+        }
+    }
+
+    private List<String> catseq() throws PatError {
+        switch (lexer.peek().getType()) {
+            case NAME: case SYM: case LB:
+                return cattail(opseq());
+            default:
+                error("catseq");
+                return null;
+        }
+    }
+
+    private List<String> cattail(List<String> lhs) throws PatError {
+        switch (lexer.peek().getType()) {
+            case NAME: case SYM: case LB:
+                ArrayList<String> cat = new ArrayList<>(lhs);
+                cat.addAll(opseq());
+                return cattail(cat);
+            case STOP: case FOLD: case RB:
+                return lhs;
+            default:
+                error("cattail");
+                return null;
+        }
+    }
+
+    private List<String> opseq() throws PatError {
+        switch (lexer.peek().getType()) {
+            case NAME: case SYM: case LB:
+                return optail(atom());
+            default:
+                error("opseq");
+                return null;
+        }
+    }
+
+    private List<String> optail(List<String> lhs) throws PatError {
+        List<String> result;
+        switch (lexer.peek().getType()) {
+            case COLON:
+                lexer.match(PatToken.Type.COLON);
+                String name = lexer.peek().getText();
+                lexer.match(PatToken.Type.NAME);
+                result = optail(lhs);
+                symbolTable.put(name, lhs);
+                return result;
+            case REV:
+                lexer.match(PatToken.Type.REV);
+                result = new ArrayList<String>(lhs);
+                Collections.reverse(result);
+                return optail(result);
+            case STOP: case FOLD: case NAME: case SYM: case LB: case RB:
+                return lhs;
+            default:
+                error("optail");
+                return null;
+        }
+    }
+
+    private List<String> atom() throws PatError {
+        String text;
+        switch (lexer.peek().getType()) {
+            case SYM:
+                text = lexer.peek().getText();
+                lexer.match(PatToken.Type.SYM);
+                return List.of(text);
+            case NAME:
+                text = lexer.peek().getText();
+                lexer.match(PatToken.Type.NAME);
+                return symbolTable.get(text);
+            case LB:
+                lexer.match(PatToken.Type.LB);
+                List<String> result = seq();
+                lexer.match(PatToken.Type.RB);
+                return result;
+            default:
+                error("atom");
+                return null;
+        }
+    }
 
 
     /** Runs the Pat interpreter from the command line.

@@ -28,10 +28,15 @@ public class PatParser {
      */
     public void prog() throws PatError {
         switch (lexer.peek().getType()) {
-            case EOF:
+            case NAME: case SYM: case LB:
+                seq();
+                lexer.match(PatToken.Type.STOP);
+                System.out.println("Parse OK");
+                prog();
                 break;
-            case STOP:
-                System.out.pritnln("Parse OK");
+            case EOF:
+                lexer.match(PatToken.Type.EOF);
+                break;
             default:
                 error("prog");
         }
@@ -39,7 +44,9 @@ public class PatParser {
 
     private void seq() throws PatError {
         switch (lexer.peek().getType()) {
-            case :
+            case NAME: case SYM: case LB:
+                catseq();
+                seqtail();
                 break;
             default:
                 error("seq");
@@ -62,7 +69,9 @@ public class PatParser {
 
     private void catseq() throws PatError {
         switch (lexer.peek().getType()) {
-            case :
+            case NAME: case SYM: case LB:
+                opseq();
+                cattail();
                 break;
             default:
                 error("catseq");
@@ -71,7 +80,11 @@ public class PatParser {
 
     private void cattail() throws PatError {
         switch (lexer.peek().getType()) {
-            case :
+            case NAME: case SYM: case LB:
+                opseq();
+                cattail();
+                break;
+            case STOP: case FOLD: case RB:
                 break;
             default:
                 error("cattail");
@@ -80,7 +93,9 @@ public class PatParser {
 
     private void opseq() throws PatError {
         switch (lexer.peek().getType()) {
-            case :
+            case NAME: case SYM: case LB:
+                atom();
+                optail();
                 break;
             default:
                 error("opseq");
@@ -89,7 +104,16 @@ public class PatParser {
 
     private void optail() throws PatError {
         switch (lexer.peek().getType()) {
-            case :
+            case COLON:
+                lexer.match(PatToken.Type.COLON);
+                lexer.match(PatToken.Type.NAME);
+                optail();
+                break;
+            case REV:
+                lexer.match(PatToken.Type.REV);
+                optail();
+                break;
+            case STOP: case FOLD: case NAME: case SYM: case LB: case RB:
                 break;
             default:
                 error("optail");
@@ -98,7 +122,16 @@ public class PatParser {
 
     private void atom() throws PatError {
         switch (lexer.peek().getType()) {
-            case :
+            case SYM:
+                lexer.match(PatToken.Type.SYM);
+                break;
+            case NAME:
+                lexer.match(PatToken.Type.NAME);
+                break;
+            case LB:
+                lexer.match(PatToken.Type.LB);
+                seq();
+                lexer.match(PatToken.Type.RB);
                 break;
             default:
                 error("atom");
