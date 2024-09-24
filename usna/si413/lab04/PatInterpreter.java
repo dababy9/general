@@ -143,6 +143,7 @@ public class PatInterpreter {
 
     private List<String> atom() throws PatError {
         String text;
+        List<String> result;
         switch (lexer.peek().getType()) {
             case SYM:
                 text = lexer.peek().getText();
@@ -151,10 +152,12 @@ public class PatInterpreter {
             case NAME:
                 text = lexer.peek().getText();
                 lexer.match(PatToken.Type.NAME);
-                return symbolTable.get(text);
+                result = symbolTable.get(text);
+                if (result == null) error("atom");
+                return result;
             case LB:
                 lexer.match(PatToken.Type.LB);
-                List<String> result = seq();
+                result = seq();
                 lexer.match(PatToken.Type.RB);
                 return result;
             default:
