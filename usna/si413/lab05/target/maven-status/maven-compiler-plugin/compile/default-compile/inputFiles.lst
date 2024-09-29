@@ -1,0 +1,12 @@
+/home/mids/m256642/general/usna/si413/lab05/src/main/java/si413/pat/PatEvaluator.java
+/home/mids/m256642/general/usna/si413/lab05/src/main/java/si413/pat/PatError.java
+/home/mids/m256642/general/usna/si413/lab05/src/main/java/si413/pat/ErrorFail.java
+/home/mids/m256642/general/usna/si413/lab05/src/main/java/si413/pat/BasicInterpreter.java
+/home/mids/m256642/general/usna/si413/lab05/target/generated-sources/antlr4/si413/pat/PatLexer.java
+/home/mids/m256642/general/usna/si413/lab05/target/generated-sources/antlr4/si413/pat/PatParserVisitor.java
+/home/mids/m256642/general/usna/si413/lab05/src/main/java/si413/pat/FancyInterpreter.java
+/home/mids/m256642/general/usna/si413/lab05/target/generated-sources/antlr4/si413/pat/PatParserBaseVisitor.java
+/home/mids/m256642/general/usna/si413/lab05/target/generated-sources/antlr4/si413/pat/PatParser.java
+/home/mids/m256642/general/usna/si413/lab05/target/generated-sources/antlr4/si413/pat/PatParserBaseListener.java
+/home/mids/m256642/general/usna/si413/lab05/src/main/java/si413/pat/ShowParse.java
+/home/mids/m256642/general/usna/si413/lab05/target/generated-sources/antlr4/si413/pat/PatParserListener.java
