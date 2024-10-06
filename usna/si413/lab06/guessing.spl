@@ -1,0 +1,7 @@
+new ans := 42;
+new guess := read;
+while not ans = guess {
+    ifelse guess < ans { "too low" } { "too high" }
+    guess := read;
+}
+"CORRECT"

@@ -1,0 +1,17 @@
+new i := 1;
+new f := 1;
+new b := 1;
+while i <= 100 {
+    new isF := f = 3;
+    new isB := b = 5;
+
+    ifelse isF {
+        f := 0;
+        ifelse isB { b := 0; "FizzBuzz" } { "Fizz" }
+    } {
+        ifelse isB { b := 0; "Buzz" } { write i; }
+    }
+    i := i + 1;
+    f := f + 1;
+    b := b + 1;
+}

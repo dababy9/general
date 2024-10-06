@@ -1,0 +1,15 @@
+new num := read;
+new max := num;
+new min := num;
+new sum := 0;
+new count := 0;
+while num > 0 {
+    if num > max { max := num; }
+    if num < min { min := num; }
+    sum := sum + num;
+    count := count + 1;
+    num := read;
+}
+write min;
+write max;
+write sum / count;

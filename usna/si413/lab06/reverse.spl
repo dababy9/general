@@ -1,0 +1,20 @@
+new makeNode := lambda n {
+	ret := lambda next {
+		ret := lambda isEnd {
+            ret := lambda op {
+			    ifelse op = 0 { ret := n; }
+                { ifelse op = 1 { ret := isEnd; } { ret := next; } }
+            };
+		};
+	};
+};
+new prev := makeNode @ 0 @ 0 @ 1;
+new num := read;
+while not num = 0 {
+    prev := makeNode @ num @ prev @ 0;
+    num := read;
+}
+while not prev @ 1 = 1 {
+    write prev @ 0;
+    prev := prev @ 2;
+}

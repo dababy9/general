@@ -1,0 +1,21 @@
+new a := read;
+new b := read;
+new divisible := lambda n {
+    ret := lambda k {
+        ifelse n = (n / k) * k { ret := true; } { ret := false; }
+    };
+};
+new sumOfDivisors := lambda n {
+    new i := 2;
+    new top := n / 2;
+    new sum := 0;
+    while i <= top {
+        if divisible @ n @ i { sum := sum + i; }
+        i := i + 1;
+    }
+    ret := sum + 1;
+};
+while a <= b {
+    if sumOfDivisors @ a > a { write a; }
+    a := a + 1;
+}

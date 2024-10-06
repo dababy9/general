@@ -1,0 +1,4 @@
+new sum := 0;
+new num := read;
+while not num = 0 { sum := sum + num; num := read; }
+write sum;
