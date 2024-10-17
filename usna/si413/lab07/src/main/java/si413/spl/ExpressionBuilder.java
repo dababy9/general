@@ -55,7 +55,10 @@ public class ExpressionBuilder extends SPLParserBaseVisitor<Expression> {
 
     @Override
     public Expression visitNegOp(SPLParser.NegOpContext ctx) {
-        return new NegOp(visit(ctx.exp()));
+        if(ctx.OPA().getText().equals("-"))
+            return new NegOp(visit(ctx.exp()));
+        else
+            return visit(ctx.exp());
     }
 
     @Override

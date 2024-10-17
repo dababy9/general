@@ -33,6 +33,6 @@ async def search_song(body: Text):
 if __name__ == "__main__":
     hostname = socket.gethostname()
     ip_address = socket.gethostbyname(hostname)
-    uvicorn.run(app, host=ip_address, port=8080)
+    uvicorn.run(app, host="127.0.0.1", port=9000)
 
 
