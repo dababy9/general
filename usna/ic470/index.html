@@ -1,0 +1,210 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Class Jukebox</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo">
+    <style>
+        body {
+            background-color: #333333;
+            font-family: "Exo", sans-serif;
+        }
+
+        h1 {
+            font-size: 750%;
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+        }
+
+        h2 {
+            text-align: center;
+            color: white;
+        }
+
+        ul {
+            color: white;
+            padding: 0;
+        }
+
+        li {
+            margin: 1% 2.5%;
+            padding: 1% 2.5%;
+            background-color: #111111;
+            list-style-type: none;
+            width: auto;
+            border: 2px solid white;
+            border-radius: 5px;
+        }
+
+        form {
+            text-align: center;
+        }
+
+        #song {
+            height: 2.5%;
+            width: 70%;
+            padding: 1%;
+            border-radius: 5px;
+            border: 0px;
+            font-family: "Exo", sans-serif;
+        }
+
+        #submit {
+            height: 2.5%;
+            width: 15%;
+            background-color: #78FFB7;
+            border-radius: 5px;
+            border: 0px;
+            font-family: "Exo", sans-serif;
+        }
+
+        .outer {
+            width: 45%;
+            border: 2px solid white;
+            border-radius: 10px;
+            background-color: #222222;
+        }
+
+        .inner {
+            margin: 2%;
+            background-color: #111111;
+            border: 2px solid white;
+            border-radius: 5px;
+
+        }
+
+        #left {
+            float: left;
+            margin-left: 2.5%;
+        }
+
+        #right {
+            float: right;
+            margin-right: 2.5%;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Class Jukebox</h1>
+    <div id="left" class="outer">
+        <h2>Add a song below!</h5>
+            <form id="submitSong">
+                <input list="songs" name="song" id="song">
+                <datalist id="songs">
+
+                </datalist>
+                <input type="submit" value="Add Song" id="submit">
+            </form>
+    </div>
+    <div id="right" class="outer">
+        <h2>Queue</h2>
+        <ul id="queue">
+            <li>song1</li>
+            <li>song2</li>
+            <li>song3</li>
+        </ul>
+    </div>
+</body>
+
+<script>
+
+    // get DOM objects
+    const form = document.getElementById("submitSong");
+    const song = document.getElementById("song");
+    const songs = document.getElementById("songs");
+
+    // when user submits a song request
+    form.addEventListener("submit", function (event) {
+
+        // don't reload page/create GET request
+        event.preventDefault();
+
+        // get user input and reset textbox
+        var songName = song.value;
+        song.value = "";
+
+        /**
+        list = document.getElementById("queue");
+        newItem = document.createElement("li");
+        newItem.appendChild(document.createTextNode(songName));
+        list.appendChild(newItem);
+        **/
+
+        // send POST request to '/request' endpoint
+        fetch("/request", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ "text": songName })
+        })
+
+            // throw error if server doesn't respond with good http code
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ERROR');
+                }
+                return response.json();
+            })
+
+            // otherwise, process response
+            .then(data => {
+
+                // do stuff
+                console.log(data);
+            })
+    });
+
+    // when user changes the textbox
+    song.addEventListener("input", function (event) {
+
+        // get text
+        var text = song.value;
+
+        // remove all elements from datalist (autofill)
+        while (songs.firstChild) {
+            songs.firstChild.remove();
+        }
+
+        // only update with new list if there is text in the textbox
+        if (text != "") {
+
+            // get list of songs from server
+            songList = [];
+            fetch("/search", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ "text": text })
+            })
+
+                // throw error if server doesn't respond with good http code
+                .then(response => {
+                    if (!response.ok) {
+                        console.log(response)
+                        throw new Error('HTTP ERROR');
+                    }
+                    return response.json();
+                })
+
+                // otherwise, process response
+                .then(data => {
+
+                    // do stuff
+                    console.log(data);
+                })
+
+            // update datalist (autofill) with list of songs
+            for (var i = 0; i < songList.length; i++) {
+                var option = document.createElement("option");
+                option.value = songList[i];
+                songs.appendChild(option);
+            }
+        }
+    });
+</script>
+
+</html>
