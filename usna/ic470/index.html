@@ -17,7 +17,8 @@
             margin-top: 50px;
         }
 
-        h2 {
+        h2,
+        h4 {
             text-align: center;
             color: white;
         }
@@ -89,14 +90,15 @@
 <body>
     <h1>Class Jukebox</h1>
     <div id="left" class="outer">
-        <h2>Add a song below!</h5>
-            <form id="submitSong">
-                <input list="songs" name="song" id="song">
-                <datalist id="songs">
+        <h2>Add a song below!</h2>
+        <form id="submitSong">
+            <input list="songs" name="song" id="song">
+            <datalist id="songs">
 
-                </datalist>
-                <input type="submit" value="Add Song" id="submit">
-            </form>
+            </datalist>
+            <input type="submit" value="Add Song" id="submit">
+        </form>
+        <h4 id="message">&nbsp;</h4>
     </div>
     <div id="right" class="outer">
         <h2>Queue</h2>
@@ -114,6 +116,8 @@
     const form = document.getElementById("submitSong");
     const song = document.getElementById("song");
     const songs = document.getElementById("songs");
+    const message = document.getElementById("message");
+    const queue = document.getElementById("queue");
 
     // when user submits a song request
     form.addEventListener("submit", function (event) {
@@ -152,8 +156,25 @@
             // otherwise, process response
             .then(data => {
 
-                // do stuff
-                console.log(data);
+                // flash either a good or bad message
+                if (data.message == "OK")
+                    flashMessage("#77ed88", "Song Added!");
+                else
+                    flashMessage("#ff0000", "There was an issue adding the song!");
+
+                // update queue
+                while (queue.firstChild)
+                    queue.firstChild.remove();
+
+                // add elements to the queue (from server response)
+                for (var i = 0; i < data.queue.length; i++) {
+                    var newItem = document.createElement("li");
+                    newItem.appendChild(document.createTextNode(data.queue[i]))
+                    queue.appendChild(newItem);
+                }
+
+                // make the top song text green (similar to spotify 'currently playing')
+                queue.firstChild.style.color = "77ed88";
             })
     });
 
@@ -164,9 +185,8 @@
         var text = song.value;
 
         // remove all elements from datalist (autofill)
-        while (songs.firstChild) {
+        while (songs.firstChild)
             songs.firstChild.remove();
-        }
 
         // only update with new list if there is text in the textbox
         if (text != "") {
@@ -200,6 +220,21 @@
                 })
         }
     });
+
+    // make the message visible and fade it away after 1 second
+    function flashMessage(color, text) {
+        message.style.opacity = 1;
+        message.style.color = color;
+        message.textContent = text;
+        setTimeout(fade, 1000);
+    }
+
+    // fade the message away
+    function fade() {
+        message.style.opacity -= 0.01;
+        if (message.style.opacity > 0)
+            requestAnimationFrame(fade);
+    }
 </script>
 
 </html>

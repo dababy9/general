@@ -27,7 +27,7 @@ async def home():
 @app.post("/request")
 async def store_song(body: Text):
     song = body.dict()['text']
-    return {"message": "/request WORKED!"}
+    return {"message": "OK" if random.choice([True, False]) else "NOT OK", "queue": ["song1", "song2", "song3", "song4"]}
 
 # define search endpoint (user searching for song)
 @app.post("/search")
@@ -46,7 +46,4 @@ if __name__ == "__main__":
                                                #scope="user-library-read,user-library-read,user-read-recently-played,user-read-currently-playing,user-read-playback-state,user-modify-playback-state"))
     
     #pprint(sp.me())
-    uvicorn.run(app, host=ip_address, port=8080)
-    
-
-
+    uvicorn.run(app, host="127.0.0.1", port=9000)
