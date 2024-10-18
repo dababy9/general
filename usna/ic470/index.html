@@ -171,8 +171,7 @@
         // only update with new list if there is text in the textbox
         if (text != "") {
 
-            // get list of songs from server
-            songList = [];
+            // send POST request to 'search' endpoint
             fetch("/search", {
                 method: "POST",
                 headers: {
@@ -184,7 +183,6 @@
                 // throw error if server doesn't respond with good http code
                 .then(response => {
                     if (!response.ok) {
-                        console.log(response)
                         throw new Error('HTTP ERROR');
                     }
                     return response.json();
@@ -193,16 +191,13 @@
                 // otherwise, process response
                 .then(data => {
 
-                    // do stuff
-                    console.log(data);
+                    // update datalist (autofill) with list of songs
+                    for (var i = 0; i < data.songs.length; i++) {
+                        var option = document.createElement("option");
+                        option.value = data.songs[i];
+                        songs.appendChild(option);
+                    }
                 })
-
-            // update datalist (autofill) with list of songs
-            for (var i = 0; i < songList.length; i++) {
-                var option = document.createElement("option");
-                option.value = songList[i];
-                songs.appendChild(option);
-            }
         }
     });
 </script>
