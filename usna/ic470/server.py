@@ -36,9 +36,11 @@ async def store_song(body: Text):
             sp.add_to_queue(sp.search(song)['tracks']['items'][1]['uri'], None)
 
         # retrieve queue (song name and artist name) and return it to user
-        print(sp.queue()['queue'][0].keys())
-        queue = [{key: x[key] for key in ['name', 'artist']} for x in sp.queue()['queue']]
-        queue.insert(0, {key: sp.queue()['currently_playing'][key] for key in ['name', 'artist']})
+        result = sp.queue()
+        queue = []
+        for item in result['queue']:
+            queue.append({'song': item['name'], 'artists': [x['name'] for x in item['artists']]})
+        queue.insert(0, {'song': result['currently_playing']['name'], 'artists': [x['name'] for x in result['currently_playing']['artists']]})
         return {"message": "OK", "queue": queue}
     
     # return error message if something went wrong
@@ -54,10 +56,14 @@ async def search_song(body: Text):
         # get current text in user search box
         text = body.model_dump()['text']
 
-        # return search of spotify
-        songs = [x['name'] for x in sp.search(text, None)['tracks']['items'][:10]]
-        print(songs)
-        return {"message": "OK", "songs": songs}
+        # return spotify search to client
+        result = sp.search(text, None)['tracks']['items']
+        songList = []
+        for item in result[:10]:
+            songList.append({'song': item['name'], 'artists': [x['name'] for x in item['artists']], 'uri': item['uri']})
+        return {"message": "OK", "songs": songList}
+        
+    # return error message if something went wrong
     except Exception as error:
         print(error)
         return {"message": "NOT OK"}
@@ -66,12 +72,10 @@ async def search_song(body: Text):
 if __name__ == "__main__":
     hostname = socket.gethostname()
     ip_address = socket.gethostbyname(hostname)
-    # connected to Anuj's spotify account now 
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id="02044de1754544a993a1e1f8dcefad93",
                                                client_secret="48bc19fb38e1452cb7c90b9a40eb9464",
                                                redirect_uri="http://localhost:9000",
                                                scope="user-library-read,user-read-recently-played,user-read-currently-playing,user-read-playback-state,user-modify-playback-state"))
-    print("HERE")
     pprint(sp.me())
-    uvicorn.run(app, host=ip_address, port=8080)
+    uvicorn.run(app, host="127.0.0.1", port=8888)
     

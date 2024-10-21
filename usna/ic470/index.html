@@ -218,7 +218,7 @@
                     // update datalist (autofill) with list of songs
                     for (var i = 0; i < data.songs.length; i++) {
                         var option = document.createElement("option");
-                        option.value = data.songs[i];
+                        option.value = data.songs[i].song + " [" + artistString(data.songs[i].artists) + "]";
                         songs.appendChild(option);
                     }
                 })
@@ -235,12 +235,20 @@
         // add elements to the queue (from server response)
         for (var i = 0; i < result.length; i++) {
             var newItem = document.createElement("li");
-            newItem.appendChild(document.createTextNode(result[i]))
+            newItem.appendChild(document.createTextNode(result[i].song + " [" + artistString(result[i].artists) + "]"))
             queue.appendChild(newItem);
         }
 
         // make the top song text green (similar to spotify 'currently playing')
         queue.firstChild.style.color = "77ed88";
+    }
+
+    // return string formatted list of artists
+    function artistString(artists){
+        var artistString = artists[0];
+        for(var j = 1; j < artists.length; j++)
+            artistString = artistString + ", " + artists[j];
+        return artistString;
     }
 
     // make the message visible and fade it away after 1 second
