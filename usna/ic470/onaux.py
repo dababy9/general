@@ -21,10 +21,11 @@ import random
 
 
 # connected to Anuj's spotify account now 
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id="142b6b91ca9c4fff8492e3e562cfcc3d",
-                                               client_secret="6093e73128bf48f9bbcab1288cc531c0",
-                                               redirect_uri="http://localhost/8000",
-                                               scope="user-library-read,user-library-read,user-read-recently-played,user-read-currently-playing,user-read-playback-state,user-modify-playback-state"))
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id="02044de1754544a993a1e1f8dcefad93",
+                                               client_secret="48bc19fb38e1452cb7c90b9a40eb9464",
+                                               redirect_uri="http://localhost:9000",
+                                                scope="user-library-read,user-read-recently-played,user-read-currently-playing,user-read-playback-state,user-modify-playback-state"))
+print("HERE")
 pprint(sp.me())
 #track_uri = "spotify:track:YOUR_TRACK_URI"
 #sp.add_to_queue(track_uri)
