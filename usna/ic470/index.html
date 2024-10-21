@@ -114,6 +114,9 @@
     const message = document.getElementById("message");
     const queue = document.getElementById("queue");
 
+    // global uri value to be used in autofill functionality
+    var uri = "";
+
     // immediately grab queue when page loads
     window.onload = function () {
 
@@ -148,9 +151,9 @@
         // don't reload page/create GET request
         event.preventDefault();
 
-        // get user input and reset textbox
-        var songName = song.value;
+        // reset textbox and autofill
         song.value = "";
+        removeAll(songs);
 
         // send POST request to '/request' endpoint
         fetch("/request", {
@@ -158,7 +161,7 @@
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ "text": songName })
+            body: JSON.stringify({ "text": uri })
         })
 
             // throw error if server doesn't respond with good http code
@@ -188,8 +191,22 @@
         // get text
         var text = song.value;
 
-        // only update with new list if there is text in the textbox
-        if (text != "") {
+        // if textbox is empty, just clear autofill
+        if (text == "")
+            removeAll(songs);
+        
+        // if input ends in invisible separator, then user has clicked on autofill entry
+        else if (text[text.length - 1] == '\u2063') {
+
+            // loop through all autofill options
+            var children = songs.children;
+            for(var i = 0; i < children.length; i++){
+                if(text == children[i].value)
+                    uri = children[i].id;
+            }
+
+        // otherwise, just pull searches from server
+        } else {
 
             // send POST request to 'search' endpoint
             fetch("/search", {
@@ -212,25 +229,30 @@
                 .then(data => {
 
                     // remove all elements from datalist (autofill)
-                    while (songs.firstChild)
-                        songs.firstChild.remove();
+                    removeAll(songs)
 
                     // update datalist (autofill) with list of songs
                     for (var i = 0; i < data.songs.length; i++) {
                         var option = document.createElement("option");
-                        option.value = data.songs[i].song + " [" + artistString(data.songs[i].artists) + "]";
+                        option.id = data.songs[i].uri;
+                        option.value = "(" + (i + 1) + ") " + data.songs[i].song + " [" + artistString(data.songs[i].artists) + "]\u2063";
                         songs.appendChild(option);
                     }
                 })
         }
     });
 
+    // remove all items from DOM object
+    function removeAll(obj){
+        while (obj.firstChild)
+            obj.firstChild.remove();
+    }
+
     // create queue on screen
     function createQueue(result) {
 
         // remove current elements from queue
-        while (queue.firstChild)
-            queue.firstChild.remove();
+        removeAll(queue);
 
         // add elements to the queue (from server response)
         for (var i = 0; i < result.length; i++) {

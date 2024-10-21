@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 import spotipy 
 from spotipy.oauth2 import SpotifyOAuth
-import spotipy.util as util
 from pprint import pprint
 import random
 
@@ -29,11 +28,11 @@ async def store_song(body: Text):
     try:
 
         # retrieve the song name
-        song = body.model_dump()['text']
+        uri = body.model_dump()['text']
 
         # add song to queue if user actually entered text
-        if song != "":
-            sp.add_to_queue(sp.search(song)['tracks']['items'][1]['uri'], None)
+        if uri != "":
+            sp.add_to_queue(uri, None)
 
         # retrieve queue (song name and artist name) and return it to user
         result = sp.queue()
@@ -76,6 +75,5 @@ if __name__ == "__main__":
                                                client_secret="48bc19fb38e1452cb7c90b9a40eb9464",
                                                redirect_uri="http://localhost:9000",
                                                scope="user-library-read,user-read-recently-played,user-read-currently-playing,user-read-playback-state,user-modify-playback-state"))
-    pprint(sp.me())
-    uvicorn.run(app, host="127.0.0.1", port=8888)
+    uvicorn.run(app, host="127.0.0.1", port=8080)
     
