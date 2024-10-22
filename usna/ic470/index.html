@@ -117,6 +117,9 @@
     // global uri value to be used in autofill functionality
     var uri = "";
 
+    // debounce timer for search functionality
+    let searchTimer;
+
     // immediately grab queue when page loads
     window.onload = function () {
 
@@ -151,6 +154,9 @@
         // don't reload page/create GET request
         event.preventDefault();
 
+        // save whether text box was empty already
+        var empty = song.value == "";
+
         // reset textbox and autofill
         song.value = "";
         removeAll(songs);
@@ -166,6 +172,10 @@
 
             // throw error if server doesn't respond with good http code
             .then(response => {
+
+                // reset uri to not add the same song again
+                uri = ""
+
                 if (!response.ok) {
                     throw new Error('HTTP ERROR');
                 }
@@ -175,11 +185,13 @@
             // otherwise, process response
             .then(data => {
 
-                // flash either a good or bad message
-                if (data.message == "OK")
-                    flashMessage("#77ed88", "Song Added!");
-                else
-                    flashMessage("#ff0000", "There was an issue adding the song!");
+                // flash either a good or bad message when user actually submits a song
+                if (!empty) {
+                    if (data.message == "OK")
+                        flashMessage("#77ed88", "Song Added!");
+                    else
+                        flashMessage("#ff0000", "There was an issue adding the song!");
+                }
 
                 createQueue(data.queue);
             })
@@ -191,17 +203,32 @@
         // get text
         var text = song.value;
 
+        // clear previous timeout if user is typing quickly
+        clearTimeout(searchTimer);
+
         // if textbox is empty, just clear autofill
         if (text == "")
             removeAll(songs);
-        
+
+        // otherwise, process current search text
+        else {
+
+            // set new timer to query after 500ms
+            searchTimer = setTimeout(() => { search(text); }, 500);
+
+        }
+    });
+
+    // function for handling search
+    function search(text) {
+
         // if input ends in invisible separator, then user has clicked on autofill entry
-        else if (text[text.length - 1] == '\u2063') {
+        if (text[text.length - 1] == '\u2063') {
 
             // loop through all autofill options
             var children = songs.children;
-            for(var i = 0; i < children.length; i++){
-                if(text == children[i].value)
+            for (var i = 0; i < children.length; i++) {
+                if (text == children[i].value)
                     uri = children[i].id;
             }
 
@@ -240,10 +267,10 @@
                     }
                 })
         }
-    });
+    }
 
     // remove all items from DOM object
-    function removeAll(obj){
+    function removeAll(obj) {
         while (obj.firstChild)
             obj.firstChild.remove();
     }
@@ -266,9 +293,9 @@
     }
 
     // return string formatted list of artists
-    function artistString(artists){
+    function artistString(artists) {
         var artistString = artists[0];
-        for(var j = 1; j < artists.length; j++)
+        for (var j = 1; j < artists.length; j++)
             artistString = artistString + ", " + artists[j];
         return artistString;
     }
