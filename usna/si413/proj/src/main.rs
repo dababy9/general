@@ -19,6 +19,7 @@ struct WordCount {
     c: i32,
     w: String,
 }
+
 impl Ord for WordCount {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.count.cmp(&other.count);
