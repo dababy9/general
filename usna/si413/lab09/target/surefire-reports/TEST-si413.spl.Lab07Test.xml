@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="si413.spl.Lab07Test" time="0.16" tests="82" errors="0" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="21"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/home/mids/m256642/general/usna/si413/lab09/target/test-classes:/home/mids/m256642/general/usna/si413/lab09/target/classes:/home/mids/m256642/.m2/repository/org/antlr/antlr4-runtime/4.13.1/antlr4-runtime-4.13.1.jar:/home/mids/m256642/.m2/repository/org/antlr/antlr4/4.13.1/antlr4-4.13.1.jar:/home/mids/m256642/.m2/repository/org/antlr/antlr-runtime/3.5.3/antlr-runtime-3.5.3.jar:/home/mids/m256642/.m2/repository/org/antlr/ST4/4.3.4/ST4-4.3.4.jar:/home/mids/m256642/.m2/repository/org/abego/treelayout/org.abego.treelayout.core/1.0.3/org.abego.treelayout.core-1.0.3.jar:/home/mids/m256642/.m2/repository/com/ibm/icu/icu4j/72.1/icu4j-72.1.jar:/home/mids/m256642/.m2/repository/net/harawata/appdirs/1.2.2/appdirs-1.2.2.jar:/home/mids/m256642/.m2/repository/net/java/dev/jna/jna-platform/5.13.0/jna-platform-5.13.0.jar:/home/mids/m256642/.m2/repository/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar:/home/mids/m256642/.m2/repository/org/jline/jline/3.23.0/jline-3.23.0.jar:/home/mids/m256642/.m2/repository/org/junit/jupiter/junit-jupiter/5.10.0/junit-jupiter-5.10.0.jar:/home/mids/m256642/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/home/mids/m256642/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/mids/m256642/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/home/mids/m256642/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.10.0/junit-jupiter-params-5.10.0.jar:/home/mids/m256642/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/home/mids/m256642/.m2/repository/org/junit/platform/junit-platform-launcher/1.10.0/junit-platform-launcher-1.10.0.jar:/home/mids/m256642/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/home/mids/m256642/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/mids/m256642/.m2/repository/net/sourceforge/argparse4j/argparse4j/0.9.0/argparse4j-0.9.0.jar:"/>
+    <property name="java.vm.vendor" value="Ubuntu"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="https://ubuntu.com/"/>
+    <property name="os.name" value="Linux"/>
+    <property name="java.vm.specification.version" value="21"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/java-21-openjdk-amd64/lib"/>
+    <property name="sun.java.command" value="/home/mids/m256642/general/usna/si413/lab09/target/surefire/surefirebooter-20241101103939609_3.jar /home/mids/m256642/general/usna/si413/lab09/target/surefire 2024-11-01T10-39-39_522-jvmRun1 surefire-20241101103939609_1tmp surefire_0-20241101103939609_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="test" value="Lab07Test,Lab08Test,Ex2Test,Ex3Test"/>
+    <property name="surefire.test.class.path" value="/home/mids/m256642/general/usna/si413/lab09/target/test-classes:/home/mids/m256642/general/usna/si413/lab09/target/classes:/home/mids/m256642/.m2/repository/org/antlr/antlr4-runtime/4.13.1/antlr4-runtime-4.13.1.jar:/home/mids/m256642/.m2/repository/org/antlr/antlr4/4.13.1/antlr4-4.13.1.jar:/home/mids/m256642/.m2/repository/org/antlr/antlr-runtime/3.5.3/antlr-runtime-3.5.3.jar:/home/mids/m256642/.m2/repository/org/antlr/ST4/4.3.4/ST4-4.3.4.jar:/home/mids/m256642/.m2/repository/org/abego/treelayout/org.abego.treelayout.core/1.0.3/org.abego.treelayout.core-1.0.3.jar:/home/mids/m256642/.m2/repository/com/ibm/icu/icu4j/72.1/icu4j-72.1.jar:/home/mids/m256642/.m2/repository/net/harawata/appdirs/1.2.2/appdirs-1.2.2.jar:/home/mids/m256642/.m2/repository/net/java/dev/jna/jna-platform/5.13.0/jna-platform-5.13.0.jar:/home/mids/m256642/.m2/repository/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar:/home/mids/m256642/.m2/repository/org/jline/jline/3.23.0/jline-3.23.0.jar:/home/mids/m256642/.m2/repository/org/junit/jupiter/junit-jupiter/5.10.0/junit-jupiter-5.10.0.jar:/home/mids/m256642/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar:/home/mids/m256642/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/home/mids/m256642/.m2/repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.jar:/home/mids/m256642/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.10.0/junit-jupiter-params-5.10.0.jar:/home/mids/m256642/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.jar:/home/mids/m256642/.m2/repository/org/junit/platform/junit-platform-launcher/1.10.0/junit-platform-launcher-1.10.0.jar:/home/mids/m256642/.m2/repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.jar:/home/mids/m256642/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/mids/m256642/.m2/repository/net/sourceforge/argparse4j/argparse4j/0.9.0/argparse4j-0.9.0.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/home/mids/m256642"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2024-07-16"/>
+    <property name="java.home" value="/usr/lib/jvm/java-21-openjdk-amd64"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/home/mids/m256642/general/usna/si413/lab09"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="surefire.real.class.path" value="/home/mids/m256642/general/usna/si413/lab09/target/surefire/surefirebooter-20241101103939609_3.jar"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="21.0.4+7-Ubuntu-1ubuntu224.04"/>
+    <property name="user.name" value="m256642"/>
+    <property name="stdout.encoding" value="UTF-8"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="6.8.0-48-generic"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="localRepository" value="/home/mids/m256642/.m2/repository"/>
+    <property name="java.vendor.url.bug" value="https://bugs.launchpad.net/ubuntu/+source/openjdk-21"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="java.version" value="21.0.4"/>
+    <property name="user.dir" value="/home/mids/m256642/general/usna/si413/lab09"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="org.slf4j.simpleLogger.defaultLogLevel" value="error"/>
+    <property name="native.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib/x86_64-linux-gnu/jni:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:/lib:/usr/lib"/>
+    <property name="stderr.encoding" value="UTF-8"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="java.vendor" value="Ubuntu"/>
+    <property name="java.vm.version" value="21.0.4+7-Ubuntu-1ubuntu224.04"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="65.0"/>
+  </properties>
+  <testcase name="newLookupSingle" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[Test case newLookupSingle()...]]></system-err>
+  </testcase>
+  <testcase name="numArith" classname="si413.spl.Lab07Test" time="0.007">
+    <system-err><![CDATA[passed!
+Test case numArith()...]]></system-err>
+  </testcase>
+  <testcase name="whileOnce" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case whileOnce()...]]></system-err>
+  </testcase>
+  <testcase name="debugStmt1" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case debugStmt1()...]]></system-err>
+  </testcase>
+  <testcase name="debugStmt2" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case debugStmt2()...]]></system-err>
+  </testcase>
+  <testcase name="write123" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case write123()...]]></system-err>
+  </testcase>
+  <testcase name="writeNeg" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case writeNeg()...]]></system-err>
+  </testcase>
+  <testcase name="compArith1" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case compArith1()...]]></system-err>
+  </testcase>
+  <testcase name="compArith2" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case compArith2()...]]></system-err>
+  </testcase>
+  <testcase name="compArith3" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case compArith3()...]]></system-err>
+  </testcase>
+  <testcase name="simpleIfElse" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case simpleIfElse()...]]></system-err>
+  </testcase>
+  <testcase name="shortCircuitDivZero" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case shortCircuitDivZero()...]]></system-err>
+  </testcase>
+  <testcase name="arithNeg" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case arithNeg()...]]></system-err>
+  </testcase>
+  <testcase name="errBind" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case errBind()...]]></system-err>
+  </testcase>
+  <testcase name="simpleBlock" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case simpleBlock()...]]></system-err>
+  </testcase>
+  <testcase name="blocks" classname="si413.spl.Lab07Test" time="0.003">
+    <system-err><![CDATA[passed!
+Test case blocks()...]]></system-err>
+  </testcase>
+  <testcase name="boolOp" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case boolOp()...]]></system-err>
+  </testcase>
+  <testcase name="minusDiv" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case minusDiv()...]]></system-err>
+  </testcase>
+  <testcase name="shortCircuitRead" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case shortCircuitRead()...]]></system-err>
+  </testcase>
+  <testcase name="emptyBlock" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case emptyBlock()...]]></system-err>
+  </testcase>
+  <testcase name="negAdd" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case negAdd()...]]></system-err>
+  </testcase>
+  <testcase name="newAsn" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case newAsn()...]]></system-err>
+  </testcase>
+  <testcase name="newVar" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case newVar()...]]></system-err>
+  </testcase>
+  <testcase name="readMany" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case readMany()...]]></system-err>
+  </testcase>
+  <testcase name="readOnce" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case readOnce()...]]></system-err>
+  </testcase>
+  <testcase name="newLookup" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case newLookup()...]]></system-err>
+  </testcase>
+  <testcase name="errLookup" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case errLookup()...]]></system-err>
+  </testcase>
+  <testcase name="writeArith" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case writeArith()...]]></system-err>
+  </testcase>
+  <testcase name="writeComp1" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case writeComp1()...]]></system-err>
+  </testcase>
+  <testcase name="writeComp2" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case writeComp2()...]]></system-err>
+  </testcase>
+  <testcase name="funcallAST" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case funcallAST()...]]></system-err>
+  </testcase>
+  <testcase name="asnError" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case asnError()...]]></system-err>
+  </testcase>
+  <testcase name="errRebind" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case errRebind()...]]></system-err>
+  </testcase>
+  <testcase name="asnLookupSingle" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case asnLookupSingle()...]]></system-err>
+  </testcase>
+  <testcase name="debugLoop" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case debugLoop()...]]></system-err>
+  </testcase>
+  <testcase name="debugStmt" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case debugStmt()...]]></system-err>
+  </testcase>
+  <testcase name="asn" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case asn()...]]></system-err>
+  </testcase>
+  <testcase name="not" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case not()...]]></system-err>
+  </testcase>
+  <testcase name="num" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case num()...]]></system-err>
+  </testcase>
+  <testcase name="comp" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case comp()...]]></system-err>
+  </testcase>
+  <testcase name="neg1" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case neg1()...]]></system-err>
+  </testcase>
+  <testcase name="neg2" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case neg2()...]]></system-err>
+  </testcase>
+  <testcase name="plus" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case plus()...]]></system-err>
+  </testcase>
+  <testcase name="vars" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case vars()...]]></system-err>
+  </testcase>
+  <testcase name="boolExp" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case boolExp()...]]></system-err>
+  </testcase>
+  <testcase name="boolOps" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case boolOps()...]]></system-err>
+  </testcase>
+  <testcase name="arith" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case arith()...]]></system-err>
+  </testcase>
+  <testcase name="block" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case block()...]]></system-err>
+  </testcase>
+  <testcase name="notOp" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case notOp()...]]></system-err>
+  </testcase>
+  <testcase name="read1" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case read1()...]]></system-err>
+  </testcase>
+  <testcase name="read2" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case read2()...]]></system-err>
+  </testcase>
+  <testcase name="ifNoError" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case ifNoError()...]]></system-err>
+  </testcase>
+  <testcase name="nestedBlocks" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case nestedBlocks()...]]></system-err>
+  </testcase>
+  <testcase name="asnLookup" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case asnLookup()...]]></system-err>
+  </testcase>
+  <testcase name="lambdaAST" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case lambdaAST()...]]></system-err>
+  </testcase>
+  <testcase name="simpleIf" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case simpleIf()...]]></system-err>
+  </testcase>
+  <testcase name="nestedIfElse" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case nestedIfElse()...]]></system-err>
+  </testcase>
+  <testcase name="debugAST" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case debugAST()...]]></system-err>
+  </testcase>
+  <testcase name="newAsnWrite" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case newAsnWrite()...]]></system-err>
+  </testcase>
+  <testcase name="writeEquals" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case writeEquals()...]]></system-err>
+  </testcase>
+  <testcase name="readMul" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case readMul()...]]></system-err>
+  </testcase>
+  <testcase name="newError" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case newError()...]]></system-err>
+  </testcase>
+  <testcase name="newStmt1" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case newStmt1()...]]></system-err>
+  </testcase>
+  <testcase name="newStmt2" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case newStmt2()...]]></system-err>
+  </testcase>
+  <testcase name="newWrite" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case newWrite()...]]></system-err>
+  </testcase>
+  <testcase name="write10" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case write10()...]]></system-err>
+  </testcase>
+  <testcase name="ifElseVars" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case ifElseVars()...]]></system-err>
+  </testcase>
+  <testcase name="lookupError" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case lookupError()...]]></system-err>
+  </testcase>
+  <testcase name="ifElse1" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case ifElse1()...]]></system-err>
+  </testcase>
+  <testcase name="ifElse2" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case ifElse2()...]]></system-err>
+  </testcase>
+  <testcase name="ifElse3" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case ifElse3()...]]></system-err>
+  </testcase>
+  <testcase name="ifElse4" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case ifElse4()...]]></system-err>
+  </testcase>
+  <testcase name="whileFalse" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case whileFalse()...]]></system-err>
+  </testcase>
+  <testcase name="whileCollatz" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case whileCollatz()...]]></system-err>
+  </testcase>
+  <testcase name="divideByZero" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case divideByZero()...]]></system-err>
+  </testcase>
+  <testcase name="whileStmt1" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case whileStmt1()...]]></system-err>
+  </testcase>
+  <testcase name="whileStmt2" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case whileStmt2()...]]></system-err>
+  </testcase>
+  <testcase name="whileStmt3" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case whileStmt3()...]]></system-err>
+  </testcase>
+  <testcase name="whileCountUp" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case whileCountUp()...]]></system-err>
+  </testcase>
+  <testcase name="shortCircuit1" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case shortCircuit1()...]]></system-err>
+  </testcase>
+  <testcase name="shortCircuit2" classname="si413.spl.Lab07Test" time="0.001">
+    <system-err><![CDATA[passed!
+Test case shortCircuit2()...]]></system-err>
+  </testcase>
+  <testcase name="boolArith" classname="si413.spl.Lab07Test" time="0.002">
+    <system-err><![CDATA[passed!
+Test case boolArith()...]]></system-err>
+  </testcase>
+</testsuite>

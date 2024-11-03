@@ -1,0 +1,27 @@
+lexer grammar SPLLexer;
+
+NUM     : [0-9]+ ;
+BOOL    : 'true'|'false' ;
+OPA     : [+-] ;
+OPM     : [*/] ;
+BOP     : 'and'|'or' ;
+NOT     : 'not' ;
+COMP    : [<>=]|[!<>]'=' ;
+ASN     : ':=' ;
+FUNARG  : '@' ;
+LP      : '(' ;
+RP      : ')' ;
+LC      : '{' ;
+RC      : '}' ;
+STOP    : ';' ;
+IF      : 'if' ;
+IFELSE  : 'ifelse' ;
+WHILE   : 'while' ;
+READ    : 'read' ;
+WRITE   : 'write' ;
+LAMBDA  : 'lambda' ;
+NEW     : 'new' ;
+ID      : [a-zA-Z_][a-zA-Z_0-9]* ;
+DEBUG   : '"' ~'"'* '"' ;
+SPACE   : [ \t\r\n]+ -> skip ;
+COMMENT : '#' ~[\r\n]* -> skip ;
