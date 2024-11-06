@@ -15,15 +15,14 @@ use std::fs::File;
 
 
 // struct and implementations for heap
+// derive ordering traits for struct (because we must implement Ord, PartialOrd, Eq, and PartialEq to use in heap), similar to Comparable and compareTo() in Java
+// deriving traits means Rust automatically generates the functions in a naive way, but it is exactly what we want for the ordering
+// For Ord and PartialOrd, Rust compares fields in lexicographic order, so 'c' first, and then 'w'.
+// For Eq and PartialEq, Rust just makes sure all fields are equal
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 struct WordCount {
     c: i32,
     w: String,
-}
-
-impl Ord for WordCount {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.count.cmp(&other.count);
-    }
 }
 
 
@@ -68,6 +67,9 @@ fn main() {
         let trimmed = lower.trim_matches(&['.', '?', '!', '"', '\'', ',', '(', ')', '[', ']', '{', '}', ';', ':', '~', '-']).to_string();
         
         // if key is already in the tree, increment the value by 1
+        // get_mut returns an OPTION, which can be either Some or None
+        // rust does not allow for arbitrary values (like null)
+        // this is the workaround used, and how we check if get_mut returned something
         if let Some(n) = tree.get_mut(&trimmed) {
             *n += 1;
 
@@ -80,23 +82,29 @@ fn main() {
     // remove any weird 'words' that are only punctuation (i. e. '-----------------')
     tree.remove("");
 
-    // create heap for top 50 elements
-    let mut top = BinaryHeap::new();
+    // create vector of WordCounts from tree
+    let elements : Vec<WordCount> = tree.into_iter()
 
-    // loop through all mappings in the splay tree
-    for (word, count) in tree.into_iter() {
+        // iterator from tree returns just a string and integer, so we must map that to a new WordCount objects
+        .map(|(string, integer)| WordCount {c: integer, w: string})
 
-        // if heap length is less than 50, just add the item
-        if top.len() < 50 {
-            top.push(WordCount {c: count, w: word});
-        }
-        println!("{:?}: {}", ch, count);
+        // collect into vector
+        .collect();
+
+    // create heap from vector
+    let mut top = BinaryHeap::from(elements);
+
+    // print top 50 elements from heap
+    for i in 0..50 {
+        let item = top.pop().unwrap();
+        println!("{}. {:?}: {}", i+1, item.w, item.c);
     }
 }
 
 
 
 // function for handling/printing errors and exiting with status codes
+// this is from the original code that printed letter frequencies
 fn exit_err<T>(msg: T, code: i32) -> ! where T: Display {
     writeln!(&mut io::stderr(), "{}", msg).expect("Could not write to stderr");
     process::exit(code)

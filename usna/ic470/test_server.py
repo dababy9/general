@@ -15,6 +15,10 @@ def server():
     process = subprocess.Popen(["python", "server.py", "8080"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     time.sleep(1)
 
+    # create spotipy access key thing
+    # spin up a fake device (or real one)
+    # add a couple songs to the queue
+
     # wait until all tests are done, then terminate server
     yield process
     process.terminate()

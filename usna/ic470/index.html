@@ -143,8 +143,14 @@
             // otherwise, process response
             .then(data => {
 
-                // create initial queue
-                createQueue(data.queue);
+                if(data.message == "OK")
+
+                    // create initial queue
+                    createQueue(data.queue);
+                else
+
+                    // alert that the playback device isn't running
+                    alert("Error accessing spotify: No active playback device!");
             })
     }
 

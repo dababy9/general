@@ -49,8 +49,7 @@ async def store_song(body: Text):
     
     # return error message if something went wrong
     except Exception as error:
-        print(error)
-        return {"message": "NOT OK"}
+         return {"message": "NOT OK"}
 
 
 
@@ -71,7 +70,6 @@ async def search_song(body: Text):
         
     # return error message if something went wrong
     except Exception as error:
-        print(error)
         return {"message": "NOT OK"}
 
 
@@ -84,5 +82,4 @@ if __name__ == "__main__":
                                                client_secret="48bc19fb38e1452cb7c90b9a40eb9464",
                                                redirect_uri="http://localhost:9000",
                                                scope="user-library-read,user-read-recently-played,user-read-currently-playing,user-read-playback-state,user-modify-playback-state"))
-    _ = sp.me()
     uvicorn.run(app, host="0.0.0.0", port=8888)
