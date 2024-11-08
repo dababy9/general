@@ -1,0 +1,38 @@
+package si413.spl.ast;
+
+import si413.spl.*;
+import java.util.List;
+import java.util.ArrayList;
+
+/** A block of SPL statements, usually surrounded with curly braces.
+ * Example: { write 1; write 2; }
+ */
+public class Block extends Statement {
+    /** A list of all statements inside the block. */
+    private List<Statement> children;
+
+    /** Creates an empty block with no statements. */
+    public Block() {
+        this(List.of());
+    }
+
+    /** Creates a block with the given list of child statements. */
+    public Block(List<Statement> children) {
+        this.children = children;
+    }
+
+    @Override
+    public List<Statement> getChildren() {
+        return children;
+    }
+
+    @Override
+    public void compile(Frame env, Context ctx){
+        // Create new Frame
+        Frame f = new Frame(env);
+        // Just compile each statement in block sequentially
+        for(Statement child : children){
+            child.compile(f, ctx);
+        }
+    }
+}
