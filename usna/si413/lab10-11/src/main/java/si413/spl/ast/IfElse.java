@@ -34,5 +34,11 @@ public class IfElse extends Statement {
         ctx.label(ifLabel);
         ifStmt.compile(new Frame(env), ctx);
         ctx.code("br label %%%s".formatted(thenLabel));
+        // Write else statement (and jump down to then label)
+        ctx.label(elseLabel);
+        elseStmt.compile(new Frame(env), ctx);
+        ctx.code("br label %%%s".formatted(thenLabel));
+        // Write then label to continue after this statement
+        ctx.label(thenLabel);
     }
 }

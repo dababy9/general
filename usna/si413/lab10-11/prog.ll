@@ -11,69 +11,64 @@ declare i32 @scanf(ptr)
 @scanLong = constant [2 x i8] c"%d"
 
 define i32 @main() {
-    ; Num literal 10
+    ; Num literal 42
     ; New Statment
   %r001 = alloca i64
-  store i64 10, ptr %r001
-    ; Using variable
-  %r002 = load i64, ptr %r001
-    ; Num literal 3
-    ; Num '+' operation
-  %r003 = add i64 %r002, 3
-    ; write statement
-  call i32 @printf(ptr @printLong, i64 %r003)
-    ; Using variable
-  %r004 = load i64, ptr %r001
-    ; Using variable
-  %r005 = load i64, ptr %r001
-    ; Num '*' operation
-  %r006 = mul i64 %r004, %r005
+  store i64 42, ptr %r001
+    ; read input
+  %r002 = alloca i64
+  call i32 @scanf(ptr @scanLong, ptr %r002)
+  %r003 = load i64, ptr %r002
     ; New Statment
-  %r007 = alloca i64
-  store i64 %r006, ptr %r007
+  %r004 = alloca i64
+  store i64 %r003, ptr %r004
+    ; While Statement
+  br label %b1
+b1:
     ; Using variable
-  %r008 = load i64, ptr %r007
-    ; write statement
-  call i32 @printf(ptr @printLong, i64 %r008)
+  %r005 = load i64, ptr %r004
     ; Using variable
-  %r009 = load i64, ptr %r007
+  %r006 = load i64, ptr %r001
+    ; num '≠' operation
+  %r007 = icmp ne i64 %r005, %r006
+  %r008 = zext i1 %r007 to i64
+  %r009 = trunc i64 %r008 to i1
+  br i1 %r009, label %b2, label %b3
+b2:
     ; Using variable
-  %r010 = load i64, ptr %r001
-    ; Num '+' operation
-  %r011 = add i64 %r009, %r010
-    ; write statement
-  call i32 @printf(ptr @printLong, i64 %r011)
-    ; Num literal 20
-    ; New Statment
-  %r012 = alloca i64
-  store i64 20, ptr %r012
+  %r010 = load i64, ptr %r004
     ; Using variable
-  %r013 = load i64, ptr %r012
-    ; write statement
-  call i32 @printf(ptr @printLong, i64 %r013)
-    ; Num literal 3
+  %r011 = load i64, ptr %r001
+    ; num '<' operation
+  %r012 = icmp slt i64 %r010, %r011
+  %r013 = zext i1 %r012 to i64
+  %r014 = trunc i64 %r013 to i1
+    ; If/Else Statement
+  br i1 %r014, label %b4, label %b5
+b4:
+    ; Num literal 1
     ; NegOp
-  %r014 = mul i64 3, -1
-    ; Assignment Statment
-  store i64 %r014, ptr %r012
-    ; Using variable
-  %r015 = load i64, ptr %r012
+  %r015 = mul i64 1, -1
     ; write statement
   call i32 @printf(ptr @printLong, i64 %r015)
-    ; Using variable
-  %r016 = load i64, ptr %r001
+  br label %b6
+b5:
+    ; Num literal 1
     ; write statement
-  call i32 @printf(ptr @printLong, i64 %r016)
-    ; Num literal 1101
+  call i32 @printf(ptr @printLong, i64 1)
+  br label %b6
+b6:
+    ; read input
+  %r016 = alloca i64
+  call i32 @scanf(ptr @scanLong, ptr %r016)
+  %r017 = load i64, ptr %r016
     ; Assignment Statment
-  store i64 1101, ptr %r007
+  store i64 %r017, ptr %r004
+  br label %b1
+b3:
     ; Using variable
-  %r017 = load i64, ptr %r001
-    ; Using variable
-  %r018 = load i64, ptr %r007
-    ; Num '+' operation
-  %r019 = add i64 %r017, %r018
+  %r018 = load i64, ptr %r001
     ; write statement
-  call i32 @printf(ptr @printLong, i64 %r019)
+  call i32 @printf(ptr @printLong, i64 %r018)
   ret i32 0
 }
