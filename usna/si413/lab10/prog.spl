@@ -1,0 +1,2 @@
+new r := lambda x { write x; ret := 10; };
+write r@3;

@@ -1,0 +1,9 @@
+{
+    "name": "violent-victory",
+    "version": "0.0.1",
+    "description": "IC470 Capstone",
+    "dependencies": {
+        "express": "^4.21.1",
+        "socket.io": "^4.8.1"
+    }
+}

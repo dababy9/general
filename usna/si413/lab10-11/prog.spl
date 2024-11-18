@@ -1,9 +1,0 @@
-new secret := 42;
-new guess := read;
-while guess != secret {
-  ifelse guess < secret
-  { write -1; }
-  { write 1; }
-  guess := read;
-}
-write secret;
