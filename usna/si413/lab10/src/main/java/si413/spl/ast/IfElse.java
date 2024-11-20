@@ -23,7 +23,6 @@ public class IfElse extends Statement {
         // Convert condition to i1 type
         String condBool = ctx.freshRegister();
         ctx.code("%s = trunc i64 %s to i1".formatted(condBool, condNum));
-        ctx.comment("If/Else Statement");
         // Create three labels: If, Else, Then
         String ifLabel = ctx.freshLabel();
         String elseLabel = ctx.freshLabel();

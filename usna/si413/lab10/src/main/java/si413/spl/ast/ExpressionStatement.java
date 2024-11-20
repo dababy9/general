@@ -15,6 +15,6 @@ public class ExpressionStatement extends Statement {
     @Override
     public void compile(Frame env, Context ctx){
         // Recursively evaluate right-hand side
-        String expResult = exp.compile(env, ctx);
+        exp.compile(env, ctx);
     }
 }

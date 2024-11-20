@@ -19,7 +19,6 @@ public class Bool extends Expression {
 
     @Override
     public String compile(Frame env, Context ctx) {
-        ctx.comment("Bool literal %b".formatted(value));
         if (value) return "1";
         else return "0";
     }

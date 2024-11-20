@@ -50,11 +50,4 @@ public class Context {
     public void label(String line) {
         codeOut.format("%s:%n", line);
     }
-
-    public String addLambda(Lambda l){
-        String funName = "@fun%d".formatted(l.getId());
-        String register = freshRegister();
-        code("%s = ptrtoint ptr %s to i64".formatted(register, funName));
-        return register;
-    }
 }

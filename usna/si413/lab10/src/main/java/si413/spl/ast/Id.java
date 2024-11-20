@@ -18,7 +18,6 @@ public class Id extends Expression {
 
     @Override
     public String compile(Frame env, Context ctx){
-        ctx.comment("Using variable");
         // Get register name from frame and load memory into new register
         String num = env.lookup(varname);
         String ptr = ctx.freshRegister();

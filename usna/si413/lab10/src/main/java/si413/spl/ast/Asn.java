@@ -21,7 +21,6 @@ public class Asn extends Statement {
 
     @Override
     public void compile(Frame env, Context ctx){
-        ctx.comment("Begin Assignment Statment");
         // Recursively evaluate right-hand side
         String rhsNum = rhs.compile(env, ctx);
         // Get register name from frame, and store new value
@@ -29,6 +28,5 @@ public class Asn extends Statement {
         String ptr = ctx.freshRegister();
         ctx.code("%s = inttoptr i64 %s to ptr".formatted(ptr, var));
         ctx.code("store i64 %s, ptr %s".formatted(rhsNum, ptr));
-        ctx.comment("End Assignment Statement");
     }
 }

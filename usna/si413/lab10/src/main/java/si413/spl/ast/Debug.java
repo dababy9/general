@@ -26,6 +26,7 @@ public class Debug extends Statement {
 
     @Override
     public void compile(Frame env, Context ctx) {
+        // Call printf on global constant string literal
         ctx.code("call i32 @printf(ptr @literal%d)".formatted(id));
     }
 }

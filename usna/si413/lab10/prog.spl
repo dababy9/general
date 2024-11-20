@@ -1,9 +1,13 @@
-new f := false;
-ifelse read = 2
-  { f := lambda x { ret := x*x; }; }
-  { f := lambda x { ret := x*x*x; }; }
+new n := 1000;
 new i := 1;
-while i <= 10 {
-  write f@i;
+new s := 0;
+while i <= n {
+  new j := 1;
+  while j <= n {
+    new temp := s + 1;
+    s := temp;
+    j := j + 1;
+  }
   i := i + 1;
 }
+write s;

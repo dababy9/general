@@ -24,11 +24,10 @@ public class ArithOp extends Expression {
 
     @Override
     public String compile(Frame env, Context ctx){
-        // recursively evaluate lhs and rhs
+        // Recursively evaluate lhs and rhs
         String lhsNum = lhsExp.compile(env, ctx);
         String rhsNum = rhsExp.compile(env, ctx);
-        ctx.comment("Num '%c' operation".formatted(op));
-        // decide which LLVM command is needed
+        // Decide which LLVM command is needed
         String llvmCmd;
         switch(op) {
             case '+': llvmCmd = "add"; break;
@@ -36,7 +35,7 @@ public class ArithOp extends Expression {
             case '*': llvmCmd = "mul"; break;
             default: llvmCmd = "sdiv"; break;
         }
-        // do the actual command in LLVM
+        // Do the actual command in LLVM
         String resultNum = ctx.freshRegister();
         ctx.code("%s = %s i64 %s, %s".formatted(resultNum, llvmCmd, lhsNum, rhsNum));
         return resultNum;
