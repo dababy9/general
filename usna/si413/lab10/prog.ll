@@ -3,36 +3,139 @@
 target triple = "x86_64-pc-linux-gnu"
 
 declare i32 @printf(ptr, ...)
-
 declare i32 @scanf(ptr)
 
 @printLong = constant [4 x i8] c"%d\0A\00"
+@scanLong = constant [5 x i8] c" %ld\00"
 
-@scanLong = constant [2 x i8] c"%d"
 
 define i32 @main() {
     ; Begin New Statment
-  %r001 = ptrtoint ptr @fun1 to i64
-  %r002 = alloca i64
-  store i64 %r001, ptr %r002
-  %r003 = ptrtoint ptr %r002 to i64
+    ; Bool literal false
+  %r001 = alloca i64
+  store i64 0, ptr %r001
+  %r002 = ptrtoint ptr %r001 to i64
     ; End New Statement
+    ; Begin Read
+  %r003 = alloca i64
+  call i32 @scanf(ptr @scanLong, ptr %r003)
+  %r004 = load i64, ptr %r003
+    ; End Read
+    ; num '=' operation
+  %r005 = icmp eq i64 %r004, 2
+  %r006 = zext i1 %r005 to i64
+  %r007 = trunc i64 %r006 to i1
+    ; If/Else Statement
+  br i1 %r007, label %b1, label %b2
+b1:
+    ; Begin Assignment Statment
+  %r008 = ptrtoint ptr @fun1 to i64
+  %r009 = inttoptr i64 %r002 to ptr
+  store i64 %r008, ptr %r009
+    ; End Assignment Statement
+  br label %b3
+b2:
+    ; Begin Assignment Statment
+  %r010 = ptrtoint ptr @fun2 to i64
+  %r011 = inttoptr i64 %r002 to ptr
+  store i64 %r010, ptr %r011
+    ; End Assignment Statement
+  br label %b3
+b3:
+    ; Begin New Statment
+  %r012 = alloca i64
+  store i64 1, ptr %r012
+  %r013 = ptrtoint ptr %r012 to i64
+    ; End New Statement
+    ; While Statement
+  br label %b4
+b4:
     ; Using variable
-  %r005 = inttoptr i64 %r003 to ptr
-  %r006 = load i64, ptr %r005
-  %r004 = inttoptr i64 %r006 to ptr
-  %r007 = call i64 %r004(i64 3)
+  %r014 = inttoptr i64 %r013 to ptr
+  %r015 = load i64, ptr %r014
+    ; num '≤' operation
+  %r016 = icmp sle i64 %r015, 10
+  %r017 = zext i1 %r016 to i64
+  %r018 = trunc i64 %r017 to i1
+  br i1 %r018, label %b5, label %b6
+b5:
+    ; Using variable
+  %r020 = inttoptr i64 %r002 to ptr
+  %r021 = load i64, ptr %r020
+  %r019 = inttoptr i64 %r021 to ptr
+    ; Using variable
+  %r023 = inttoptr i64 %r013 to ptr
+  %r024 = load i64, ptr %r023
+  %r022 = call i64 %r019(i64 %r024)
     ; write statement
-  call i32 @printf(ptr @printLong, i64 %r007)
+  call i32 @printf(ptr @printLong, i64 %r022)
+    ; Begin Assignment Statment
+    ; Using variable
+  %r025 = inttoptr i64 %r013 to ptr
+  %r026 = load i64, ptr %r025
+    ; Num '+' operation
+  %r027 = add i64 %r026, 1
+  %r028 = inttoptr i64 %r013 to ptr
+  store i64 %r027, ptr %r028
+    ; End Assignment Statement
+  br label %b4
+b6:
   ret i32 0
 }
+
 define i64 @fun1 (i64 %arg) {
-  %r008 = alloca i64
-  store i64 %arg, ptr %r008
-  %r009 = ptrtoint ptr %r008 to i64
-    ; Using variable
-  %r010 = inttoptr i64 %r009 to ptr
-  %r011 = load i64, ptr %r010
-    ; write statement
-  call i32 @printf(ptr @printLong, i64 %r011)
+  %r029 = alloca i64
+  store i64 %arg, ptr %r029
+  %r030 = ptrtoint ptr %r029 to i64
+    ; Begin New Statment
+  %r031 = alloca i64
+  store i64 0, ptr %r031
+  %r032 = ptrtoint ptr %r031 to i64
+    ; End New Statement
     ; Begin Assignment Statment
+    ; Using variable
+  %r033 = inttoptr i64 %r030 to ptr
+  %r034 = load i64, ptr %r033
+    ; Using variable
+  %r035 = inttoptr i64 %r030 to ptr
+  %r036 = load i64, ptr %r035
+    ; Num '*' operation
+  %r037 = mul i64 %r034, %r036
+  %r038 = inttoptr i64 %r032 to ptr
+  store i64 %r037, ptr %r038
+    ; End Assignment Statement
+  %r039 = inttoptr i64 %r032 to ptr
+  %r040 = load i64, ptr %r039
+  ret i64 %r040
+}
+
+define i64 @fun2 (i64 %arg) {
+  %r041 = alloca i64
+  store i64 %arg, ptr %r041
+  %r042 = ptrtoint ptr %r041 to i64
+    ; Begin New Statment
+  %r043 = alloca i64
+  store i64 0, ptr %r043
+  %r044 = ptrtoint ptr %r043 to i64
+    ; End New Statement
+    ; Begin Assignment Statment
+    ; Using variable
+  %r045 = inttoptr i64 %r042 to ptr
+  %r046 = load i64, ptr %r045
+    ; Using variable
+  %r047 = inttoptr i64 %r042 to ptr
+  %r048 = load i64, ptr %r047
+    ; Num '*' operation
+  %r049 = mul i64 %r046, %r048
+    ; Using variable
+  %r050 = inttoptr i64 %r042 to ptr
+  %r051 = load i64, ptr %r050
+    ; Num '*' operation
+  %r052 = mul i64 %r049, %r051
+  %r053 = inttoptr i64 %r044 to ptr
+  store i64 %r052, ptr %r053
+    ; End Assignment Statement
+  %r054 = inttoptr i64 %r044 to ptr
+  %r055 = load i64, ptr %r054
+  ret i64 %r055
+}

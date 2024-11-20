@@ -2,6 +2,7 @@ package si413.spl;
 
 import si413.spl.ast.Statement;
 import si413.spl.ast.Lambda;
+import si413.spl.ast.Debug;
 import java.util.List;
 import java.io.PrintWriter;
 import java.io.FileWriter;
@@ -50,14 +51,19 @@ public class Compiler implements Runnable {
 
         // function prototypes
         dest.println("declare i32 @printf(ptr, ...)");
-        dest.println();
         dest.println("declare i32 @scanf(ptr)");
         dest.println();
 
         // global constants
         dest.println("@printLong = constant [4 x i8] c\"%d\\0A\\00\"");
+        dest.println("@scanLong = constant [5 x i8] c\" %ld\\00\"");
         dest.println();
-        dest.println("@scanLong = constant [2 x i8] c\"%d\"");
+
+        // string literals for debug statements
+        for(int id : Debug.strings.navigableKeySet()){
+            String s = Debug.strings.get(id);
+            dest.println("@literal%d = constant [%d x i8] c\"%s\\0A\\00\"".formatted(id, s.length()+2, s));
+        }
         dest.println();
 
         Frame global = Frame.makeGlobal();
@@ -71,9 +77,10 @@ public class Compiler implements Runnable {
         dest.println("}");
 
         // additional function definitions
-        for (String name : ctx.lambdas.navigableKeySet()){
-            Lambda l = ctx.lambdas.get(name);
-            dest.println("define i64 %s (i64 %%arg) {".formatted(name));
+        for (int id : Lambda.lambdas.navigableKeySet()){
+            dest.println();
+            Lambda l = Lambda.lambdas.get(id);
+            dest.println("define i64 @fun%d (i64 %%arg) {".formatted(id));
             l.retroCompile(ctx);
             dest.println("}");
         }

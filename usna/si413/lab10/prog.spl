@@ -1,2 +1,9 @@
-new r := lambda x { write x; ret := 10; };
-write r@3;
+new f := false;
+ifelse read = 2
+  { f := lambda x { ret := x*x; }; }
+  { f := lambda x { ret := x*x*x; }; }
+new i := 1;
+while i <= 10 {
+  write f@i;
+  i := i + 1;
+}

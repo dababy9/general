@@ -1,7 +1,6 @@
 package si413.spl;
 
 import java.io.PrintWriter;
-import java.util.TreeMap;
 import si413.spl.ast.*;
 
 /** This represents the context of the current compilation.
@@ -15,8 +14,6 @@ public class Context {
     private PrintWriter codeOut;
     private int nextReg = 1;
     private int nextLabel = 1;
-    private int nextFun = 1;
-    public TreeMap<String, Lambda> lambdas = new TreeMap<>();
 
     public Context(PrintWriter codeOut) {
         this.codeOut = codeOut;
@@ -55,8 +52,7 @@ public class Context {
     }
 
     public String addLambda(Lambda l){
-        String funName = "@fun%d".formatted(nextFun++);
-        lambdas.put(funName, l);
+        String funName = "@fun%d".formatted(l.getId());
         String register = freshRegister();
         code("%s = ptrtoint ptr %s to i64".formatted(register, funName));
         return register;
