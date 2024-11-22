@@ -1,13 +1,8 @@
-new n := 1000;
-new i := 1;
-new s := 0;
-while i <= n {
-  new j := 1;
-  while j <= n {
-    new temp := s + 1;
-    s := temp;
-    j := j + 1;
-  }
-  i := i + 1;
-}
-write s;
+new x := 5;
+new f := lambda x {
+  write x;
+  x := 3;
+  write x;
+};
+f@1;
+write x;

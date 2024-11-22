@@ -21,7 +21,6 @@ public class NewStmt extends Statement {
 
     @Override
     public void compile(Frame env, Context ctx){
-        ctx.comment("Begin New Statment");
         // Recursively evaluate right-hand side
         String rhsNum = rhs.compile(env, ctx);
         // Create new pointer and allocate memory for it

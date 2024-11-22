@@ -12,77 +12,46 @@ declare i32 @scanf(ptr)
 define i32 @main() {
     ; Begin New Statment
   %r001 = alloca i64
-  store i64 1000, ptr %r001
+  store i64 5, ptr %r001
   %r002 = ptrtoint ptr %r001 to i64
     ; End New Statement
     ; Begin New Statment
-  %r003 = alloca i64
-  store i64 1, ptr %r003
-  %r004 = ptrtoint ptr %r003 to i64
+  %r003 = ptrtoint ptr @fun1 to i64
+  %r004 = alloca i64
+  store i64 %r003, ptr %r004
+  %r005 = ptrtoint ptr %r004 to i64
     ; End New Statement
-    ; Begin New Statment
-  %r005 = alloca i64
-  store i64 0, ptr %r005
-  %r006 = ptrtoint ptr %r005 to i64
-    ; End New Statement
-    ; While Statement
-  br label %b1
-b1:
-  %r007 = inttoptr i64 %r004 to ptr
+  %r007 = inttoptr i64 %r005 to ptr
   %r008 = load i64, ptr %r007
-  %r009 = inttoptr i64 %r002 to ptr
-  %r010 = load i64, ptr %r009
-  %r011 = icmp sle i64 %r008, %r010
-  %r012 = zext i1 %r011 to i64
-  %r013 = trunc i64 %r012 to i1
-  br i1 %r013, label %b2, label %b3
-b2:
+  %r006 = inttoptr i64 %r008 to ptr
+  %r009 = call i64 %r006(i64 1)
+  %r010 = inttoptr i64 %r002 to ptr
+  %r011 = load i64, ptr %r010
+    ; write statement
+  call i32 @printf(ptr @printLong, i64 %r011)
+  ret i32 0
+}
+
+define i64 @fun1 (i64 %arg) {
+  %r012 = alloca i64
+  store i64 %arg, ptr %r012
+  %r013 = ptrtoint ptr %r012 to i64
     ; Begin New Statment
   %r014 = alloca i64
-  store i64 1, ptr %r014
+  store i64 0, ptr %r014
   %r015 = ptrtoint ptr %r014 to i64
     ; End New Statement
-    ; While Statement
-  br label %b4
-b4:
-  %r016 = inttoptr i64 %r015 to ptr
+  %r016 = inttoptr i64 %r013 to ptr
   %r017 = load i64, ptr %r016
-  %r018 = inttoptr i64 %r002 to ptr
-  %r019 = load i64, ptr %r018
-  %r020 = icmp sle i64 %r017, %r019
-  %r021 = zext i1 %r020 to i64
-  %r022 = trunc i64 %r021 to i1
-  br i1 %r022, label %b5, label %b6
-b5:
-    ; Begin New Statment
-  %r023 = inttoptr i64 %r006 to ptr
-  %r024 = load i64, ptr %r023
-  %r025 = add i64 %r024, 1
-  %r026 = alloca i64
-  store i64 %r025, ptr %r026
-  %r027 = ptrtoint ptr %r026 to i64
-    ; End New Statement
-  %r028 = inttoptr i64 %r027 to ptr
-  %r029 = load i64, ptr %r028
-  %r030 = inttoptr i64 %r006 to ptr
-  store i64 %r029, ptr %r030
-  %r031 = inttoptr i64 %r015 to ptr
-  %r032 = load i64, ptr %r031
-  %r033 = add i64 %r032, 1
-  %r034 = inttoptr i64 %r015 to ptr
-  store i64 %r033, ptr %r034
-  br label %b4
-b6:
-  %r035 = inttoptr i64 %r004 to ptr
-  %r036 = load i64, ptr %r035
-  %r037 = add i64 %r036, 1
-  %r038 = inttoptr i64 %r004 to ptr
-  store i64 %r037, ptr %r038
-  br label %b1
-b3:
-  %r039 = inttoptr i64 %r006 to ptr
-  %r040 = load i64, ptr %r039
     ; write statement
-  call i32 @printf(ptr @printLong, i64 %r040)
-  ret i32 0
+  call i32 @printf(ptr @printLong, i64 %r017)
+  %r018 = inttoptr i64 %r013 to ptr
+  store i64 3, ptr %r018
+  %r019 = inttoptr i64 %r013 to ptr
+  %r020 = load i64, ptr %r019
+    ; write statement
+  call i32 @printf(ptr @printLong, i64 %r020)
+  %r021 = inttoptr i64 %r015 to ptr
+  %r022 = load i64, ptr %r021
+  ret i64 %r022
 }
