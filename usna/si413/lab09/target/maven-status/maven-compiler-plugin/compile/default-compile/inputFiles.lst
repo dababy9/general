@@ -1,15 +1,15 @@
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/ast/Debug.java
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/Sound.java
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/ast/Id.java
-/home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/Interpreter.java
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/ast/CompOp.java
+/home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/Interpreter.java
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/ast/Statement.java
 /home/caleb/general/usna/si413/lab09/target/generated-sources/antlr4/si413/spl/SPLLexer.java
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/StatementBuilder.java
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/ast/Rand.java
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/ast/NotOp.java
-/home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/StlistBuilder.java
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/ast/Note.java
+/home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/StlistBuilder.java
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/ast/Beep.java
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/ast/Write.java
 /home/caleb/general/usna/si413/lab09/src/main/java/si413/spl/FancyInterpreter.java
