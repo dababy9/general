@@ -70,7 +70,9 @@ public class Frame {
     public void rebind(String variable, Value val) {
         if (bindings.containsKey(variable))
             bindings.put(variable, val);
-        else if (parent != null)
+        else if (superClass != null && superClass.lookup(variable) != null)
+            superClass.rebind(variable, val);
+        else if (parent != null && parent.lookup(variable) != null)
             parent.rebind(variable, val);
         else
             Interpreter.current().error("Variable '%s' not yet bound; cannot rebind".formatted(variable));
