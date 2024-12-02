@@ -30,6 +30,7 @@ exp
   | READ             # Read
   | LAMBDA ID block  # Lambda
   | CLASS block      # ClassDecl
+  | CLASS ID block   # SubClassDecl
   | exp OBJ          # NewClass
   | exp OBJ ID       # ClassRef
   | exp FUNARG exp   # FunCall

@@ -257,6 +257,18 @@ public class SPLParserBaseListener implements SPLParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterSubClassDecl(SPLParser.SubClassDeclContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSubClassDecl(SPLParser.SubClassDeclContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterClassDecl(SPLParser.ClassDeclContext ctx) { }
 	/**
 	 * {@inheritDoc}

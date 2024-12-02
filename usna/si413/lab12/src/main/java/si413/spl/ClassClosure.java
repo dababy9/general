@@ -16,13 +16,22 @@ public class ClassClosure {
         }
     }
 
-    private ClassDecl cls;
-    private Frame env;
+    private ClassDecl cls, superCls;
+    private Frame env, superEnv = null;
     private int id;
 
     public ClassClosure(ClassDecl cls, Frame env) {
         this.cls = cls;
         this.env = env;
+        id = saved.size();
+        saved.add(this);
+    }
+
+    public ClassClosure(ClassDecl cls, ClassDecl superCls, Frame env, Frame superEnv) {
+        this.cls = cls;
+        this.superCls = superCls;
+        this.env = env;
+        this.superEnv = superEnv;
         id = saved.size();
         saved.add(this);
     }
@@ -35,8 +44,16 @@ public class ClassClosure {
         return cls;
     }
 
+    public ClassDecl getSuperCls() {
+        return superCls;
+    }
+
     public Frame getEnv() {
         return env;
+    }
+
+    public Frame getSuperEnv() {
+        return superEnv;
     }
 
     @Override

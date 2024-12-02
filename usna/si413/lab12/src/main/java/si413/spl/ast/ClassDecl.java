@@ -6,8 +6,14 @@ import si413.spl.*;
  */
 public class ClassDecl extends Expression {
     private Statement body;
+    private String superName = null;
 
     public ClassDecl(Statement body) {
+        this.body = body;
+    }
+
+    public ClassDecl(String superName, Statement body) {
+        this.superName = superName;
         this.body = body;
     }
 
@@ -17,6 +23,10 @@ public class ClassDecl extends Expression {
 
     @Override
     public Value evaluate(Frame env) {
+        if(superName != null) {
+            ClassClosure cc = env.lookup(superName).getCC();
+            return Value.fromCC(new ClassClosure(this, cc.getCls(), env, cc.getEnv()));
+        }
         return Value.fromCC(new ClassClosure(this, env));
     }
 }

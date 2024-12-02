@@ -149,6 +149,13 @@ public interface SPLParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitRead(SPLParser.ReadContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code SubClassDecl}
+	 * labeled alternative in {@link SPLParser#exp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSubClassDecl(SPLParser.SubClassDeclContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code ClassDecl}
 	 * labeled alternative in {@link SPLParser#exp}.
 	 * @param ctx the parse tree

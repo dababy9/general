@@ -104,6 +104,13 @@ public class ExpressionBuilder extends SPLParserBaseVisitor<Expression> {
     }
 
     @Override
+    public Expression visitSubClassDecl(SPLParser.SubClassDeclContext ctx) {
+        String superName = ctx.ID().getText();
+        Statement body = stmtBuilder.visit(ctx.block());
+        return new ClassDecl(superName, body);
+    }
+
+    @Override
     public Expression visitFunCall(SPLParser.FunCallContext ctx) {
         Expression funExp = visit(ctx.exp(0));
         Expression argExp = visit(ctx.exp(1));

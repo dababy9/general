@@ -244,6 +244,18 @@ public interface SPLParserListener extends ParseTreeListener {
 	 */
 	void exitRead(SPLParser.ReadContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code SubClassDecl}
+	 * labeled alternative in {@link SPLParser#exp}.
+	 * @param ctx the parse tree
+	 */
+	void enterSubClassDecl(SPLParser.SubClassDeclContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code SubClassDecl}
+	 * labeled alternative in {@link SPLParser#exp}.
+	 * @param ctx the parse tree
+	 */
+	void exitSubClassDecl(SPLParser.SubClassDeclContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code ClassDecl}
 	 * labeled alternative in {@link SPLParser#exp}.
 	 * @param ctx the parse tree
