@@ -7,4 +7,4 @@ class Game {
 }
 
 // Set up export to be used in server.js
-module.exports = { Game }
+module.exports = { Game };

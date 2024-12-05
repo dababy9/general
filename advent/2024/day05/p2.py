@@ -1,6 +1,7 @@
 f = open("input.txt", "r")
 
 m = {}
+wrong = []
 
 total = 0
 
@@ -27,8 +28,15 @@ for line in f:
                         valid = False
                         break
                 except:
-                    pass
-        if valid:
-            total += int(line[len(line)//2])
-
+                    m[line[i]] = []
+        if not valid:
+            wrong.append(line)
+            
+for line in wrong:
+    for i in range(len(line)-1, 0, -1):
+        for j in range(i):
+            if [x for x in m[line[j]] if x in line[0:i+1]] == []:
+                line[i], line[j] = line[j], line[i]
+                break
+    total += int(line[len(line)//2])
 print(total)
