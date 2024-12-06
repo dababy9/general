@@ -1,61 +1,39 @@
-import copy
-
 f = open("input.txt", "r")
 
-floor = []
+grid = { (x, y): c for y, l in enumerate(f.readlines()) 
+                   for x, c in enumerate(l.strip()) }
+                   
+start_pos = next((xy) for xy, c in grid.items() if c == '^')
+start_direction = (0, -1)
+grid[start_pos] = '.'
 
-for line in f:
-    floor.append(list(line.strip()))
+def walk(g, in_simulation = False):
+    obstacle_placements = set()
+    visits = dict()
+    position = start_pos
+    direction = start_direction
+    while(True):
+        if direction in visits.get(position, []):
+            raise OverflowError("Infinite loop detected")
 
-row, col = 0, 0
+        visits[position] = visits.get(position, []) + [direction]
 
-for r in range(len(floor)):
-    for c in range(len(floor[r])):
-        if(floor[r][c] == '^'):
-            row, col = r, c
-            floor[r][c] = '.'
-            break
+        x, y = position
+        dx, dy = direction
+        next_pos = (x+dx, y+dy)
+        next_field = g.get(next_pos, "")
 
-dirs = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+        if next_field == '.':
+            if not in_simulation and next_pos not in obstacle_placements:
+                try:
+                    walk({**g, **{next_pos: '#'}}, True)
+                except OverflowError:
+                    obstacle_placements.add(next_pos)
 
-def hasLoop(arr, r, c, dir, visited):
-    while True:
-        newRow, newCol = r + dirs[dir][0], c + dirs[dir][1]
-        if newRow >= 0 and newCol >= 0 and newRow < len(floor) and newCol < len(arr[0]):
-            if arr[newRow][newCol] == '.':
-                r, c = newRow, newCol
-                if (r, c) in visited:
-                    if dir in visited[(r, c)]:
-                        return True
-                    visited[(r, c)].add(dir)
-                else:
-                    visited[(r, c)] = {dir}
-            else:
-                dir = (dir + 1) % 4
+            position = next_pos
+        elif next_field == '#':
+            direction = (-dy, dx)
         else:
-            return False
+            return obstacle_placements
 
-d = 0
-total = 0
-
-v = {(row, col): {0}}
-
-while True:
-    newRow, newCol = row + dirs[d][0], col + dirs[d][1]
-    if newRow >= 0 and newCol >= 0 and newRow < len(floor) and newCol < len(floor[0]):
-        if floor[newRow][newCol] == '.':
-            newFloor = copy.deepcopy(floor)
-            newFloor[newRow][newCol] = '#'
-            if hasLoop(newFloor, row, col, d, copy.deepcopy(v)):
-                total += 1
-            row, col = newRow, newCol
-            if (row, col) in v:
-                v[(row, col)].add(d)
-            else:
-                v[(row, col)] = {d}
-        else:
-            d = (d + 1) % 4
-    else:
-        break
-
-print(total)
+print(len(walk(grid)))

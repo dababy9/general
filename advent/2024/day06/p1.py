@@ -1,35 +1,28 @@
-
-
 f = open("input.txt", "r")
 
-floor = []
+grid = { (x, y): c for y, l in enumerate(f.readlines()) 
+                   for x, c in enumerate(l.strip()) }
+                   
+position = next((xy) for xy, c in grid.items() if c == '^')
+direction = (0, -1)
+grid[position] = '.'
 
-for line in f:
-    floor.append(list(line.strip()))
+visits = set()
 
-row, col = 0, 0
+while(True):
 
-for r in range(len(floor)):
-    for c in range(len(floor[r])):
-        if(floor[r][c] == '^'):
-            row, col = r, c
-            floor[r][c] = '.'
-            break
+    visits.add(position)
 
-dirs = [(-1, 0), (0, 1), (1, 0), (0, -1)]
-dir = 0
+    x, y = position
+    dx, dy = direction
+    next_pos = (x+dx, y+dy)
+    next_field = grid.get(next_pos, "")
 
-visited = {(row, col)}
-
-while True:
-    newRow, newCol = row + dirs[dir][0], col + dirs[dir][1]
-    if newRow >= 0 and newCol >= 0 and newRow < len(floor) and newCol < len(floor[0]):
-        if floor[newRow][newCol] == '.':
-            row, col = newRow, newCol
-            visited.add((row, col))
-        else:
-            dir = (dir + 1) % 4
+    if next_field == '.':
+        position = next_pos
+    elif next_field == '#':
+        direction = (-dy, dx)
     else:
         break
 
-print(len(visited))
+print(len(visits))
