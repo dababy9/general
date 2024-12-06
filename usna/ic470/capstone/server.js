@@ -23,15 +23,26 @@ const io = new Server(server);
 // Express app now serves static files from 'static' directory
 app.use('/static', express.static('static'));
 
+
+
+
+
 // ---------- DEFINING ENDPOINTS ----------
+
+// Root endpoint
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/html/index.html');
 });
 
-// Bind server to the specified port, and listen for incoming requests
-server.listen(port, () => {
-    console.log("Listening on port 9000");
+app.get('/test', (req, res) => {
+    res.sendFile(__dirname + '/html/template.html')
 });
+
+// ----------------------------------------
+
+
+
+
 
 // Middleware for handling sessions with socket.io connections
 io.use((socket, next) => {
@@ -65,10 +76,10 @@ io.use((socket, next) => {
     next();
 });
 
+
+
 // Main socket.io function
 io.on('connection', (socket) => {
-
-    // ---------- SESSION CREATION ----------
 
     // Save the session in sessionStore
     sessionStore.saveSession(socket.sessionID, {
@@ -84,8 +95,6 @@ io.on('connection', (socket) => {
 
     socket.join("waiting");
 
-    // --------------------------------------
-
 
 
     socket.on('disconnect', (reason) => {
@@ -98,3 +107,10 @@ io.on('connection', (socket) => {
         console.log("Session disconnect: " + socket.sessionID);
     });
 })
+
+
+
+// Bind server to the specified port, and listen for incoming requests
+server.listen(port, () => {
+    console.log("Listening on port 9000");
+});
