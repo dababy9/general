@@ -17,13 +17,7 @@ public class NewClass extends Expression {
     public Value evaluate(Frame env) {
         ClassClosure cc = lhs.evaluate(env).getCC();
         if(cc == null) return Value.unset();
-        Frame superEnv = cc.getSuperEnv();
-        if(superEnv != null){
-            for(Statement s : cc.getSuperCls().getBody().getChildren()){
-                s.execute(superEnv);
-            }
-        }
-        Frame objFrame = new Frame(cc.getEnv(), superEnv);
+        Frame objFrame = new Frame(cc.getEnv());
         for(Statement s : cc.getCls().getBody().getChildren()){
             s.execute(objFrame);
         }
