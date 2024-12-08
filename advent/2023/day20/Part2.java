@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Deque;
 import java.util.LinkedList;
-public class Part1 {
+public class Part2 {
 
     public class Tuple {
         Module from, to;
@@ -116,26 +116,28 @@ public class Part1 {
                     m.outputs.add(out);
                 }
             }
-            long lows = 0, highs = 0;
             Deque<Tuple> queue = new LinkedList<>();
-            for(int i = 0; i < 1000; i++){
+            boolean found = false;
+            for(int i = 0; !found; i++){
                 queue.add(new Tuple(null, false, modules.get("broadcaster")));
                 while(!queue.isEmpty()){
                     Tuple t = queue.poll();
+                    if(t.to == dummy && !t.pulse){
+                        System.out.println(i);
+                        found = true;
+                        break;
+                    }
                     for(Tuple out : t.to.processInput(t.from, t.pulse))
                         queue.add(out);
-                    if(t.pulse) highs++;
-                    else lows++;
                 }
             }
-            System.out.println(lows * highs);
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
     }
 
     public static void main(String[] args){
-        Part1 run = new Part1();
+        Part2 run = new Part2();
         run.run();
     }
 } 
