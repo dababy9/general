@@ -23,3 +23,9 @@ socket.on("session", ({ sessionID, userID }) => {
     // Set the userID in the socket
     socket.userID = userID;
 });
+
+// This event is fired whenever an error occurs server-side regarding session status
+// For example, if a user somehow sends a message to update game state before even joining a game
+socket.on("statusError", (msg) => {
+    window.location.replace("/");
+});

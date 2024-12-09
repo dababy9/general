@@ -1,17 +1,16 @@
 // Constants pertinent to server functionality
 const port = 9000;
 
-// Import necessary modules/methods
+// Import modules
 const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
-const { Game } = require('./game.js');
 const { randomBytes } = require('crypto');
-const { SessionStore } = require('./session.js');
+const Game = require('./game');
+const sessionStore = require('./sessionStore')
 
 // Used for managing sessions
 const randomID = () => randomBytes(16).toString("hex");
-const sessionStore = new SessionStore();
 
 // Create Express app and pass it to HTTP server
 const app = express();
@@ -45,7 +44,7 @@ app.get('/test', (req, res) => {
 
 
 // Middleware for handling sessions with socket.io connections
-io.use((socket, next) => {
+io.use(async (socket, next) => {
 
     // Try to get a sessionID from the socket
     const sessionID = socket.handshake.auth.sessionID;
@@ -54,7 +53,7 @@ io.use((socket, next) => {
     if (sessionID) {
 
         // Find the session
-        const session = sessionStore.findSession(sessionID);
+        const session = await sessionStore.findSession(sessionID);
 
         // Assuming the sessionID is a valid one
         if (session) {
@@ -62,6 +61,10 @@ io.use((socket, next) => {
             // Update the socket to have the correct sessionID and userID
             socket.sessionID = sessionID;
             socket.userID = session.userID;
+
+            // Client is already part of a session
+            socket.isNewSession = false;
+            socket.stat = session.stat;
 
             // Move on to actual connection handling
             return next();
@@ -72,6 +75,10 @@ io.use((socket, next) => {
     socket.sessionID = randomID();
     socket.userID = randomID();
 
+    // Client is not already part of a session
+    socket.isNewSession = true;
+    socket.stat = 'new';
+
     // Move on to actual connection handling
     next();
 });
@@ -79,13 +86,9 @@ io.use((socket, next) => {
 
 
 // Main socket.io function
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
 
-    // Save the session in sessionStore
-    sessionStore.saveSession(socket.sessionID, {
-        userID: socket.userID,
-        connected: true
-    })
+    // ---------- ONLY RUN ONCE ON CONNECT ----------
 
     // Send sessionID and userID to client
     socket.emit('session', {
@@ -93,20 +96,65 @@ io.on('connection', (socket) => {
         userID: socket.userID
     });
 
-    socket.join("waiting");
+    // If the client didn't already have a session, save the new session and join them to 'new' room
+    if (socket.isNewSession) {
 
+        console.log("New session connected: " + socket.sessionID);
 
-
-    socket.on('disconnect', (reason) => {
-
-        sessionStore.saveSession(socket.sessionID, {
+        // Save the session in sessionStore
+        await sessionStore.saveSession(socket.sessionID, {
             userID: socket.userID,
-            connected: false
-        });
+            connected: true,
+            stat: 'new'
+        })
 
-        console.log("Session disconnect: " + socket.sessionID);
+        // Put new client in 'new' room
+        socket.join("new");
+
+    // Otherwise, just update existing session to reflect (re)connection status
+    } else {
+
+        console.log("Existing session reconnected: " + socket.sessionID);
+
+        await sessionStore.updateSessionField(socket.sessionID, "connected", true)
+    }
+
+    // ----------------------------------------------
+
+
+
+    // ---------- SOCKET EVENT HANDLERS ----------
+
+    socket.on('trial', async () => {
+        socket.emit('statusError');
     });
-})
+
+    // Disconnect event
+    // This event is fired as soon as the socket closes connection
+    // Happens even with just a simple page load/reload, so we use sessions to differentiate between reload and actual disconnection
+    socket.on('disconnect', async (reason) => {
+
+        // Immediately mark session as disconnected, but don't delete
+        await sessionStore.updateSessionField(socket.sessionID, "connected", false);
+
+        // Set a timer to check disconnection after 5 seconds
+        setTimeout(async () => {
+
+            // Retrieve session
+            const session = await sessionStore.findSession(socket.sessionID);
+
+            // If the session still exists and it is still disconnected, then the client is actually disconnected
+            if (session && !session.connected) {
+                console.log("Deleting session with id: " + socket.sessionID);
+
+                // Delete the session from the database
+                await sessionStore.deleteSession(socket.sessionID);
+            }
+        }, 5000);
+    });
+
+    // -------------------------------------------
+});
 
 
 
