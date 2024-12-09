@@ -1,5 +1,5 @@
 // Constants pertinent to server functionality
-const port = 9000;
+const PORT = process.env.PORT || 9000;
 
 // Import modules
 const express = require('express');
@@ -7,12 +7,12 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const { randomBytes } = require('crypto');
-// const gameState = require('./gameState');
-// const RedisInterface = require('./RedisInterface')
+const gameState = require('./gameState');
+const RedisInterface = require('./RedisInterface')
 
 // Used for managing sessions
 const randomID = () => randomBytes(16).toString("hex");
-// const sessionStore = new RedisInterface();
+const sessionStore = new RedisInterface();
 
 // Create Express app and pass it to HTTP server
 const app = express();
@@ -55,7 +55,7 @@ io.use(async (socket, next) => {
     if (sessionID) {
 
         // Find the session
-        // const session = await sessionStore.get(sessionID);
+        const session = await sessionStore.get(sessionID);
 
         // Assuming the sessionID is a valid one
         if (session) {
@@ -104,11 +104,11 @@ io.on('connection', async (socket) => {
         console.log("New session connected: " + socket.sessionID);
 
         // Save the session in sessionStore
-        // await sessionStore.set(socket.sessionID, {
-        //     userID: socket.userID,
-        //     connected: true,
-        //     stat: 'new'
-        // })
+        await sessionStore.set(socket.sessionID, {
+            userID: socket.userID,
+            connected: true,
+            stat: 'new'
+        })
 
         // Put new client in 'new' room
         socket.join("new");
@@ -118,7 +118,7 @@ io.on('connection', async (socket) => {
 
         console.log("Existing session reconnected: " + socket.sessionID);
 
-        // await sessionStore.updateField(socket.sessionID, 'connected', true)
+        await sessionStore.updateField(socket.sessionID, 'connected', true)
     }
 
     // ----------------------------------------------
@@ -137,20 +137,20 @@ io.on('connection', async (socket) => {
     socket.on('disconnect', async (reason) => {
 
         // Immediately mark session as disconnected, but don't delete
-        // await sessionStore.updateField(socket.sessionID, 'connected', false);
+        await sessionStore.updateField(socket.sessionID, 'connected', false);
 
         // Set a timer to check disconnection after 5 seconds
         setTimeout(async () => {
 
             // Retrieve session
-            // const session = await sessionStore.get(socket.sessionID);
+            const session = await sessionStore.get(socket.sessionID);
 
             // If the session still exists and it is still disconnected, then the client is actually disconnected
             if (session && !session.connected) {
                 console.log("Deleting session with id: " + socket.sessionID);
 
                 // Delete the session from the database
-                // await sessionStore.del(socket.sessionID);
+                await sessionStore.del(socket.sessionID);
             }
         }, 5000);
     });
@@ -161,6 +161,6 @@ io.on('connection', async (socket) => {
 
 
 // Bind server to the specified port, and listen for incoming requests
-server.listen(port, () => {
+server.listen(PORT, () => {
     console.log("Listening on port 9000");
 });

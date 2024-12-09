@@ -6,7 +6,10 @@ class RedisInterface {
 
     // In constructor, just create new redis client
     constructor() {
-        this.client = new Redis();
+        this.client = new Redis({
+            host: process.env.REDIS_HOST || 'localhost',
+            port: process.env.REDIS_PORT || 6379
+        });
     }
 
     // Store or overwrite an object given an ID
