@@ -1,3 +1,7 @@
+// URL and port for Redis database (not used in Docker container)
+redisHost = 'localhost';
+redisPort = 6379;
+
 // Import ioredis
 const Redis = require('ioredis');
 
@@ -7,8 +11,8 @@ class RedisInterface {
     // In constructor, just create new redis client
     constructor() {
         this.client = new Redis({
-            host: process.env.REDIS_HOST || 'localhost',
-            port: process.env.REDIS_PORT || 6379
+            host: process.env.REDIS_HOST || redisHost,
+            port: process.env.REDIS_PORT || redisPort
         });
     }
 

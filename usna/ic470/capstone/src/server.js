@@ -1,4 +1,5 @@
 // Constants pertinent to server functionality
+// 'process.env.PORT' is only used for Docker container
 const PORT = process.env.PORT || 9000;
 
 // Import modules
