@@ -1,6 +1,4 @@
-# Violent Victory
-
-## Overview
+# Overview
 
 This is the developer documentation, intended for those attempting to host their own verion of Violent Victory. If you are simply looking for documentation on how to play the game, you can check that out [here](../User).
 
