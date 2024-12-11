@@ -27,6 +27,11 @@ class RedisInterface {
         return await this.client.set(id, JSON.stringify(data));
     }
 
+    // Push a value to the end of a list
+    async append(list, value) {
+        return await this.client.rpush(list, value);
+    }
+
     // Get the object given an ID
     async get(id) {
 
@@ -35,6 +40,11 @@ class RedisInterface {
 
         // If entry existed, return parsed object, otherswise return null
         return jsonString ? JSON.parse(jsonString) : null;
+    }
+
+    // Remove and return the element at the start of a list
+    async poll(list) {
+        return await this.client.lpop(list);
     }
 
     // Update a specific field of an object given an id

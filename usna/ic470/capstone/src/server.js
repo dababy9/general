@@ -9,11 +9,14 @@ const { Server } = require('socket.io');
 const path = require('path');
 const { randomBytes } = require('crypto');
 const gameState = require('./gameState');
-const RedisInterface = require('./RedisInterface')
+const RedisInterface = require('./RedisInterface');
 
 // Used for managing sessions
-const randomID = () => randomBytes(16).toString("hex");
+const randomID = () => randomBytes(16).toString('hex');
 const sessionStore = new RedisInterface();
+
+// Used for managing game lobbies
+const queueManager = new RedisInterface();
 
 // Create Express app and pass it to HTTP server
 const app = express();
@@ -33,11 +36,17 @@ app.use('/static', express.static(path.resolve('static')));
 
 // Root endpoint
 app.get('/', (req, res) => {
-    res.sendFile(path.resolve('html/index.html'));
+    res.sendFile(path.resolve('html/home.html'));
 });
 
-app.get('/test', (req, res) => {
-    res.sendFile(path.resolve('html/template.html'));
+// Game endpoint
+app.get('/game', (req, res) => {
+    res.sendFile(path.resolve('html/game.html'));
+});
+
+// Error endpoint
+app.get('/error', (req, res) => {
+    res.sendFile(path.resolve('html/statusError.html'));
 });
 
 // ----------------------------------------
@@ -61,11 +70,8 @@ io.use(async (socket, next) => {
         // Assuming the sessionID is a valid one
         if (session) {
 
-            // Update the socket to have the correct sessionID and userID
+            // Update the socket variables
             socket.sessionID = sessionID;
-            socket.userID = session.userID;
-
-            // Client is already part of a session
             socket.isNewSession = false;
             socket.stat = session.stat;
 
@@ -74,9 +80,8 @@ io.use(async (socket, next) => {
         }
     }
 
-    // If the socket didn't have a sessionID (or it wasn't found in sessionStore), create new random sessionID and userID
+    // If the socket didn't have a sessionID (or it wasn't found in sessionStore), create new random sessionID
     socket.sessionID = randomID();
-    socket.userID = randomID();
 
     // Client is not already part of a session
     socket.isNewSession = true;
@@ -93,11 +98,12 @@ io.on('connection', async (socket) => {
 
     // ---------- ONLY RUN ONCE ON CONNECT ----------
 
-    // Send sessionID and userID to client
-    socket.emit('session', {
-        sessionID: socket.sessionID,
-        userID: socket.userID
-    });
+    // Send sessionID to client
+    socket.emit('session', socket.sessionID);
+
+    // Leave the default room (socket.id) and join room identified by the sessionID instead
+    socket.leave(socket.id);
+    socket.join(socket.sessionID);
 
     // If the client didn't already have a session, save the new session and join them to 'new' room
     if (socket.isNewSession) {
@@ -106,20 +112,16 @@ io.on('connection', async (socket) => {
 
         // Save the session in sessionStore
         await sessionStore.set(socket.sessionID, {
-            userID: socket.userID,
             connected: true,
             stat: 'new'
-        })
-
-        // Put new client in 'new' room
-        socket.join("new");
+        });
 
     // Otherwise, just update existing session to reflect (re)connection status
     } else {
 
         console.log("Existing session reconnected: " + socket.sessionID);
 
-        await sessionStore.updateField(socket.sessionID, 'connected', true)
+        await sessionStore.updateField(socket.sessionID, 'connected', true);
     }
 
     // ----------------------------------------------
@@ -128,8 +130,39 @@ io.on('connection', async (socket) => {
 
     // ---------- SOCKET EVENT HANDLERS ----------
 
-    socket.on('trial', async () => {
-        socket.emit('statusError');
+    // Quick-play event
+    // This event is fired when the client attempts to join the quick-play queue
+    // Will automatically start a game when two players are in the quick-play queue
+    socket.on('quick-play', async () => {
+
+        // Check the client's status: if they are not sending this while in the 'base' status, then send a status error to client
+        if (socket.stat !== 'base') {
+            socket.emit('statusError');
+            return;
+        }
+
+        // Set status to 'quick-play'
+        socket.stat = 'quick-play';
+        sessionStore.updateField(socket.sessionID, 'stat', socket.stat);
+
+        // Attempt to retrieve a player from the quick-play queue
+        const opponentSessionID = await queueManager.poll('quickPlayQueue');
+
+        // If a player existed, join them in a game
+        if (opponentSessionID) {
+
+            // Create a new game, which will return a random gameID.
+            const gameID = await gameState.createGame(opponentSessionID, socket.sessionID);
+            await sessionStore.updateField(opponentSessionID, 'gameID', gameID);
+            await sessionStore.updateField(socket.sessionID, 'gameID', gameID);
+
+            // Send the 'game-start' message to both players
+            io.to(opponentSessionID).emit('game-start');
+            socket.emit('game-start');
+
+        // Otherwise, add this player to the quick-play queue
+        } else
+            await queueManager.append('quickPlayQueue', socket.sessionID);
     });
 
     // Disconnect event
