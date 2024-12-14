@@ -1,17 +1,24 @@
+// Load environment variables from .env file
+require('dotenv').config();
+
 // Import Redis Interface and create a client
-const RedisInterface = require('./RedisInterface');
-const gameStore = new RedisInterface();
+const RedisInterface = require('./redisInterface');
+const gameStore = new RedisInterface(
+    process.env.REDIS_HOST,
+    process.env.REDIS_PORT
+);
 
 // Import randomBytes from crypto
 const { randomBytes } = require('crypto');
 
 // Define initial game state
 const initialState = {
+    messages: [{from: "server", message: "Game Initialized!"}],
     vp1: 0,
     vp2: 0
 }
 
-// Function that creates a new game given two sessionIDs, stores the game in a database, and returns the gameID
+// Function that creates a new game given two sessionIDs, stores the game in the database, and returns the gameID
 async function createGame(sessionID1, sessionID2) {
 
     // Create random gameID
@@ -31,7 +38,36 @@ async function createGame(sessionID1, sessionID2) {
     return gameID;
 }
 
+// Function that retrieves a game from the database
+async function getGame(id) {
+
+    // Attempts to retrieve the entry from the database
+    const game = await gameStore.get(id);
+
+    // Return null if the entry is empty
+    if (!game)
+        return null;
+
+    // Otherwise, return the gameData field of the game, which is the relevant game information
+    return game.gameData;
+}
+
+// Function to close gameStore Redis client
+function close() {
+    
+    // Attempt to close
+    try {
+        gameStore.close();
+
+    // Pass error up down the call stack if it was thrown
+    } catch (err) {
+        throw err;
+    }
+}
+
 // Set up export to be used in server.js
 module.exports = {
-    createGame
+    createGame,
+    getGame,
+    close
 };
