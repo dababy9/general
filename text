@@ -1,0 +1,43 @@
+Quantum Mechanics
+Superposition
+Entanglement
+Measurement
+Born rule
+Schrodinger equation (linear and reversible)
+No-cloning theorem
+No-deleting theorem
+Qubits
+Bra-ket notation
+Amplitudes, probabilities, Born rule
+Superposition
+Entanglement (separable states vs entangled states)
+Normalizing state vectors
+Identify if a given state is a superposition, is entangled, is normalized
+Measurement of a state in the normal (computational) basis and in other arbitrary bases (using the dot product)
+How does phase affect measurement?  How is it used in computation?
+Linear Algebra
+Add two vectors
+Dot product two vectors
+Multiply a vector and a matrix
+Normalize a vector
+Circuits
+Relation between a gate and its matrix representation
+Apply a gate to a state vector by multiplying and by algebra
+Standard gates (Pauli gates, Hadamard gate, CNOT, rotation gates)
+Which gates cause a superposition? Which gates cause entanglement?
+Create circuits that generate a given state
+Calculate the output state of a given circuit
+BQP vs P vs NP
+Algorithms
+Phase kickback
+Deutsch's algorithm
+Deutsch Josza algorithm
+Grover's algorithm
+Quantum fourier transform
+Shor's algorithm
+Protocols
+Quantum bomb testing
+Quantum teleportation
+Superdense coding
+Quantum key distribution (BB84)
+Post-quantum cryptography (general ideas, no specific math)
