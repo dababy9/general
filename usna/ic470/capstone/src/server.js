@@ -164,10 +164,15 @@ io.on('connection', async (socket) => {
         }
     });
 
+    // Send event
+    // This event is fired when the client attempts to send a message in game
+    // Will update the messge log and send the message to both players
+    socket.on('send-message', (message) => Handler.handleMessage(message, socket, gameState, io));
+
     // Disconnect event
     // This event is fired as soon as the socket closes connection
     // Happens even with just a simple page load/reload, so we use sessions to differentiate between reload and actual disconnection
-    socket.on('disconnect', async (reason) => Handler.handleDisconnect(socket, sessionStore, reason));
+    socket.on('disconnect', (reason) => Handler.handleDisconnect(socket, sessionStore, reason));
 
     // -------------------------------------------
 });

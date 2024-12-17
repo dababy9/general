@@ -52,6 +52,26 @@ async function getGame(id) {
     return game.gameData;
 }
 
+// Function that adds a new message to the message log
+async function newMessage(gameID, sessionID, message) {
+
+    // Attempts to retrieve the entry from the database
+    const game = await gameStore.get(gameID);
+
+    // If the game is empty, return false
+    if (!game)
+        return false;
+
+    // Otherwise, append message to message log
+    game.gameData.messages.push({from: sessionID, message: message});
+
+    // Update entry in database
+    gameStore.set(gameID, game);
+
+    // Return true to indicate successful message
+    return true;
+}
+
 // Function to close gameStore Redis client
 function close() {
     
@@ -69,5 +89,6 @@ function close() {
 module.exports = {
     createGame,
     getGame,
+    newMessage,
     close
 };

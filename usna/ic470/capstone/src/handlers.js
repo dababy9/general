@@ -1,3 +1,5 @@
+const e = require("express");
+
 // Quick-play handler
 const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io) => {
 
@@ -86,6 +88,26 @@ const handleGameStateFetch = async (socket, gameState) => {
     socket.emit('game-state', game.messages);
 }
 
+// Message send update
+const handleMessage = async (message, socket, gameState, io) => {
+
+    // Check the client's status: if they are not in the 'game' status, then send a status error to client
+    if (socket.stat !== 'game') {
+        socket.emit('statusError');
+        return;
+    }
+
+    // Attempt to add message to game log
+    if (gameState.newMessage(socket.gameID, socket.sessionID, message)) {
+
+        // If successful, send message to both clients
+        io.to(socket.gameID).emit('new-message', {from: socket.sessionID, data: message});
+
+    // Otherwise, send a message error to client
+    } else
+        socket.emit('messageError');
+}
+
 // Disconnect handler
 const handleDisconnect = async (socket, sessionStore) => {
 
@@ -112,5 +134,6 @@ module.exports = {
     handleQuickPlay,
     handleMessagesFetch,
     handleGameStateFetch,
+    handleMessage,
     handleDisconnect
 };
