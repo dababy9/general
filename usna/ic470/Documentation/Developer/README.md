@@ -45,7 +45,7 @@ The server can either be run in a Docker container(s), or can just be run with `
 
 The back-end is written in [node.js](https://nodejs.org/en). The server itself is an [express](https://expressjs.com/) app serves html pages to the different endpoints and also serves any static files (images, client-side scripts, etc.) There is also a [socket.io](https://socket.io/) server mounted on top of the app that handles sessions as well as the dynamic game updates and messaging.
 
-#### `server.js`
+### `server.js`
 
 This is the main driver, and is the script that handles all the connections and messages. It imports all of the other scripts in the `/src` directory, with the intent of making the program more modular.
 
@@ -55,15 +55,15 @@ The other main section of this script is the `socket.io` server. `io` is the var
 
 Finally, the end of the script just handles various shutdown signals to have the app close out database connections and exit gracefully.
 
-#### `handlers.js`
+### `handlers.js`
 
 This script is just a module that provides a minimalistic interface for each `socket.io` client-side message. It is a bunch of asynchronous functions that take any necessary objects/data and process the message that they handle. For example, the bottom function `handleDisconnect` only requires `socket` (which holds the `sessionID`) and `sessionStore`, which is another interface intended for storing and retrieving sessions/session data. It is directly called when the client sends the `disconnect` message.
 
-#### `redisInterface.js`
+### `redisInterface.js`
 
 This script provides an interface containing a couple of useful methods for interacting with the database. All of the redis operations are atomic, meaning there are no concerns for race conditions (even though the functions are asynchronous).
 
-#### `gameState.js`
+### `gameState.js`
 
 This script contains all of the game logic, and is the middle layer that validates/processes any incoming moves before making changes to the game state stored in the database. Most of the exported methods are used at some point in the handlers that process client-side methods: for example, the `newMessage` method is called from within the `handleMessage` function in `handler.js`.
 
