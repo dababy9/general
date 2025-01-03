@@ -1,5 +1,3 @@
-const e = require("express");
-
 // Quick-play handler
 const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io) => {
 

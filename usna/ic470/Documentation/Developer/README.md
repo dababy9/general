@@ -51,13 +51,13 @@ This is the main driver, and is the script that handles all the connections and 
 
 This script is where the `express` app is fully defined. All of the endpoints are defined and serve a specific html page. Additionally, the app is configured to serve all static files relative to the `/static` directory. The app is also passed to an `http` server that listens on port `9000` (by default). The app handles all regular `http` requests, but has no concept of sessions/session state.
 
-The other main section of this script is the `socket.io` server. `io` is the variable that represents the `socket.io` server, which mounts on top of the `express` app. There are only two definitions for the `socket.io` server: `io.use()` and `io.on('connection')`. The `io.use()` definition is called middleware, and is executed right before any `socket.io` connection. The middleware function for this server just handles session retrieval/generation. The `io.on('connection')` definition contains initial code followed by many `socket.on()` definitions that handle various client-side messages. The initial code stores the session given by the middleware in the database, among other things. Then, each client-side message is passed off to the corresponding function from the `handler.js` script.
+The other main section of this script is the `socket.io` server. `io` is the variable that represents the `socket.io` server, which mounts on top of the `express` app. There are only two definitions for the `socket.io` server: `io.use()` and `io.on('connection')`. The `io.use()` definition is called middleware, and is executed right before any `socket.io` connection. For this server, it just handles session retrieval/generation. The `io.on('connection')` definition contains initial code followed by many `socket.on()` definitions that handle various client-side messages. The initial code stores the session given by the middleware in the database, among other things. Then, the various `socket.on()` definitions just make a call to the corresponding handler function from the `handler.js` script.
 
 Finally, the end of the script just handles various shutdown signals to have the app close out database connections and exit gracefully.
 
 ### `handlers.js`
 
-This script is just a module that provides a minimalistic interface for each `socket.io` client-side message. It is a bunch of asynchronous functions that take any necessary objects/data and process the message that they handle. For example, the bottom function `handleDisconnect` only requires `socket` (which holds the `sessionID`) and `sessionStore`, which is another interface intended for storing and retrieving sessions/session data. It is directly called when the client sends the `disconnect` message.
+This script is just a module that provides a minimalistic interface for each `socket.io` client-side message. It is a bunch of asynchronous functions that take any necessary objects/data and process the message that they handle. For example, take the bottom function `handleDisconnect` - it is called directly when the client sends the `disconnect` message.
 
 ### `redisInterface.js`
 
@@ -69,7 +69,7 @@ This script contains all of the game logic, and is the middle layer that validat
 
 ## API
 
-#### `auth` from client (for sessions)
+### `auth` from client (for sessions)
 
 The `auth` object is an option that the client can send to the server with the initial connection request. In this case, we attach a single variable to the object called `sessionID`.
 
@@ -79,7 +79,29 @@ The client will receive the `sessionID` and store it in the browser's `sessionSt
 
 Then, on every new page load (and thus a new `socket.io` connection), the client will attach the `sessionID` from the `sessionStorage` to the `auth` object and send it to the server. This is how the client can maintain a persistent `socket.io` session over multiple pages.
 
-#### `socket.io` messages from client
+### `socket.io` messages from client
+
+Many of these client messages are intended to only be sent when the client is in a certain 'status'. For example, the client should not be able to send any sort of game move when they aren't in a game, and in a similar fashion, they should not be able to join the quick-play queue if they are already in a game. However, it is not possible to prevent a client from sending any message whatsoever, and they could theoretically send messages that may result in strange and unanticipated behavior. To prevent this, the server saves a `stat` with the client session, and this status is used to validate any messages. If a sends a message that is unexpected in the current `status`, the server will respond with a `statusError` message (which is discussed in further detail [here](#socketio-messages-from-server)).
 
 | Message | Description |
 | :-----: | ----------- |
+| `quick-play` | This message is sent when the client attempts to join the quick-play queue. The queue is essentially just a pairing algorithm, and a client will either join the empty queue, or be paired up in a new game with a client that is already in the queue. The client must be in the `base` status for this message to be processed successfully. |
+| `fetch` | This message is sent when the client attempts to retrieve a resource. There are two resources that the client can request: `messages` and `game-state`. The client must attach the resource (either `messages` or `game-state`) as an additional parameter to specify the resource requested; otherwise, the server will respond with a .
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+. |
+| `send-message` | 
+
+### `socket.io` messages from server
+
+| Message | Description |
+| :-----: | ----------- |
+| 
