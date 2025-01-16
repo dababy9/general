@@ -1,5 +1,5 @@
 - input validation client and server-side
 - test catch-all handler for socket.io
 - flesh out error pages
-- maybe split message error into two different errors, one for unrecognized message and one for bad message
 - something weird going on with deleting sessions when navigating pages
+- delete user from quick play queue if they disconnect
