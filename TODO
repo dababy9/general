@@ -3,3 +3,5 @@
 - flesh out error pages
 - something weird going on with deleting sessions when navigating pages
 - delete user from quick play queue if they disconnect
+- make a redis-server config file
+- make a disconnect message when opponent disconnects in game
