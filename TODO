@@ -1,7 +1,6 @@
 - input validation client and server-side
 - test catch-all handler for socket.io
 - flesh out error pages
-- something weird going on with deleting sessions when navigating pages
-- delete user from quick play queue if they disconnect
+- make sure to save sessionID to sessionStorage when user clicks button
 - make a redis-server config file
 - make a disconnect message when opponent disconnects in game

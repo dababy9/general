@@ -52,12 +52,8 @@ class RedisInterface {
             // Attempt to retrieve json string from database
             const jsonString = await this.client.get(id);
 
-            // Throw an error if the database returned an empty entry
-            if (!jsonString)
-                throw new Error("Could not find object with ID: " + id);
-
-            // Return parsed object
-            return JSON.parse(jsonString);
+            // If the entry existed, return parsed object, otherwise return null
+            return jsonString ? JSON.parse(jsonString) : null;
 
         // If an error was caught, print it out and return null
         } catch (err) {

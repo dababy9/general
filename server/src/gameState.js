@@ -44,12 +44,9 @@ async function getGame(id) {
     // Attempts to retrieve the entry from the database
     const game = await gameStore.get(id);
 
-    // Return null if the entry is empty
-    if (!game)
-        return null;
-
-    // Otherwise, return the gameData field of the game, which is the relevant game information
-    return game.gameData;
+    // If the entry exists, return the gameData field of the game, which is the relevant game information
+    // Otherwise, return null
+    return game ? game.gameData : null;
 }
 
 // Function that adds a new message to the message log

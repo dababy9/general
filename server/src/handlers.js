@@ -14,9 +14,7 @@ const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io
     // Attempt to retrieve a player from the quick-play queue
     const opponentSessionID = await queueManager.poll('quickPlayQueue');
 
-    console.log("OPPONENT: "+opponentSessionID);
-
-    // If a player existed, join them in a game
+    // If a player is in the queue, join them in a game
     if (opponentSessionID) {
 
         // Create a new game, which will return a random gameID.
@@ -28,9 +26,11 @@ const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io
             sessionStore.get(socket.sessionID)
         ]);
 
-        // If either session doesn't exist in database, just return
-        if (!opponentSession || !currentSession)
+        // If opponent session doesn't exist, just add the current player to the queue
+        if (!opponentSession) {
+            await queueManager.append('quickPlayQueue', socket.sessionID);
             return;
+        }
 
         // Update both sessions with new gameID and status
         opponentSession.gameID = gameID;
