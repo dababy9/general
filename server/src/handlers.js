@@ -14,7 +14,9 @@ const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io
     // Attempt to retrieve a player from the quick-play queue
     const opponentSessionID = await queueManager.poll('quickPlayQueue');
 
-    // If a player is in the queue, join them in a game
+    console.log("OPPONENT: "+opponentSessionID);
+
+    // If a player existed, join them in a game
     if (opponentSessionID) {
 
         // Create a new game, which will return a random gameID.
@@ -26,11 +28,9 @@ const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io
             sessionStore.get(socket.sessionID)
         ]);
 
-        // If opponent session doesn't exist, just add the current player to the queue
-        if (!opponentSession) {
-            await queueManager.append('quickPlayQueue', socket.sessionID);
+        // If either session doesn't exist in database, just return
+        if (!opponentSession || !currentSession)
             return;
-        }
 
         // Update both sessions with new gameID and status
         opponentSession.gameID = gameID;
@@ -109,7 +109,7 @@ const handleMessage = async (message, socket, gameState, io) => {
 }
 
 // Disconnect handler
-const handleDisconnect = async (socket, sessionStore, gameState, io) => {
+const handleDisconnect = async (socket, sessionStore) => {
 
     // Immediately mark session as disconnected, but don't delete
     await sessionStore.updateField(socket.sessionID, 'connected', false);
@@ -123,13 +123,6 @@ const handleDisconnect = async (socket, sessionStore, gameState, io) => {
         // If the session still exists and it is still disconnected, then the client is actually disconnected
         if (session && !session.connected) {
             console.log("Deleting session with id: " + socket.sessionID);
-
-            // If the client was in a game, send a disconnect message to their opponent
-            if (session.stat == 'game' && gameState.newMessage(session.gameID, '', "Opponent has left the game"))
-
-                // Important to use the 'session' object here rather than the 'socket' object
-                // Sometimes the 'socket' object does not have a 'gameID' field after the setTimeout callback is executed
-                io.to(session.gameID).emit('new-message', {from: '', data: "Opponent has left the game"});
 
             // Delete the session from the database
             await sessionStore.del(socket.sessionID);

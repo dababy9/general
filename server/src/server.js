@@ -182,7 +182,15 @@ io.on('connection', async (socket) => {
     // Disconnect event
     // This event is fired as soon as the socket closes connection
     // Happens even with just a simple page load/reload, so we use sessions to differentiate between reload and actual disconnection
-    socket.on('disconnect', (reason) => Handler.handleDisconnect(socket, sessionStore, gameState, io));
+    socket.on('disconnect', (reason) => Handler.handleDisconnect(socket, sessionStore, reason));
+
+    // Default event
+    // This event is fired when the client sends an unrecognized message
+    // Will respond to the client with an error
+    //socket.onAny((event) => {
+        //console.log("Unrecognized message: " + event);
+        //socket.emit('unrecognized-request');
+    //});
 
     // -------------------------------------------
 });
@@ -191,7 +199,7 @@ io.on('connection', async (socket) => {
 
 // Bind server to the specified port, and listen for incoming requests
 server.listen(PORT, () => {
-    console.log("Listening on port " + PORT);
+    console.log("Listening on port 9000");
 });
 
 
