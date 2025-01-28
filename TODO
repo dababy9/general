@@ -1,6 +1,5 @@
 - input validation client and server-side
-- test catch-all handler for socket.io
 - flesh out error pages
 - make sure to save sessionID to sessionStorage when user clicks button
 - make a redis-server config file
-- make a disconnect message when opponent disconnects in game
+- change some parts of documentation
