@@ -11,12 +11,8 @@ const gameStore = new RedisInterface(
 // Import randomBytes from crypto
 const { randomBytes } = require('crypto');
 
-// Define initial game state
-const initialState = {
-    messages: [{from: "server", message: "Game Initialized!"}],
-    vp1: 0,
-    vp2: 0
-}
+// Import initial game state
+const { initialState } = require('./objects');
 
 // Function that creates a new game given two sessionIDs, stores the game in the database, and returns the gameID
 async function createGame(sessionID1, sessionID2) {
@@ -24,15 +20,16 @@ async function createGame(sessionID1, sessionID2) {
     // Create random gameID
     const gameID = randomBytes(12).toString('hex');
 
-    // Create gameState with both sessionIDs and actual game data to be stored in Redis
-    const gameState = {
-        sessionID1,
-        sessionID2,
-        gameData: initialState
+    // Create gameData with both sessionIDs, the message log, and the actual game state to be stored in Redis
+    const gameData = {
+        blueSessionID: sessionID1,
+        redSessionID: sessionID2,
+        messages: [{from: "server", message: "Game Initialized!"}],
+        gameState: initialState
     }
 
-    // Store the gameState in the database
-    await gameStore.set(gameID, gameState);
+    // Store the gameData in the database
+    await gameStore.set(gameID, gameData);
 
     // Return the gameID of the game
     return gameID;
@@ -44,12 +41,20 @@ async function getGame(id) {
     // Attempts to retrieve the entry from the database
     const game = await gameStore.get(id);
 
-    // Return null if the entry is empty
-    if (!game)
-        return null;
+    // If the entry exists, return the gameState field of the game, which is the relevant game information
+    // Otherwise, return null
+    return game ? game.gameState : null;
+}
 
-    // Otherwise, return the gameData field of the game, which is the relevant game information
-    return game.gameData;
+// Function that retrieves the message log of a game from the database
+async function getMessages(id) {
+
+    // Attempts to retrieve the entry from the database
+    const game = await gameStore.get(id);
+
+    // If the entry exists, return the message log
+    // Otherwise, return null
+    return game ? game.messages : null;
 }
 
 // Function that adds a new message to the message log
@@ -62,8 +67,11 @@ async function newMessage(gameID, sessionID, message) {
     if (!game)
         return false;
 
-    // Otherwise, append message to message log
-    game.gameData.messages.push({from: sessionID, message: message});
+    // Determine the color of the player sending the message
+    color = (sessionID == game.gameState.blueSessionID) ? 'blue' : 'red';
+
+    // Pppend message to message log
+    game.messages.push({from: color, message: message});
 
     // Update entry in database
     gameStore.set(gameID, game);
@@ -89,6 +97,7 @@ function close() {
 module.exports = {
     createGame,
     getGame,
+    getMessages,
     newMessage,
     close
 };

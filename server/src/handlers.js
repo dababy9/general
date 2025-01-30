@@ -1,12 +1,6 @@
 // Quick-play handler
 const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io) => {
 
-    // Check the client's status: if they are not in the 'base' status, then send a status error to client
-    if (socket.stat !== 'base') {
-        socket.emit('status-error');
-        return;
-    }
-
     // Set status to 'quick-play'
     socket.stat = 'quick-play';
     sessionStore.updateField(socket.sessionID, 'stat', socket.stat);
@@ -14,9 +8,7 @@ const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io
     // Attempt to retrieve a player from the quick-play queue
     const opponentSessionID = await queueManager.poll('quickPlayQueue');
 
-    console.log("OPPONENT: "+opponentSessionID);
-
-    // If a player existed, join them in a game
+    // If a player is in the queue, join them in a game
     if (opponentSessionID) {
 
         // Create a new game, which will return a random gameID.
@@ -28,9 +20,11 @@ const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io
             sessionStore.get(socket.sessionID)
         ]);
 
-        // If either session doesn't exist in database, just return
-        if (!opponentSession || !currentSession)
+        // If opponent session doesn't exist, just add the current player to the queue
+        if (!opponentSession) {
+            await queueManager.append('quickPlayQueue', socket.sessionID);
             return;
+        }
 
         // Update both sessions with new gameID and status
         opponentSession.gameID = gameID;
@@ -56,46 +50,25 @@ const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io
 // Fetch messages handler
 const handleMessagesFetch = async (socket, gameState) => {
 
-    // Check the client's status: if they are not in the 'game' status, then send a status error to client
-    if (socket.stat !== 'game') {
-        socket.emit('status-error');
-        return;
-    }
-
     // Get the game data from the database
-    const game = await gameState.getGame(socket.gameID);
+    const messages = await gameState.getMessages(socket.gameID);
 
     // Send the responses to the client
-    socket.emit('message-log', game.messages);
+    socket.emit('message-log', messages);
 }
 
 // Fetch game state handler
 const handleGameStateFetch = async (socket, gameState) => {
 
-    // Check the client's status: if they are not in the 'game' status, then send a status error to client
-    if (socket.stat !== 'game') {
-        socket.emit('status-error');
-        return;
-    }
-
     // Get the game data from the database
     const game = await gameState.getGame(socket.gameID);
-
-    // Delete the message field from the game data (client requests messages through a different handler)
-    delete game.messages;
     
     // Send the responses to the client
-    socket.emit('game-state', game.messages);
+    socket.emit('game-state', game);
 }
 
 // Message send update
 const handleMessage = async (message, socket, gameState, io) => {
-
-    // Check the client's status: if they are not in the 'game' status, then send a status error to client
-    if (socket.stat !== 'game') {
-        socket.emit('status-error');
-        return;
-    }
 
     // Attempt to add message to game log
     if (gameState.newMessage(socket.gameID, socket.sessionID, message)) {
@@ -108,8 +81,48 @@ const handleMessage = async (message, socket, gameState, io) => {
         socket.emit('bad-message');
 }
 
+// Move handler
+const handleMove = async (socket, gameState) => {
+
+}
+
+// CHMR handler
+const handleCHMR = async (socket, gameState) => {
+
+}
+
+// Humanitarian Aid handler
+const handleHumanitarianAid = async (socket, gameState) => {
+
+}
+
+// Surge handler
+const handleSurge = async (socket, gameState) => {
+
+}
+
+// Influence Operation handler
+const handleInfluenceOperation = async (socket, gameState) => {
+
+}
+
+// Artillery Fires handler
+const handleArtilleryFires = async (socket, gameState) => {
+
+}
+
+// Air Strike handler
+const handleAirStrike = async (socket, gameState) => {
+
+}
+
+// End Turn handler
+const handleEndTurn = async (socket, gameState, io) => {
+
+}
+
 // Disconnect handler
-const handleDisconnect = async (socket, sessionStore) => {
+const handleDisconnect = async (socket, sessionStore, gameState, io) => {
 
     // Immediately mark session as disconnected, but don't delete
     await sessionStore.updateField(socket.sessionID, 'connected', false);
@@ -124,6 +137,13 @@ const handleDisconnect = async (socket, sessionStore) => {
         if (session && !session.connected) {
             console.log("Deleting session with id: " + socket.sessionID);
 
+            // If the client was in a game, send a disconnect message to their opponent
+            if (session.stat == 'game' && gameState.newMessage(session.gameID, '', "Opponent has left the game"))
+
+                // Important to use the 'session' object here rather than the 'socket' object
+                // Sometimes the 'socket' object does not have a 'gameID' field after the setTimeout callback is executed
+                io.to(session.gameID).emit('new-message', {from: '', data: "Opponent has left the game"});
+
             // Delete the session from the database
             await sessionStore.del(socket.sessionID);
         }
@@ -136,5 +156,13 @@ module.exports = {
     handleMessagesFetch,
     handleGameStateFetch,
     handleMessage,
+    handleMove,
+    handleCHMR,
+    handleHumanitarianAid,
+    handleSurge,
+    handleInfluenceOperation,
+    handleArtilleryFires,
+    handleAirStrike,
+    handleEndTurn,
     handleDisconnect
 };

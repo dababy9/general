@@ -5,64 +5,13 @@
     <title>Violent Victory</title>
     <script src="https://pixijs.download/release/pixi.js"></script>
 </head>
+
 <body>
-    <script type="module">
-        const app = new PIXI.Application();
-        await app.init({ resizeTo: window, background: '#DFE8F3'});
-        document.body.appendChild(app.canvas);
-        // load the PNG asynchronously
-        await PIXI.Assets.load(['content/backgroundVV.png', 
-                                'content/StartGameVV.png']);
 
-        const background = PIXI.Sprite.from('content/backgroundVV.png');
-
-        // make the width of the game the size of the screen and 
-        // then make the height proportional. 
-        const w = 990 - 20;
-        const h = w * (495 / 899);
-
-        background.width = w;
-        background.height = h;
-
-        // add background to the canvas
-        app.stage.addChild(background);
-
-        // 
-        // const startButton = PIXI.Texture.from('static/content/StartGameVV.png');
-        
-        // const buttons = [];
-
-        // const buttonPositions = [];
-
-        const button = new PIXI.Sprite(PIXI.Texture.from('content/StartGameVV.png'));
-
-        button.anchor.set(0.5);
-        button.x = w/2;
-        button.y = h/2;
-
-        button.eventMode = 'static';
-        button.cursor = 'pointer';
-
-        button.on('pointerdown',startClick);
-
-
-        app.stage.addChild(button);
-        // buttons.push(button);
- 
-        function startClick(){
-            this.isdown=true;
-            this.alpha=1;
-            socket.emit('quick-play');
-        }
-
-
-
-    </script>
-    
     <!-- Load scripts -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="scripts/session.js"></script>
-    <script src="scripts/home.js"></script>
+    <script src="scripts/home.js" type="module"></script>
     
 </body>
 

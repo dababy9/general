@@ -14,17 +14,11 @@ const path = require('path');
 const { randomBytes } = require('crypto');
 const gameState = require('./gameState');
 const RedisInterface = require('./redisInterface');
-const Handler = require('./handlers')
+const Handler = require('./handlers');
+const { initialSession } = require('./objects.js');
 
 // Used for generating random sessionIDs
 const randomID = () => randomBytes(16).toString('hex');
-
-// Defining an initial session
-const initialSession = {
-    stat: 'base',
-    connected: true,
-    gameID: ''
-}
 
 // Initialize Redis interfaces using environment variables
 const sessionStore = new RedisInterface(REDIS_HOST, REDIS_PORT);
@@ -156,12 +150,30 @@ io.on('connection', async (socket) => {
     // Quick-play event
     // This event is fired when the client attempts to join the quick-play queue
     // Will automatically start a game when two players are in the quick-play queue
-    socket.on('quick-play', () => Handler.handleQuickPlay(socket, sessionStore, queueManager, gameState, io));
+    socket.on('quick-play', async () => {
+
+        // Check the client's status: if they are not in the 'base' status, then send a status error to client
+        if (socket.stat !== 'base') {
+            socket.emit('status-error');
+            return;
+        }
+
+        // Handle the event
+        Handler.handleQuickPlay(socket, sessionStore, queueManager, gameState, io);
+    });
 
     // Fetch event
     // This event is fired when the client attempts to fetch an entire resource (game state, message log)
     // Mainly for reconnecting to a game, or a corrupted/malformed client-side game state
     socket.on('fetch', async (resource) => {
+
+        // Check the client's status: if they are not in the 'game' status, then send a status error to client
+        if (socket.stat !== 'game') {
+            socket.emit('status-error');
+            return;
+        }
+
+        // Handle the event (or respond with an error)
         switch (resource) {
             case 'messages':
                 await Handler.handleMessagesFetch(socket, gameState);
@@ -177,20 +189,64 @@ io.on('connection', async (socket) => {
     // Send event
     // This event is fired when the client attempts to send a message in game
     // Will update the message log and send the message to both players
-    socket.on('send-message', (message) => Handler.handleMessage(message, socket, gameState, io));
+    socket.on('send-message', async (message) => {
+
+        // Check the client's status: if they are not in the 'game' status, then send a status error to client
+        if (socket.stat !== 'game') {
+            socket.emit('status-error');
+            return;
+        }
+
+        // Handle the event
+        Handler.handleMessage(message, socket, gameState, io);
+    });
+
+    // Action event
+    // This event is fired when the client attempts to take an action in a game
+    socket.on('action', async (type) => {
+
+        // Check the client's status: if they are not in the 'game' status, then send a status error to client
+        if (socket.stat !== 'game') {
+            socket.emit('status-error');
+            return;
+        }
+
+        // Handle the event (or respond with an error)
+        switch (type) {
+            case 'move':
+                await Handler.handleMove(socket, gameState);
+                break;
+            case 'chmr':
+                await Handler.handleCHMR(socket, gameState);
+                break;
+            case 'haid':
+                await Handler.handleHumanitarianAid(socket, gameState);
+                break;
+            case 'srge':
+                await Handler.handleSurge(socket, gameState);
+                break;
+            case 'inop':
+                await Handler.handleInfluenceOperation(socket, gameState);
+                break;
+            case 'arty':
+                await Handler.handleArtilleryFires(socket, gameState);
+                break;
+            case 'airs':
+                await Handler.handleAirStrike(socket, gameState);
+                break;
+            default:
+                socket.emit('bad-request');
+        }
+    });
+
+    // End Turn event
+    // This event is fired when the client ends their turn
+    socket.on('end-turn', () => Handler.handleEndTurn(socket, gameState, io));
 
     // Disconnect event
     // This event is fired as soon as the socket closes connection
     // Happens even with just a simple page load/reload, so we use sessions to differentiate between reload and actual disconnection
-    socket.on('disconnect', (reason) => Handler.handleDisconnect(socket, sessionStore, reason));
-
-    // Default event
-    // This event is fired when the client sends an unrecognized message
-    // Will respond to the client with an error
-    //socket.onAny((event) => {
-        //console.log("Unrecognized message: " + event);
-        //socket.emit('unrecognized-request');
-    //});
+    socket.on('disconnect', (reason) => Handler.handleDisconnect(socket, sessionStore, gameState, io));
 
     // -------------------------------------------
 });
@@ -199,7 +255,7 @@ io.on('connection', async (socket) => {
 
 // Bind server to the specified port, and listen for incoming requests
 server.listen(PORT, () => {
-    console.log("Listening on port 9000");
+    console.log("Listening on port " + PORT);
 });
 
 

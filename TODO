@@ -3,3 +3,5 @@
 - make sure to save sessionID to sessionStorage when user clicks button
 - make a redis-server config file
 - change some parts of documentation
+- make new game state
+- make game state messages
