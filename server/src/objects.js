@@ -14,17 +14,7 @@ const player = {
 }
 
 // Node definitions (only used in initialState)
-const city = {
-    blueArmies: 0,
-    redArmies: 0,
-    civilians: 4
-}
-const village = {
-    blueArmies: 0,
-    redArmies: 0,
-    civilians: 2
-}
-const haven = {
+const tile = {
     blueArmies: 0,
     redArmies: 0,
     civilians: 0
@@ -40,27 +30,31 @@ const initialState = {
         'blueBase': {
             blueArmies: 16,
             redArmies: 0,
-            civilians: 2
+            civilians: 0
         },
         'redBase': {
             blueArmies: 0,
             redArmies: 16,
-            civilians: 2
+            civilians: 0
         },
-        'city1': { ...city },
-        'city2': { ...city },
-        'city3': { ...city },
-        'city4': { ...city },
-        'village1': { ...village },
-        'village2': { ...village },
-        'haven1': { ...haven },
-        'haven2': { ...haven },
-        'haven3': { ...haven },
-        'haven4': { ...haven },
-        'haven5': { ...haven },
-        'haven6': { ...haven },
-        'haven7': { ...haven },
-        'haven8': { ...haven }
+        'city1': { ...tile },
+        'city2': { ...tile },
+        'city3': { ...tile },
+        'city4': { ...tile },
+        'village1': { ...tile },
+        'village2': { ...tile },
+        'village3': { ...tile },
+        'village4': { ...tile },
+        'haven1': { ...tile },
+        'haven2': { ...tile },
+        'haven3': { ...tile },
+        'haven4': { ...tile },
+        'haven5': { ...tile },
+        'haven6': { ...tile },
+        'haven7': { ...tile },
+        'haven8': { ...tile },
+        'haven9': { ...tile },
+        'haven10': { ...tile }
     }
 }
 
