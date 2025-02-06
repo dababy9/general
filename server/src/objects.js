@@ -1,70 +1,71 @@
 // Initial session
-const initialSession = {
-    stat: 'base',
-    connected: true,
-    gameID: ''
+function createInitialSession() {
+    return {
+        stat: 'base',
+        connected: true,
+        gameID: ''
+    }
 }
 
-// Player definition (only used in initialState)
-const player = {
-    cp: 6,
-    support: 7,
-    surgeArmies: 8,
-    casualties: 0
+// Function to return a node on the game map (only used in creation of the initial game state)
+function createTile(civ, blue = 0, red = 0) {
+    this.civilians = civ;
+    this.blueArmies = blue;
+    this.redArmies = red;
 }
 
-// Node definitions (only used in initialState)
-const tile = {
-    blueArmies: 0,
-    redArmies: 0,
-    civilians: 0
-}
+// Returns a number 1-6 (only used in creation of the initial game state)
+function d6() { return Math.floor(Math.random()*6)+1; }
 
 // Initial game state
-const initialState = {
-    bluePlayer: { ...player },
-    redPlayer: { ...player },
-    turnPlayer: '',
-    turnCounter: 1,
-    nodes: {
-        'blueBase': {
-            blueArmies: 16,
-            redArmies: 0,
-            civilians: 0
-        },
-        'redBase': {
-            blueArmies: 0,
-            redArmies: 16,
-            civilians: 0
-        },
-        'city1': { ...tile },
-        'city2': { ...tile },
-        'city3': { ...tile },
-        'city4': { ...tile },
-        'village1': { ...tile },
-        'village2': { ...tile },
-        'village3': { ...tile },
-        'village4': { ...tile },
-        'haven1': { ...tile },
-        'haven2': { ...tile },
-        'haven3': { ...tile },
-        'haven4': { ...tile },
-        'haven5': { ...tile },
-        'haven6': { ...tile },
-        'haven7': { ...tile },
-        'haven8': { ...tile },
-        'haven9': { ...tile },
-        'haven10': { ...tile }
+function createInitialState() {
+
+    const player = {
+        cp: 6,
+        support: 7,
+        surgeArmies: 8,
+        casualties: 0
     }
+
+    const gameState = {
+        bluePlayer: { ...player },
+        redPlayer: { ...player },
+        turnPlayer: '',
+        turnCounter: 1,
+        nodes: new Map([
+            ['blueBase', createTile(d6(), 16, 0)],
+            ['redBase', createTile(d6(), 0, 16)],
+            ['city1', createTile(d6()+d6())],
+            ['city2', createTile(d6()+d6())],
+            ['city3', createTile(d6()+d6())],
+            ['city4', createTile(d6()+d6())],
+            ['village1', createTile(d6())],
+            ['village2', createTile(d6())],
+            ['village3', createTile(d6())],
+            ['village4', createTile(d6())],
+            ['haven1', createTile(0)],
+            ['haven2', createTile(0)],
+            ['haven3', createTile(0)],
+            ['haven4', createTile(0)],
+            ['haven5', createTile(0)],
+            ['haven6', createTile(0)],
+            ['haven7', createTile(0)],
+            ['haven8', createTile(0)],
+            ['haven9', createTile(0)],
+            ['haven10', createTile(0)]
+        ])
+    };
+
+    return gameState;
 }
 
 // Graph of the game map
 const gameMap = {
-
+    
 }
 
 module.exports = {
-    initialSession,
-    initialState,
+    createInitialSession,
+    createInitialState,
     gameMap
 }

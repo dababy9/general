@@ -3,8 +3,6 @@ require('dotenv').config();
 
 // Constants pertinent to server functionality
 const PORT = process.env.PORT || 9000;
-const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
-const REDIS_PORT = process.env.REDIS_PORT || 6379;
 
 // Import modules
 const express = require('express');
@@ -12,17 +10,17 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const { randomBytes } = require('crypto');
-const gameState = require('./gameState');
-const RedisInterface = require('./redisInterface');
-const Handler = require('./handlers');
-const { initialSession } = require('./objects.js');
+const game = require('./game');
+const handler = require('./handlers');
+const { createInitialSession } = require('./objects.js');
 
 // Used for generating random sessionIDs
 const randomID = () => randomBytes(16).toString('hex');
 
-// Initialize Redis interfaces using environment variables
-const sessionStore = new RedisInterface(REDIS_HOST, REDIS_PORT);
-const queueManager = new RedisInterface(REDIS_HOST, REDIS_PORT);
+// Initialize in-memory 'storages'
+const sessionStore = new Map();
+const gameStore = new Map();
+const quickPlayQueue = new Array();
 
 // Create Express app and pass it to HTTP server
 const app = express();
@@ -66,7 +64,7 @@ app.get('/message-error', (req, res) => {
 
 
 // Middleware for handling sessions with socket.io connections
-io.use(async (socket, next) => {
+io.use((socket, next) => {
 
     // Try to get a sessionID from the socket
     const sessionID = socket.handshake.auth.sessionID;
@@ -75,7 +73,7 @@ io.use(async (socket, next) => {
     if (sessionID) {
 
         // Find the session
-        const session = await sessionStore.get(sessionID);
+        const session = sessionStore.get(sessionID);
 
         // Assuming the sessionID is a valid one
         if (session) {
@@ -107,7 +105,7 @@ io.use(async (socket, next) => {
 
 
 // Main socket.io function
-io.on('connection', async (socket) => {
+io.on('connection', (socket) => {
 
     // ---------- ONLY RUN ONCE ON CONNECT ----------
 
@@ -127,18 +125,22 @@ io.on('connection', async (socket) => {
 
         console.log("New session connected: " + socket.sessionID);
 
+        // Create a new session
+        const newSession = createInitialSession();
+
         // Save new session in sessionStore
-        await sessionStore.set(socket.sessionID, initialSession);
+        sessionStore.set(socket.sessionID, newSession);
 
         // Copy properties from the new session to the socket
-        Object.assign(socket, initialSession);
+        Object.assign(socket, newSession);
 
     // Otherwise, just update existing session to reflect (re)connection status
     } else {
 
         console.log("Existing session reconnected: " + socket.sessionID);
 
-        await sessionStore.updateField(socket.sessionID, 'connected', true);
+        // Set the existing session back to 'connected'
+        sessionStore.get(socket.sessionID).connected = true;
     }
 
     // ----------------------------------------------
@@ -150,7 +152,7 @@ io.on('connection', async (socket) => {
     // Quick-play event
     // This event is fired when the client attempts to join the quick-play queue
     // Will automatically start a game when two players are in the quick-play queue
-    socket.on('quick-play', async () => {
+    socket.on('quick-play', () => {
 
         // Check the client's status: if they are not in the 'base' status, then send a status error to client
         if (socket.stat !== 'base') {
@@ -159,13 +161,13 @@ io.on('connection', async (socket) => {
         }
 
         // Handle the event
-        Handler.handleQuickPlay(socket, sessionStore, queueManager, gameState, io);
+        handler.handleQuickPlay(socket, sessionStore, gameStore, quickPlayQueue, game, randomID(), io);
     });
 
     // Fetch event
     // This event is fired when the client attempts to fetch an entire resource (game state, message log)
     // Mainly for reconnecting to a game, or a corrupted/malformed client-side game state
-    socket.on('fetch', async (resource) => {
+    socket.on('fetch', (resource) => {
 
         // Check the client's status: if they are not in the 'game' status, then send a status error to client
         if (socket.stat !== 'game') {
@@ -176,20 +178,20 @@ io.on('connection', async (socket) => {
         // Handle the event (or respond with an error)
         switch (resource) {
             case 'messages':
-                await Handler.handleMessagesFetch(socket, gameState);
+                socket.emit('message-log', gameStore.get(socket.gameID).messages);
                 break;
             case 'game-state':
-                await Handler.handleGameStateFetch(socket, gameState);
+                socket.emit('message-log', gameStore.get(socket.gameID).gameState);
                 break;
             default:
                 socket.emit('bad-request');
         }
     });
 
-    // Send event
+    // Send message event
     // This event is fired when the client attempts to send a message in game
     // Will update the message log and send the message to both players
-    socket.on('send-message', async (message) => {
+    socket.on('send-message', (message) => {
 
         // Check the client's status: if they are not in the 'game' status, then send a status error to client
         if (socket.stat !== 'game') {
@@ -198,12 +200,12 @@ io.on('connection', async (socket) => {
         }
 
         // Handle the event
-        Handler.handleMessage(message, socket, gameState, io);
+        handler.handleMessage(message, socket, gameStore, io);
     });
 
     // Action event
     // This event is fired when the client attempts to take an action in a game
-    socket.on('action', async (type) => {
+    socket.on('action', (type) => {
 
         // Check the client's status: if they are not in the 'game' status, then send a status error to client
         if (socket.stat !== 'game') {
@@ -212,41 +214,17 @@ io.on('connection', async (socket) => {
         }
 
         // Handle the event (or respond with an error)
-        switch (type) {
-            case 'move':
-                await Handler.handleMove(socket, gameState);
-                break;
-            case 'chmr':
-                await Handler.handleCHMR(socket, gameState);
-                break;
-            case 'haid':
-                await Handler.handleHumanitarianAid(socket, gameState);
-                break;
-            case 'srge':
-                await Handler.handleSurge(socket, gameState);
-                break;
-            case 'inop':
-                await Handler.handleInfluenceOperation(socket, gameState);
-                break;
-            case 'arty':
-                await Handler.handleArtilleryFires(socket, gameState);
-                break;
-            case 'airs':
-                await Handler.handleAirStrike(socket, gameState);
-                break;
-            default:
-                socket.emit('bad-request');
-        }
+        // TODO ----------------------------------------------------------------------------------------------------------------------------------------------------------
     });
 
     // End Turn event
     // This event is fired when the client ends their turn
-    socket.on('end-turn', () => Handler.handleEndTurn(socket, gameState, io));
+    //socket.on('end-turn', () => Handler.handleEndTurn(socket, gameStore, io));
 
     // Disconnect event
     // This event is fired as soon as the socket closes connection
     // Happens even with just a simple page load/reload, so we use sessions to differentiate between reload and actual disconnection
-    socket.on('disconnect', (reason) => Handler.handleDisconnect(socket, sessionStore, gameState, io));
+    socket.on('disconnect', (reason) => handler.handleDisconnect(socket, sessionStore, gameStore, io));
 
     // -------------------------------------------
 });
@@ -262,26 +240,10 @@ server.listen(PORT, () => {
 
 // ---------- SHUTDOWN CODE ----------
 
-// Function to clean up before shutdown
+// Function to exit gracefully before shutdown
 const shutdown = async () => {
     console.log("\nShutting down...");
-
-    // Attempt to close Redis clients
-    try {
-        sessionStore.close();
-        queueManager.close();
-        gameState.close();
-
-        console.log("Redis clients closed successfully.");
-    
-    // If there was an error, print accordingly
-    } catch (err) {
-        console.error("Error while closing Redis clients:", err);
-    
-    // Exit the application
-    } finally {
-        process.exit(0);
-    }
+    process.exit(0);
 }
 
 // Handle process signals
@@ -299,6 +261,5 @@ process.on('unhandledRejection', async (reason, promise) => {
     console.error("Unhandled promise rejection:", reason);
     await shutdown();
 });
-
 
 // -----------------------------------

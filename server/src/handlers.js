@@ -1,30 +1,32 @@
 // Quick-play handler
-const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io) => {
+const handleQuickPlay = (socket, sessionStore, gameStore, quickPlayQueue, game, randomID, io) => {
 
     // Set status to 'quick-play'
-    socket.stat = 'quick-play';
-    sessionStore.updateField(socket.sessionID, 'stat', socket.stat);
+    sessionStore.get(socket.sessionID).stat = socket.stat = 'quick-play';
 
     // Attempt to retrieve a player from the quick-play queue
-    const opponentSessionID = await queueManager.poll('quickPlayQueue');
+    const opponentSessionID = quickPlayQueue.shift();
 
     // If a player is in the queue, join them in a game
     if (opponentSessionID) {
 
-        // Create a new game, which will return a random gameID.
-        const gameID = await gameState.createGame(opponentSessionID, socket.sessionID);
-
-        // Retrieve both players' session data
-        const [opponentSession, currentSession] = await Promise.all([
-            sessionStore.get(opponentSessionID),
-            sessionStore.get(socket.sessionID)
-        ]);
+        // Retrieve opponent's session
+        opponentSession = sessionStore.get(opponentSessionID);
 
         // If opponent session doesn't exist, just add the current player to the queue
         if (!opponentSession) {
-            await queueManager.append('quickPlayQueue', socket.sessionID);
+            quickPlayQueue.push(socket.sessionID);
             return;
         }
+
+        // Retrieve the current session
+        currentSession = sessionStore.get(socket.sessionID);
+
+        // Generate a random ID for the game
+        const gameID = randomID;
+
+        // Store the new game in gameStore
+        gameStore.set(gameID, game.newGame(opponentSessionID, socket.sessionID));
 
         // Update both sessions with new gameID and status
         opponentSession.gameID = gameID;
@@ -32,120 +34,75 @@ const handleQuickPlay = async (socket, sessionStore, queueManager, gameState, io
         currentSession.gameID = gameID;
         currentSession.stat = 'game';
 
-        // Save updated sessions back to the database
-        await Promise.all([
-            sessionStore.set(opponentSessionID, opponentSession),
-            sessionStore.set(socket.sessionID, currentSession)
-        ]);
-
         // Send the 'game-start' response to both players
         io.to(opponentSessionID).emit('game-start');
         socket.emit('game-start');
 
     // Otherwise, add this player to the quick-play queue
     } else
-        await queueManager.append('quickPlayQueue', socket.sessionID);
-}
-
-// Fetch messages handler
-const handleMessagesFetch = async (socket, gameState) => {
-
-    // Get the game data from the database
-    const messages = await gameState.getMessages(socket.gameID);
-
-    // Send the responses to the client
-    socket.emit('message-log', messages);
-}
-
-// Fetch game state handler
-const handleGameStateFetch = async (socket, gameState) => {
-
-    // Get the game data from the database
-    const game = await gameState.getGame(socket.gameID);
-    
-    // Send the responses to the client
-    socket.emit('game-state', game);
+        quickPlayQueue.push(socket.sessionID);
 }
 
 // Message send update
-const handleMessage = async (message, socket, gameState, io) => {
+const handleMessage = (message, socket, gameStore, io) => {
 
-    // Attempt to add message to game log
-    if (gameState.newMessage(socket.gameID, socket.sessionID, message)) {
+    // Attempt to retrieve the game
+    const gameData = gameStore.get(socket.gameID);
 
-        // If successful, send response to both clients
-        io.to(socket.gameID).emit('new-message', {from: socket.sessionID, data: message});
+    // If the game does not exist, send a status error to the client
+    if (!gameData){
+        socket.emit('status-error');
+        return;
+    }
 
-    // Otherwise, send a bad-message response to client
-    } else
+    // Check if the message is invalid or inappropriate, and if so, send a bad message error to client
+    if (0 == 1) {
         socket.emit('bad-message');
-}
+        return;
+    }
 
-// Move handler
-const handleMove = async (socket, gameState) => {
+    // Define message object to be added to message log
+    const messageObject = {from: (socket.sessionID == gameData.blueSessionID) ? 'blue' : 'red', data: message};
 
-}
+    // Append the message to the log
+    gameData.messages.push(messageObject);
 
-// CHMR handler
-const handleCHMR = async (socket, gameState) => {
-
-}
-
-// Humanitarian Aid handler
-const handleHumanitarianAid = async (socket, gameState) => {
-
-}
-
-// Surge handler
-const handleSurge = async (socket, gameState) => {
-
-}
-
-// Influence Operation handler
-const handleInfluenceOperation = async (socket, gameState) => {
-
-}
-
-// Artillery Fires handler
-const handleArtilleryFires = async (socket, gameState) => {
-
-}
-
-// Air Strike handler
-const handleAirStrike = async (socket, gameState) => {
-
-}
-
-// End Turn handler
-const handleEndTurn = async (socket, gameState, io) => {
-
+    // Send the message to both clients
+    io.to(socket.gameID).emit('new-message', messageObject);
 }
 
 // Disconnect handler
-const handleDisconnect = async (socket, sessionStore, gameState, io) => {
+const handleDisconnect = (socket, sessionStore, gameStore, io) => {
 
     // Immediately mark session as disconnected, but don't delete
-    await sessionStore.updateField(socket.sessionID, 'connected', false);
+    sessionStore.get(socket.sessionID).connected = false;
 
     // Set a timer to check disconnection after 5 seconds
-    setTimeout(async () => {
+    setTimeout(() => {
 
         // Retrieve session
-        const session = await sessionStore.get(socket.sessionID);
+        const session = sessionStore.get(socket.sessionID);
 
         // If the session still exists and it is still disconnected, then the client is actually disconnected
         if (session && !session.connected) {
             console.log("Deleting session with id: " + socket.sessionID);
 
-            // If the client was in a game, send a disconnect message to their opponent
-            if (session.stat == 'game' && gameState.newMessage(session.gameID, '', "Opponent has left the game"))
+            // Check if the client is in 'game' status
+            if (session.stat == 'game'){
 
-                // Important to use the 'session' object here rather than the 'socket' object
-                // Sometimes the 'socket' object does not have a 'gameID' field after the setTimeout callback is executed
-                io.to(session.gameID).emit('new-message', {from: '', data: "Opponent has left the game"});
+                // Attempt to retrieve the game they are in
+                const gameData = gameStore.get(session.gameID);
+                
+                // If the game exists, append disconnect message to the log and send to opponent
+                if (gameData) {
+                    const messageObject = {from: 'server', data: "Opponent has disconnected"};
+                    gameData.messages.push(messageObject);
+                    io.to(session.gameID).emit('new-message', messageObject);
+                }
+            }
 
-            // Delete the session from the database
-            await sessionStore.del(socket.sessionID);
+            // Delete the session from sessionStore
+            sessionStore.delete(socket.sessionID);
         }
     }, 5000);
 }
@@ -153,16 +110,6 @@ const handleDisconnect = async (socket, sessionStore, gameState, io) => {
 // Set up export to be used in server.js
 module.exports = {
     handleQuickPlay,
-    handleMessagesFetch,
-    handleGameStateFetch,
     handleMessage,
-    handleMove,
-    handleCHMR,
-    handleHumanitarianAid,
-    handleSurge,
-    handleInfluenceOperation,
-    handleArtilleryFires,
-    handleAirStrike,
-    handleEndTurn,
     handleDisconnect
 };

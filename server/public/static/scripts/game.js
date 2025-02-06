@@ -11,6 +11,10 @@ socket.on('new-message', (message) => {
     console.log(message.data);
 });
 
+document.getElementById('btn').addEventListener('click', () => {
+    socket.emit('send-message', 'hello');
+});
+
 
 
 const app = new PIXI.Application();
