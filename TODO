@@ -4,3 +4,6 @@
 - change documentation a lot
 - make game state messages
 - finish endturn and action socket.on events
+
+BUGS
+user clicking quick-play twice (also breaks queue)

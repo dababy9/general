@@ -1,8 +1,5 @@
-// Load environment variables from .env file
-require('dotenv').config();
-
 // Constants pertinent to server functionality
-const PORT = process.env.PORT || 9000;
+const PORT = 9000;
 
 // Import modules
 const express = require('express');
@@ -178,10 +175,10 @@ io.on('connection', (socket) => {
         // Handle the event (or respond with an error)
         switch (resource) {
             case 'messages':
-                socket.emit('message-log', gameStore.get(socket.gameID).messages);
+                socket.emit('message-log', JSON.stringify(gameStore.get(socket.gameID).messages));
                 break;
             case 'game-state':
-                socket.emit('message-log', gameStore.get(socket.gameID).gameState);
+                socket.emit('message-log', JSON.stringify(gameStore.get(socket.gameID).gameState));
                 break;
             default:
                 socket.emit('bad-request');
