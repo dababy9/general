@@ -1,24 +1,30 @@
+// Initialize in-memory 'storages'
+const sessionStore = new Map();
+const gameStore = new Map();
+const quickPlayQueue = new Array();
+
 // Initial session
-function createInitialSession() {
+const createInitialSession = () => {
     return {
         stat: 'base',
         connected: true,
-        gameID: ''
+        gameID: '',
+        color: ''
     }
 }
 
 // Function to return a node on the game map (only used in creation of the initial game state)
-function createTile(civ, blue = 0, red = 0) {
+const createTile = (civ, blue = 0, red = 0) => {
     this.civilians = civ;
     this.blueArmies = blue;
     this.redArmies = red;
 }
 
 // Returns a number 1-6 (only used in creation of the initial game state)
-function d6() { return Math.floor(Math.random()*6)+1; }
+const d6 = () => { return Math.floor(Math.random()*6)+1; }
 
 // Initial game state
-function createInitialState() {
+const createInitialState = () => {
 
     const player = {
         cp: 6,
@@ -65,6 +71,9 @@ const gameMap = {
 }
 
 module.exports = {
+    sessionStore,
+    gameStore,
+    quickPlayQueue,
     createInitialSession,
     createInitialState,
     gameMap

@@ -1,5 +1,32 @@
+// Import modules
+const { sessionStore, gameStore, quickPlayQueue } = require('./objects.js');
+const game = require('./game');
+
+// Define a method to send a message to the current game
+// Involves both updating the message log in the game state and sending a socket.io message to both players
+const sendMessage = (io, gameID, from, data) => {
+
+    // Attempt to retrieve the game
+    const gameData = gameStore.get(gameID);
+
+    // If the game does not exist, return false
+    if (!gameData) return false;
+
+    // Define message object to be added to message log
+    const messageObject = {from: from, data: data};
+
+    // Append the message to the log
+    gameData.messages.push(messageObject);
+
+    // Send the message to both clients
+    io.to(gameID).emit('new-message', messageObject);
+
+    // Return true to indicate a successful message send
+    return true;
+}
+
 // Quick-play handler
-const handleQuickPlay = (socket, sessionStore, gameStore, quickPlayQueue, game, randomID, io) => {
+const handleQuickPlay = (socket, randomID, io) => {
 
     // Set status to 'quick-play'
     sessionStore.get(socket.sessionID).stat = socket.stat = 'quick-play';
@@ -44,16 +71,7 @@ const handleQuickPlay = (socket, sessionStore, gameStore, quickPlayQueue, game, 
 }
 
 // Message send update
-const handleMessage = (message, socket, gameStore, io) => {
-
-    // Attempt to retrieve the game
-    const gameData = gameStore.get(socket.gameID);
-
-    // If the game does not exist, send a status error to the client
-    if (!gameData){
-        socket.emit('status-error');
-        return;
-    }
+const handleMessage = (message, socket, io) => {
 
     // Check if the message is invalid or inappropriate, and if so, send a bad message error to client
     if (0 == 1) {
@@ -61,18 +79,13 @@ const handleMessage = (message, socket, gameStore, io) => {
         return;
     }
 
-    // Define message object to be added to message log
-    const messageObject = {from: (socket.sessionID == gameData.blueSessionID) ? 'blue' : 'red', data: message};
-
-    // Append the message to the log
-    gameData.messages.push(messageObject);
-
-    // Send the message to both clients
-    io.to(socket.gameID).emit('new-message', messageObject);
+    // Attempt to send the message and give a status error if it failed
+    if (!sendMessage(io, socket.gameID, socket.color, message))
+        socket.emit('status-error');
 }
 
 // Disconnect handler
-const handleDisconnect = (socket, sessionStore, gameStore, io) => {
+const handleDisconnect = (socket, io) => {
 
     // Immediately mark session as disconnected, but don't delete
     sessionStore.get(socket.sessionID).connected = false;
@@ -90,15 +103,8 @@ const handleDisconnect = (socket, sessionStore, gameStore, io) => {
             // Check if the client is in 'game' status
             if (session.stat == 'game'){
 
-                // Attempt to retrieve the game they are in
-                const gameData = gameStore.get(session.gameID);
-                
-                // If the game exists, append disconnect message to the log and send to opponent
-                if (gameData) {
-                    const messageObject = {from: 'server', data: "Opponent has disconnected"};
-                    gameData.messages.push(messageObject);
-                    io.to(session.gameID).emit('new-message', messageObject);
-                }
+                // Send the disconnect message
+                sendMessage(io, session.gameID, 'server', "Opponent has disconnected");
             }
 
             // Delete the session from sessionStore

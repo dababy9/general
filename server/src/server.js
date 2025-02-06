@@ -10,17 +10,11 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const { randomBytes } = require('crypto');
-const game = require('./game');
 const handler = require('./handlers');
-const { createInitialSession } = require('./objects.js');
+const { sessionStore, gameStore, createInitialSession } = require('./objects.js');
 
 // Used for generating random sessionIDs
 const randomID = () => randomBytes(16).toString('hex');
-
-// Initialize in-memory 'storages'
-const sessionStore = new Map();
-const gameStore = new Map();
-const quickPlayQueue = new Array();
 
 // Create Express app and pass it to HTTP server
 const app = express();
@@ -116,9 +110,15 @@ io.on('connection', (socket) => {
     socket.leave(socket.id);
     socket.join(socket.sessionID);
 
-    // If the client is in a game, join the room associated with the gameID
-    if (socket.stat === 'game' && socket.gameID)
+    // Check if the client is in a game
+    if (socket.stat === 'game' && socket.gameID){
+
+        // Set the socket's player color
+        socket.color = (socket.sessionID == gameStore.get(socket.gameID).blueSessionID ? 'blue' : 'red');
+
+        // Join the room associated with the gameID
         socket.join(socket.gameID)
+    }
 
     // If the client didn't already have a session, save the new session and join them to 'new' room
     if (socket.isNewSession) {
@@ -161,7 +161,7 @@ io.on('connection', (socket) => {
         }
 
         // Handle the event
-        handler.handleQuickPlay(socket, sessionStore, gameStore, quickPlayQueue, game, randomID(), io);
+        handler.handleQuickPlay(socket, randomID(), io);
     });
 
     // Fetch event
@@ -200,7 +200,7 @@ io.on('connection', (socket) => {
         }
 
         // Handle the event
-        handler.handleMessage(message, socket, gameStore, io);
+        handler.handleMessage(message, socket, io);
     });
 
     // Action event
@@ -224,7 +224,7 @@ io.on('connection', (socket) => {
     // Disconnect event
     // This event is fired as soon as the socket closes connection
     // Happens even with just a simple page load/reload, so we use sessions to differentiate between reload and actual disconnection
-    socket.on('disconnect', (reason) => handler.handleDisconnect(socket, sessionStore, gameStore, io));
+    socket.on('disconnect', (reason) => handler.handleDisconnect(socket, io));
 
     // -------------------------------------------
 });
