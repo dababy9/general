@@ -1,8 +1,7 @@
 - input validation client and server-side
-- flesh out error pages
+- modify session.js to send user to correct endpoint
 - make sure to save sessionID to sessionStorage when user clicks button
 - change documentation a lot
-- make game state messages
 - finish endturn and action socket.on events
 
 BUGS

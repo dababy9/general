@@ -1,35 +1,17 @@
 // Import modules
+const { randomBytes } = require('crypto');
 const { sessionStore, gameStore, quickPlayQueue } = require('./objects.js');
 const game = require('./game');
 
-// Define a method to send a message to the current game
-// Involves both updating the message log in the game state and sending a socket.io message to both players
-const sendMessage = (io, gameID, from, data) => {
-
-    // Attempt to retrieve the game
-    const gameData = gameStore.get(gameID);
-
-    // If the game does not exist, return false
-    if (!gameData) return false;
-
-    // Define message object to be added to message log
-    const messageObject = {from: from, data: data};
-
-    // Append the message to the log
-    gameData.messages.push(messageObject);
-
-    // Send the message to both clients
-    io.to(gameID).emit('new-message', messageObject);
-
-    // Return true to indicate a successful message send
-    return true;
-}
+// Used for generating random gameIDs
+const randomID = () => randomBytes(16).toString('hex');
 
 // Quick-play handler
-const handleQuickPlay = (socket, randomID, io) => {
+const handleQuickPlay = (socket, io) => {
 
     // Set status to 'quick-play'
-    sessionStore.get(socket.sessionID).stat = socket.stat = 'quick-play';
+    const currentSession = sessionStore.get(socket.sessionID);
+    currentSession.stat = socket.stat = 'quick-play';
 
     // Attempt to retrieve a player from the quick-play queue
     const opponentSessionID = quickPlayQueue.shift();
@@ -38,7 +20,7 @@ const handleQuickPlay = (socket, randomID, io) => {
     if (opponentSessionID) {
 
         // Retrieve opponent's session
-        opponentSession = sessionStore.get(opponentSessionID);
+        const opponentSession = sessionStore.get(opponentSessionID);
 
         // If opponent session doesn't exist, just add the current player to the queue
         if (!opponentSession) {
@@ -46,11 +28,8 @@ const handleQuickPlay = (socket, randomID, io) => {
             return;
         }
 
-        // Retrieve the current session
-        currentSession = sessionStore.get(socket.sessionID);
-
         // Generate a random ID for the game
-        const gameID = randomID;
+        const gameID = randomID();
 
         // Store the new game in gameStore
         gameStore.set(gameID, game.newGame(opponentSessionID, socket.sessionID));
@@ -70,6 +49,49 @@ const handleQuickPlay = (socket, randomID, io) => {
         quickPlayQueue.push(socket.sessionID);
 }
 
+// Create game handler
+const handleCreateGame = (socket) => {
+
+    // Generate a random ID for the game
+    const gameID = randomID();
+
+    // Store the new game in gameStore
+    gameStore.set(gameID, game.newGame(socket.sessionID));
+
+    // Set status to 'game'
+    const currentSession = sessionStore.get(socket.sessionID);
+    currentSession.stat = socket.stat = 'game';
+
+    // Send the 'game-start' response to player creating the game
+    socket.emit('game-start');
+}
+
+// Join game handler
+const handleJoinGame = (gameID, socket) => {
+
+    // Attempt to retrieve the game
+    const gameData = gameStore.get(gameID);
+
+    // If the game does not exist, send an invalid gameID error to client
+    if (!gameData) {
+        socket.emit('invalid-gameid');
+        return;
+    }
+
+    // If the game exists, add client's sessionID to whichever field is empty (blueSessionID or redSessionID)
+    if (!gameData.blueSessionID)
+        gameData.blueSessionID = socket.sessionID;
+    else
+        gameData.redSessionID = socket.sessionID;
+
+    // Set status to 'game'
+    const currentSession = sessionStore.get(socket.sessionID);
+    currentSession.stat = socket.stat = 'game';
+
+    // Send the 'game-start' response to player joining the game
+    socket.emit('game-start');
+}
+
 // Message send update
 const handleMessage = (message, socket, io) => {
 
@@ -79,9 +101,23 @@ const handleMessage = (message, socket, io) => {
         return;
     }
 
-    // Attempt to send the message and give a status error if it failed
-    if (!sendMessage(io, socket.gameID, socket.color, message))
+    // Attempt to retrieve the game
+    const gameData = gameStore.get(socket.gameID);
+
+    // If the game does not exist, send a status error to client
+    if (!gameData) {
         socket.emit('status-error');
+        return;
+    }
+
+    // Define message object to be added to message log
+    const messageObject = {from: socket.color, data: message};
+
+    // Append the message to the log
+    gameData.messages.push(messageObject);
+
+    // Send the message to both clients
+    io.to(socket.gameID).emit('new-message', messageObject);
 }
 
 // Disconnect handler
@@ -103,8 +139,24 @@ const handleDisconnect = (socket, io) => {
             // Check if the client is in 'game' status
             if (session.stat == 'game'){
 
-                // Send the disconnect message
-                sendMessage(io, session.gameID, 'server', "Opponent has disconnected");
+                // Attempt to retrieve the game
+                const gameData = gameStore.get(session.gameID);
+
+                // If the game exists, send disconnect message and mark the game as over
+                if (gameData) {
+
+                    // Define message object to be added to message log
+                    const messageObject = {from: 'server', data: "Opponent has disconnected"};
+
+                    // Append the message to the log
+                    gameData.messages.push(messageObject);
+
+                    // Send the message to both clients
+                    io.to(session.gameID).emit('new-message', messageObject);
+
+                    // Mark the game as over
+                    gameData.inPlay = false;
+                }
             }
 
             // Delete the session from sessionStore
@@ -116,6 +168,8 @@ const handleDisconnect = (socket, io) => {
 // Set up export to be used in server.js
 module.exports = {
     handleQuickPlay,
+    handleCreateGame,
+    handleJoinGame,
     handleMessage,
     handleDisconnect
 };

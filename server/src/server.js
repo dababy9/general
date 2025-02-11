@@ -54,6 +54,17 @@ app.get('/message-error', (req, res) => {
 
 
 
+// Small helper function to check status (and send status error accordingly)
+const validStatus = (socket, status) => {
+    if (socket.stat !== status) {
+        socket.emit('status-error');
+        return false;
+    }
+    return true;
+}
+
+
+
 // Middleware for handling sessions with socket.io connections
 io.use((socket, next) => {
 
@@ -151,14 +162,28 @@ io.on('connection', (socket) => {
     // Will automatically start a game when two players are in the quick-play queue
     socket.on('quick-play', () => {
 
-        // Check the client's status: if they are not in the 'base' status, then send a status error to client
-        if (socket.stat !== 'base') {
-            socket.emit('status-error');
-            return;
-        }
+        // Check the client's status: if they are not in the 'base' status, then stop
+        if (!validStatus(socket, 'base')) return;
 
         // Handle the event
-        handler.handleQuickPlay(socket, randomID(), io);
+        handler.handleQuickPlay(socket, io);
+    });
+
+    // Private play event
+    // This event is fired when the client attempts to either join or create a private game
+    // When creating a game, the user is given the gameID which another player uses to join that same game
+    socket.on('private-play', (gameID) => {
+
+        // Check the client's status: if they are not in the 'base' status, then stop
+        if (!validStatus(socket, 'base')) return;
+
+        // If the user provided no gameID, then they are attempting to create a private game
+        if(!gameID)
+            handler.handleCreateGame(socket);
+
+        // Otherwise, they are trying to join a private game
+        else
+            handler.handleJoinGame(gameID, socket);
     });
 
     // Fetch event
@@ -166,11 +191,8 @@ io.on('connection', (socket) => {
     // Mainly for reconnecting to a game, or a corrupted/malformed client-side game state
     socket.on('fetch', (resource) => {
 
-        // Check the client's status: if they are not in the 'game' status, then send a status error to client
-        if (socket.stat !== 'game') {
-            socket.emit('status-error');
-            return;
-        }
+        // Check the client's status: if they are not in the 'game' status, then stop
+        if (!validStatus(socket, 'game')) return;
 
         // Handle the event (or respond with an error)
         switch (resource) {
@@ -190,11 +212,8 @@ io.on('connection', (socket) => {
     // Will update the message log and send the message to both players
     socket.on('send-message', (message) => {
 
-        // Check the client's status: if they are not in the 'game' status, then send a status error to client
-        if (socket.stat !== 'game') {
-            socket.emit('status-error');
-            return;
-        }
+        // Check the client's status: if they are not in the 'game' status, then stop
+        if (!validStatus(socket, 'game')) return;
 
         // Handle the event
         handler.handleMessage(message, socket, io);
@@ -204,11 +223,8 @@ io.on('connection', (socket) => {
     // This event is fired when the client attempts to take an action in a game
     socket.on('action', (type) => {
 
-        // Check the client's status: if they are not in the 'game' status, then send a status error to client
-        if (socket.stat !== 'game') {
-            socket.emit('status-error');
-            return;
-        }
+        // Check the client's status: if they are not in the 'game' status, then stop
+        if (!validStatus(socket, 'game')) return;
 
         // Handle the event (or respond with an error)
         // TODO ----------------------------------------------------------------------------------------------------------------------------------------------------------

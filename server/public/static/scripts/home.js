@@ -93,5 +93,5 @@ function startClick(){
 function goToBoard(){
     this.isdown=true;
     this.alpha=1;
-    window.location.replace('/game');
+    socket.emit('private-play', 1234);
 }

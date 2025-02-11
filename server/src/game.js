@@ -17,12 +17,18 @@ const d6Sum = (rolls) => {
 }
 
 // Function that creates and returns a new game given two sessionIDs
-const newGame = (sessionID1, sessionID2) => {
+const newGame = (sessionID1, sessionID2 = null) => {
+
+    // Randomize which player will be which color
+    coin = Math.random() < 0.5;
+    blueID = coin ? sessionID1 : sessionID2;
+    redID = !coin ? sessionID1 : sessionID2;
 
     // Create gameData with both sessionIDs, the message log, and the actual game state
     const gameData = {
-        blueSessionID: sessionID1,
-        redSessionID: sessionID2,
+        blueSessionID: blueID,
+        redSessionID: redID,
+        inPlay: false,
         messages: [{from: 'server', data: "Game Initialized!"}],
         gameState: createInitialState()
     }
