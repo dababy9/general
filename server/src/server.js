@@ -1,5 +1,5 @@
 // Constants pertinent to server functionality
-const PORT = 9000;
+const PORT = process.argv[2] || 9000;
 
 // Import modules
 const express = require('express');
@@ -54,192 +54,135 @@ app.get('/message-error', (req, res) => {
 
 
 
-// Small helper function to check status (and send status error accordingly)
-const validStatus = (socket, status) => {
-    if (socket.stat !== status) {
-        socket.emit('status-error');
-        return false;
-    }
-    return true;
-}
-
-
-
 // Middleware for handling sessions with socket.io connections
 io.use((socket, next) => {
 
-    // Try to get a sessionID from the socket
-    const sessionID = socket.handshake.auth.sessionID;
+    // Attempt to retrieve a previous session from the socket's handshake object
+    sessionID = socket.handshake.auth.sessionID;
+    session = sessionStore.get(sessionID);
 
-    // If the client already has a sessionID
-    if (sessionID) {
+    // If the client already has a session
+    if (session) {
 
-        // Find the session
-        const session = sessionStore.get(sessionID);
+        // Mark the session as 'connected'
+        session.connected = true;
 
-        // Assuming the sessionID is a valid one
-        if (session) {
+        // If the client is in a game, join the room associated with the gameID
+        if (session.stat === 'game')
+            socket.join(session.gameID)
 
-            // Assign sessionID to socket
-            socket.sessionID = sessionID;
+    // If the client does not already have a session
+    } else {
 
-            // Copy the rest of the properties from 'session' object to the socket
-            Object.assign(socket, session);
+        // Generate new session info
+        sessionID = randomID();
+        session = createInitialSession();
 
-            // Indicate that this socket belongs to an existing session
-            socket.isNewSession = false;
-
-            // Move on to actual connection handling
-            return next();
-        }
+        // Store the new session in sessionStore
+        sessionStore.set(sessionID, session);
     }
 
-    // If the socket didn't have a sessionID (or it wasn't found in sessionStore), create new random sessionID
-    socket.sessionID = randomID();
+    // Assign session info to the socket
+    socket.data.sessionID = sessionID;
+    socket.data.session = session;
 
-    // Indicate that this socket belongs to a new session
-    socket.isNewSession = true;
+    // Send the sessionID to the client
+    socket.emit('session', sessionID);
 
-    // Move on to actual connection handling
+    // Leave the default room (socket.id) and join room identified by the sessionID instead
+    socket.leave(socket.id);
+    socket.join(sessionID);
+
+    // Move on to main socket.io function
     next();
 });
 
 
 
-// Main socket.io function
+// Main socket.io function with all socket.io handlers
 io.on('connection', (socket) => {
 
-    // ---------- ONLY RUN ONCE ON CONNECT ----------
+    // Immediately grab the sessionID and session from the socket's data field
+    const sessionID = socket.data.sessionID;
+    const session = socket.data.session;
 
-    // Send sessionID to client
-    socket.emit('session', socket.sessionID);
+    // General request for client to enter a game
+    socket.on('play', (type, gameID = null) => {
 
-    // Leave the default room (socket.id) and join room identified by the sessionID instead
-    socket.leave(socket.id);
-    socket.join(socket.sessionID);
+        // Make sure the client is in the 'base' status
+        if (session.stat !== 'base') return;
 
-    // Check if the client is in a game
-    if (socket.stat === 'game' && socket.gameID){
+        // Check the type of request
+        switch (type) {
 
-        // Set the socket's player color
-        socket.color = (socket.sessionID == gameStore.get(socket.gameID).blueSessionID ? 'blue' : 'red');
-
-        // Join the room associated with the gameID
-        socket.join(socket.gameID)
-    }
-
-    // If the client didn't already have a session, save the new session and join them to 'new' room
-    if (socket.isNewSession) {
-
-        console.log("New session connected: " + socket.sessionID);
-
-        // Create a new session
-        const newSession = createInitialSession();
-
-        // Save new session in sessionStore
-        sessionStore.set(socket.sessionID, newSession);
-
-        // Copy properties from the new session to the socket
-        Object.assign(socket, newSession);
-
-    // Otherwise, just update existing session to reflect (re)connection status
-    } else {
-
-        console.log("Existing session reconnected: " + socket.sessionID);
-
-        // Set the existing session back to 'connected'
-        sessionStore.get(socket.sessionID).connected = true;
-    }
-
-    // ----------------------------------------------
-
-
-
-    // ---------- SOCKET EVENT HANDLERS ----------
-
-    // Quick-play event
-    // This event is fired when the client attempts to join the quick-play queue
-    // Will automatically start a game when two players are in the quick-play queue
-    socket.on('quick-play', () => {
-
-        // Check the client's status: if they are not in the 'base' status, then stop
-        if (!validStatus(socket, 'base')) return;
-
-        // Handle the event
-        handler.handleQuickPlay(socket, io);
-    });
-
-    // Private play event
-    // This event is fired when the client attempts to either join or create a private game
-    // When creating a game, the user is given the gameID which another player uses to join that same game
-    socket.on('private-play', (gameID) => {
-
-        // Check the client's status: if they are not in the 'base' status, then stop
-        if (!validStatus(socket, 'base')) return;
-
-        // If the user provided no gameID, then they are attempting to create a private game
-        if(!gameID)
-            handler.handleCreateGame(socket);
-
-        // Otherwise, they are trying to join a private game
-        else
-            handler.handleJoinGame(gameID, socket);
-    });
-
-    // Fetch event
-    // This event is fired when the client attempts to fetch an entire resource (game state, message log)
-    // Mainly for reconnecting to a game, or a corrupted/malformed client-side game state
-    socket.on('fetch', (resource) => {
-
-        // Check the client's status: if they are not in the 'game' status, then stop
-        if (!validStatus(socket, 'game')) return;
-
-        // Handle the event (or respond with an error)
-        switch (resource) {
-            case 'messages':
-                socket.emit('message-log', JSON.stringify(gameStore.get(socket.gameID).messages));
+            // Client requests to join the quick-play queue
+            case 'quick':
+                handler.handleQuickPlay(sessionID, session, io);
                 break;
-            case 'game-state':
-                socket.emit('message-log', JSON.stringify(gameStore.get(socket.gameID).gameState));
+
+            // Client requests to create a private game
+            case 'create':
+                handler.handleCreateGame(sessionID, session, io);
                 break;
-            default:
-                socket.emit('bad-request');
+
+            // Client requests to join a private game
+            case 'join':
+                handler.handleJoinGame(gameID, sessionID, session, io);
+                break;
+
+            // DEVELOPER TOOL
+            case 'dev':
+                handler.handleDevPlay(sessionID, session, io);
+                break;
         }
     });
 
-    // Send message event
-    // This event is fired when the client attempts to send a message in game
-    // Will update the message log and send the message to both players
-    socket.on('send-message', (message) => {
+    // General request for client to do something while in a game
+    socket.on('game', (type, arg = null) => {
 
-        // Check the client's status: if they are not in the 'game' status, then stop
-        if (!validStatus(socket, 'game')) return;
+        // Make sure the client is in the 'game' status
+        if (session.stat !== 'game') return;
 
-        // Handle the event
-        handler.handleMessage(message, socket, io);
+        // Attempt to retrieve the game
+        const gameData = gameStore.get(session.gameID);
+
+        // Make sure the client is actually in a game
+        if (!gameData) return;
+
+        // Check the type of request
+        switch (type) {
+
+            // Client requests to fetch the message log
+            case 'fetch-message-log':
+                socket.emit('message-log', JSON.stringify(gameData.messages));
+                break;
+
+            // Client requests to fetch the game state
+            case 'fetch-game-state':
+                socket.emit('game-state', JSON.stringify(gameData.gameState));
+                break;
+
+            // Client requests to send a message in-game (in this case, 'arg' is the message)
+            case 'send-message':
+                handler.handleMessageSend(arg, gameData, session, io);
+                break;
+
+            // Client requests to take an action in-game (in this case, 'arg' is an object with the type of action and the actual action)
+            case 'action':
+                handler.handleAction(arg, gameData, sessionID, session, io);
+                break;
+
+            // Client requests to end their turn
+            case 'end-turn':
+                handler.handleEndTurn(io);
+                break;
+        }
     });
-
-    // Action event
-    // This event is fired when the client attempts to take an action in a game
-    socket.on('action', (type) => {
-
-        // Check the client's status: if they are not in the 'game' status, then stop
-        if (!validStatus(socket, 'game')) return;
-
-        // Handle the event (or respond with an error)
-        // TODO ----------------------------------------------------------------------------------------------------------------------------------------------------------
-    });
-
-    // End Turn event
-    // This event is fired when the client ends their turn
-    //socket.on('end-turn', () => Handler.handleEndTurn(socket, gameStore, io));
 
     // Disconnect event
     // This event is fired as soon as the socket closes connection
-    // Happens even with just a simple page load/reload, so we use sessions to differentiate between reload and actual disconnection
-    socket.on('disconnect', (reason) => handler.handleDisconnect(socket, io));
-
-    // -------------------------------------------
+    // Happens even with a page load/reload, so we use sessions to differentiate between reload and actual disconnection
+    socket.on('disconnect', () => handler.handleDisconnect(sessionID, session, io));
 });
 
 
@@ -255,9 +198,9 @@ server.listen(PORT, () => {
 
 // Function to exit gracefully before shutdown
 const shutdown = async () => {
-    console.log("\nShutting down...");
+    console.log("\n\nShutting down...\n");
     process.exit(0);
-}
+};
 
 // Handle process signals
 process.on('SIGINT', shutdown);

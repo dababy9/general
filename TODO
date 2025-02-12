@@ -1,8 +1,3 @@
-- input validation client and server-side
-- modify session.js to send user to correct endpoint
 - make sure to save sessionID to sessionStorage when user clicks button
 - change documentation a lot
-- finish endturn and action socket.on events
-
-BUGS
-user clicking quick-play twice (also breaks queue)
+- add a log file

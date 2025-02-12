@@ -2,6 +2,7 @@
 const sessionStore = new Map();
 const gameStore = new Map();
 const quickPlayQueue = new Array();
+const privateGameTable = new Map();
 
 // Initial session
 const createInitialSession = () => {
@@ -72,10 +73,12 @@ const gameMap = {
     
 }
 
+// Set up export to be used in server.js and handlers.js
 module.exports = {
     sessionStore,
     gameStore,
     quickPlayQueue,
+    privateGameTable,
     createInitialSession,
     createInitialState,
     gameMap

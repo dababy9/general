@@ -17,12 +17,7 @@ const d6Sum = (rolls) => {
 }
 
 // Function that creates and returns a new game given two sessionIDs
-const newGame = (sessionID1, sessionID2 = null) => {
-
-    // Randomize which player will be which color
-    coin = Math.random() < 0.5;
-    blueID = coin ? sessionID1 : sessionID2;
-    redID = !coin ? sessionID1 : sessionID2;
+const newGame = (blueID, redID) => {
 
     // Create gameData with both sessionIDs, the message log, and the actual game state
     const gameData = {
@@ -37,7 +32,49 @@ const newGame = (sessionID1, sessionID2 = null) => {
     return gameData;
 }
 
-// Set up export to be used in server.js
+// Function that processes/validates a 'Move' action
+const moveAction = (gameData, action) => {
+
+}
+
+// Function that processes/validates a 'CHMR' action
+const CHMRAction = (gameData, action) => {
+
+}
+
+// Function that processes/validates a 'Humanitarian Aid' action
+const humanitarianAidAction = (gameData, action) => {
+
+}
+
+// Function that processes/validates a 'Surge' action
+const surgeAction = (gameData, action) => {
+
+}
+
+// Function that processes/validates a 'Influence Operation' action
+const influenceOperationAction = (gameData, action) => {
+
+}
+
+// Function that processes/validates a 'Artillery Fire' action
+const artilleryFireAction = (gameData, action) => {
+
+}
+
+// Function that processes/validates a 'Air Strike' action
+const airStrikeAction = (gameData, action) => {
+
+}
+
+// Set up export to be used in handlers.js
 module.exports = {
-    newGame
+    newGame,
+    moveAction,
+    CHMRAction,
+    humanitarianAidAction,
+    surgeAction,
+    influenceOperationAction,
+    artilleryFireAction,
+    airStrikeAction
 };

@@ -2,15 +2,18 @@
     "name": "violent-victory",
     "version": "0.0.1",
     "description": "IC470 Capstone",
-    "author": "Caleb Walker <caleb.walker62@gmail.com",
+    "author": {
+        "name": "Caleb Walker",
+        "email": "caleb.walker62@gmail.com"
+    },
     "contributors": [
         {
             "name": "Lauren Leckelt",
-            "email": "blank@gmail.com"
+            "email": "lleckelt@gmail.com"
         },
         {
             "name": "Joshua Clark",
-            "email": "blank@gmail.com"
+            "email": "mr.joshua.cm@gmail.com"
         }
     ],
     "license": "MIT",
@@ -20,8 +23,8 @@
         "dev": "nodemon src/server.js"
     },
     "dependencies": {
-        "dotenv": "^16.4.7",
         "express": "^4.21.1",
+        "sanitize-html": "^2.14.0",
         "socket.io": "^4.8.1"
     },
     "devDependencies": {
