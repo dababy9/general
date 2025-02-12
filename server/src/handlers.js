@@ -28,7 +28,7 @@ const startGame = (gameID, session, sessionID, opponentSession, opponentSessionI
     // Send the 'game-start' response to both clients
     io.to(opponentSessionID).emit('game-start');
     io.to(sessionID).emit('game-start');
-}
+};
 
 // Quick-Play handler
 const handleQuickPlay = (sessionID, session, io) => {
