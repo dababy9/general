@@ -167,14 +167,19 @@ io.on('connection', (socket) => {
                 handler.handleMessageSend(arg, gameData, session, io);
                 break;
 
+            // Client requests to roll for initiative
+            case 'initiative':
+                handler.handleInitiative(gameData, session, io);
+                break;
+
             // Client requests to take an action in-game (in this case, 'arg' is an object with the type of action and the actual action)
             case 'action':
-                handler.handleAction(arg, gameData, sessionID, session, io);
+                handler.handleAction(arg, gameData, session, io);
                 break;
 
             // Client requests to end their turn
             case 'end-turn':
-                handler.handleEndTurn(io);
+                handler.handleEndTurn(gameData.gameState, session, io);
                 break;
         }
     });

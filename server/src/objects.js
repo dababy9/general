@@ -40,7 +40,7 @@ const createInitialState = () => {
         bluePlayer: { ...player },
         redPlayer: { ...player },
         turnPlayer: '',
-        turnCounter: 1,
+        turnCounter: 0,
         nodes: {
             'blueBase': createTile(d6(), 16, 0),
             'redBase': createTile(d6(), 0, 16),

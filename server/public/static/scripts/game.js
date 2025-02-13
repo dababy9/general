@@ -21,3 +21,11 @@ document.getElementById('fetchgamestate').addEventListener('click', () => {
 document.getElementById('sendmessage').addEventListener('click', () => {
     socket.emit('game', 'send-message', document.getElementById('message').value);
 });
+
+document.getElementById('initiative').addEventListener('click', () => {
+    socket.emit('game', 'initiative');
+});
+
+document.getElementById('endturn').addEventListener('click', () => {
+    socket.emit('game', 'end-turn');
+});

@@ -23,6 +23,8 @@ const newGame = (blueID, redID) => {
     const gameData = {
         blueSessionID: blueID,
         redSessionID: redID,
+        blueInitiative: false,
+        redInitiative: false,
         inPlay: false,
         messages: [{from: 'server', data: "Game Initialized!"}],
         gameState: createInitialState()
@@ -30,6 +32,23 @@ const newGame = (blueID, redID) => {
 
     // Return the game object
     return gameData;
+};
+
+// Conduct a roll for initiative and return results
+// Automatically re-rolls if a tie occurs
+const initiativeRoll = () => {
+
+    // Rolls to be returned
+    blueRoll = redRoll = 0;
+
+    // Roll until a tie is broken
+    while (blueRoll === redRoll){
+        blueRoll = d6();
+        redRoll = d6();
+    }
+
+    // Return result
+    return { 'winner': blueRoll > redRoll ? 'blue' : 'red', 'blueRoll': blueRoll, 'redRoll': redRoll };
 };
 
 // Function that processes/validates a 'Move' action
@@ -70,6 +89,7 @@ const airStrikeAction = (gameData, action) => {
 // Set up export to be used in handlers.js
 module.exports = {
     newGame,
+    initiativeRoll,
     moveAction,
     CHMRAction,
     humanitarianAidAction,

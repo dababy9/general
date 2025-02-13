@@ -15,10 +15,10 @@ const socket = io({
 
 // This event will be fired by server upon a new session being started
 // Message will include sessionID
-socket.on('session', (sessionID) => {
+socket.on('session', (data) => {
 
-    // Store the new sessionID in sessionStorage (locally in browser tab)
-    sessionStorage.setItem('sessionID', sessionID);
+    // Save the included sessionID
+    sessionID = data;
 });
 
 // This event is fired whenever an error occurs server-side regarding session status

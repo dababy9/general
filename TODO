@@ -1,3 +1,6 @@
 - make sure to save sessionID to sessionStorage when user clicks button
 - change documentation a lot
 - add a log file
+
+BUGS
+session is not saving properly on page refresh
