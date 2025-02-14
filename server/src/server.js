@@ -74,6 +74,8 @@ io.use((socket, next) => {
     // If the client does not already have a session
     } else {
 
+        console.log("NEW SESSION");
+
         // Generate new session info
         sessionID = randomID();
         session = createInitialSession();

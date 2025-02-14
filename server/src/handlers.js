@@ -136,12 +136,8 @@ const handleMessageSend = (message, gameData, session, io) => {
 // Initiative handler
 const handleInitiative = (gameData, session, io) => {
 
-    console.log("RECEIVED INITIATIVE REQ");
-
     // Make sure that there isn't a turn player
     if (gameData.gameState.turnPlayer) return;
-
-    console.log("VALID ONE");
 
     // Update the initiative flag corresponding to the client's color
     if (session.color === 'blue')
@@ -151,8 +147,6 @@ const handleInitiative = (gameData, session, io) => {
 
     // If both flags are true, then conduct a roll for initiative
     if (gameData.blueInitiative && gameData.redInitiative) {
-
-        console.log("ACTUALLY ROLLING");
 
         // Reset flags
         gameData.blueInitiative = gameData.redInitiative = false;
@@ -217,20 +211,14 @@ const handleAction = ({ type, action }, gameData, session, io) => {
 // End Turn handler
 const handleEndTurn = (gameState, session, io) => {
 
-    console.log("RECEIVED ENDTURN REQ");
-
     // Make sure it's the client's turn
     if (gameState.turnPlayer !== session.color) return;
-
-    console.log("VALID ONE");
 
     // Increment turn counter
     gameState.turnCounter++;
 
     // If turn counter is even, players must roll for initiative
     if (gameState.turnCounter % 2 === 0) {
-
-        console.log("INITIATIVE NEXT");
 
         // Set the turn player to empty
         gameState.turnPlayer = '';
@@ -239,10 +227,8 @@ const handleEndTurn = (gameState, session, io) => {
         io.to(session.gameID).emit('initiative-ready');
 
     // Otherwise, simply switch the turn player to the opposite color
-    } else {
+    } else
         gameState.turnPlayer = (gameState.turnPlayer === 'blue' ? 'red' : 'blue');
-        console.log("AUTO NEXT");
-    }
 };
 
 // Disconnect handler

@@ -6,7 +6,7 @@
 
 
 // Attempt to get sessionID from sessionStorage (local to each browser tab)
-const sessionID = sessionStorage.getItem('sessionID');
+sessionID = sessionStorage.getItem('sessionID');
 
 // Create the socket and include sessionID (will be empty if no sessionID was found in sessionStorage)
 const socket = io({
@@ -19,6 +19,8 @@ socket.on('session', (data) => {
 
     // Save the included sessionID
     sessionID = data;
+
+    console.log(sessionID);
 });
 
 // This event is fired whenever an error occurs server-side regarding session status
