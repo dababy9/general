@@ -40,16 +40,6 @@ app.get('/game', (req, res) => {
     res.sendFile(path.resolve(htmlPath + 'game.html'));
 });
 
-// Status error endpoint
-app.get('/status-error', (req, res) => {
-    res.sendFile(path.resolve(htmlPath + 'status-error.html'));
-});
-
-// Message error endpoint
-app.get('/message-error', (req, res) => {
-    res.sendFile(path.resolve(htmlPath + 'message-error.html'));
-});
-
 // ----------------------------------------
 
 
