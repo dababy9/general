@@ -64,8 +64,6 @@ io.use((socket, next) => {
     // If the client does not already have a session
     } else {
 
-        console.log("NEW SESSION");
-
         // Generate new session info
         sessionID = randomID();
         session = createInitialSession();
@@ -79,7 +77,7 @@ io.use((socket, next) => {
     socket.data.session = session;
 
     // Send the sessionID to the client
-    socket.emit('session', sessionID);
+    socket.emit('session', { 'id': sessionID, 'stat': session.stat });
 
     // Leave the default room (socket.id) and join room identified by the sessionID instead
     socket.leave(socket.id);

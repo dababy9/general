@@ -14,23 +14,19 @@ const socket = io({
 });
 
 // This event will be fired by server upon a new session being started
-// Message will include sessionID
-socket.on('session', (data) => {
+// Message will include sessionID and the status of the session (used for redirection)
+socket.on('session', ({id, stat}) => {
 
     // Save the included sessionID
-    sessionID = data;
-
-    console.log(sessionID);
+    sessionID = id;
 });
 
-// This event is fired whenever an error occurs server-side regarding session status
-// For example, if a user somehow sends a message to update game state before joining a game
-socket.on('status-error', () => {
-    window.location.replace('/status-error');
-});
+// This event is fired when the server puts the client into a game.
+socket.on('game-start', () => {
 
-// This event is fired whenever an error occurs server-side regarding an unrecognized or malformed client message
-// For example, if a client sends the server a 'fetch' message with no resource specified
-socket.on('message-error', () => {
-    window.location.replace('/message-error')
+    // First, save the sessionID in the browser tab's sessionStorage to maintain the session
+    sessionStorage.setItem('sessionID', sessionID);
+
+    // Then, redirect to the game board page
+    window.location.replace('/game');
 });
