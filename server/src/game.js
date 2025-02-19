@@ -26,7 +26,7 @@ const newGame = (blueID, redID) => {
         blueInitiative: false,
         redInitiative: false,
         inPlay: false,
-        messages: [{from: 'server', data: "Game Initialized!"}],
+        messages: [{ from: 'server', data: "Game Initialized!" }],
         gameState: createInitialState()
     }
 
@@ -42,7 +42,7 @@ const initiativeRoll = () => {
     blueRoll = redRoll = 0;
 
     // Roll until a tie is broken
-    while (blueRoll === redRoll){
+    while (blueRoll === redRoll) {
         blueRoll = d6();
         redRoll = d6();
     }

@@ -1,3 +1,6 @@
-- make sure to save sessionID to sessionStorage when user clicks button
-- change documentation a lot
-- add a log file
+- update documentation
+- check when game is over
+- redirect based on status?
+- cancel matchmaking functionality
+- start on action functionality
+- 
