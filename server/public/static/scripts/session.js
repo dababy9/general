@@ -14,8 +14,8 @@ const socket = io({
 });
 
 // This event will be fired by server upon a new session being started
-// Message will include sessionID and the status of the session (used for redirection)
-socket.on('session', ({id, stat}) => {
+// Message will include sessionID
+socket.on('session', (id) => {
 
     // Save the included sessionID
     sessionID = id;

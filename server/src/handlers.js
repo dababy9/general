@@ -111,7 +111,7 @@ const handleJoinGame = (gameID, sessionID, session, io) => {
 // DEVELOPER TOOL
 const handleDevPlay = (sessionID, session, io) => {
     startGame(randomID(), session, sessionID, session, sessionID, io);
-}
+};
 
 // Send Message handler
 const handleMessageSend = (message, gameData, session, io) => {
@@ -152,7 +152,7 @@ const handleInitiative = (gameData, session, io) => {
         gameData.blueInitiative = gameData.redInitiative = false;
 
         // Get roll results: { winner, blueRoll, redRoll }
-        result = game.initiativeRoll();
+        let result = game.initiativeRoll();
 
         // Set the turn player based on results
         gameData.gameState.turnPlayer = result.winner;

@@ -8,7 +8,7 @@ const { Server } = require('socket.io');
 const path = require('path');
 const { randomBytes } = require('crypto');
 const handler = require('./handlers');
-const { sessionStore, gameStore, createInitialSession } = require('./objects.js');
+const { sessionStore, gameStore, quickPlayQueue, privateGameTable, createInitialSession } = require('./objects.js');
 
 // Used for generating random sessionIDs
 const randomID = () => randomBytes(16).toString('hex');
@@ -48,8 +48,8 @@ app.get('/game', (req, res) => {
 io.use((socket, next) => {
 
     // Attempt to retrieve a previous session from the socket's handshake object
-    sessionID = socket.handshake.auth.sessionID;
-    session = sessionStore.get(sessionID);
+    let sessionID = socket.handshake.auth.sessionID;
+    let session = sessionStore.get(sessionID);
 
     // If the client already has a session
     if (session) {
@@ -77,7 +77,7 @@ io.use((socket, next) => {
     socket.data.session = session;
 
     // Send the sessionID to the client
-    socket.emit('session', { 'id': sessionID, 'stat': session.stat });
+    socket.emit('session', sessionID);
 
     // Leave the default room (socket.id) and join room identified by the sessionID instead
     socket.leave(socket.id);
@@ -125,6 +125,18 @@ io.on('connection', (socket) => {
                 handler.handleDevPlay(sessionID, session, io);
                 break;
         }
+    });
+
+    // General request for client to exit matchmaking
+    socket.on('leave', (type) => {
+
+        // Client attempts to leave the quick-play queue
+        if (type === 'quick' && session.stat === 'quick-play')
+            handler.handleLeaveQuickPlay(sessionID);
+
+        // Client attempts to leave private game (before another client joins it)
+        if (type === 'private' && session.stat === 'private-play' && session.gameID)
+            privateGameTable.delete(session.gameID);
     });
 
     // General request for client to do something while in a game
