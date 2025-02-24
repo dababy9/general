@@ -15,13 +15,11 @@ const createInitialSession = () => {
 }
 
 // Function to return a node on the game map (only used in creation of the initial game state)
-const createTile = (civ, blue = 0, red = 0) => {
-    return {
-        civilians: civ,
-        blueArmies: blue,
-        redArmies: red
-    }
-}
+const createTile = (civ = 0, blue = 0, red = 0) => [
+    ...Array.from({ length: civ }, () => ({ type: 'civ' })),
+    ...Array.from({ length: blue }, () => ({ type: 'blue', hasMoved: false })),
+    ...Array.from({ length: red })
+]
 
 // Returns a number 1-6 (only used in creation of the initial game state)
 const d6 = () => { return Math.floor(Math.random()*6)+1; }
@@ -44,24 +42,24 @@ const createInitialState = () => {
         nodes: {
             'blueBase': createTile(d6(), 16, 0),
             'redBase': createTile(d6(), 0, 16),
-            'city4': createTile(d6()+d6()),
-            'city6': createTile(d6()+d6()),
-            'city9': createTile(d6()+d6()),
-            'city10': createTile(d6()+d6()),
-            'village2': createTile(d6()),
-            'village3': createTile(d6()),
-            'village7': createTile(d6()),
-            'village8': createTile(d6()),
-            'haven1': createTile(0),
-            'haven2': createTile(0),
-            'haven3': createTile(0),
-            'haven4': createTile(0),
-            'haven5': createTile(0),
-            'haven6': createTile(0),
-            'haven7': createTile(0),
-            'haven8': createTile(0),
-            'haven9': createTile(0),
-            'haven10': createTile(0)
+            'city4': Array.from({ length: d6()+d6() }, () => { type: 'civ' }),
+            'city6': Array.from({ length: d6()+d6() }, () => { type: 'civ' }),
+            'city9': Array.from({ length: d6()+d6() }, () => { type: 'civ' }),
+            'city10': Array.from({ length: d6()+d6() }, () => { type: 'civ' }),
+            'village2': Array.from({ length: d6() }, () => { type: 'civ' }),
+            'village3': Array.from({ length: d6() }, () => { type: 'civ' }),
+            'village7': Array.from({ length: d6() }, () => { type: 'civ' }),
+            'village8': Array.from({ length: d6() }, () => { type: 'civ' }),
+            'haven1': [],
+            'haven2': [],
+            'haven3': [],
+            'haven4': [],
+            'haven5': [],
+            'haven6': [],
+            'haven7': [],
+            'haven8': [],
+            'haven9': [],
+            'haven10': []
         }
     };
 

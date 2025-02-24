@@ -39,7 +39,7 @@ const handleQuickPlay = (sessionID, session, io) => {
         // Add the client to the queue
         quickPlayQueue.push(sessionID);
 
-        // Set the client status accordingly
+        // Set client status to 'quick-play'
         session.stat = 'quick-play';
 
     // If the quick-play queue is not empty
@@ -50,18 +50,16 @@ const handleQuickPlay = (sessionID, session, io) => {
         const opponentSession = sessionStore.get(opponentSessionID);
 
         // If opponent session doesn't exist, just re-call this handler function
-        if (!opponentSession)
+        if (!opponentSession) {
             handleQuickPlay(sessionID, session, io);
-        
-        // Otherwise, join the two clients in a game
-        else {
-
-            // Generate a random ID for the game
-            const gameID = randomID();
-
-            // Start the game
-            startGame(gameID, session, sessionID, opponentSession, opponentSessionID, io);
+            return;
         }
+
+        // Generate a random ID for the game
+        const gameID = randomID();
+
+        // Start the game
+        startGame(gameID, session, sessionID, opponentSession, opponentSessionID, io);
     }
 };
 
@@ -88,24 +86,25 @@ const handleJoinGame = (gameID, sessionID, session, io) => {
     const opponentSessionID = privateGameTable.get(gameID);
 
     // If no entry was found, send an invalid game error to client
-    if (!opponentSessionID)
-        io.to(sessionID).emit('invalid-game');
-    
-    // Otherwise, attempt to join the two clients in a game
-    else {
-
-        // Delete the entry from privateGameTable to prevent any other clients from joining game
-        privateGameTable.delete(gameID);
-
-        // Retrieve the opponent's session
-        const opponentSession = sessionStore.get(opponentSessionID);
-
-        // If opponent session doesn't exist, terminate function
-        if (!opponentSession) return;
-
-        // Start the game
-        startGame(gameID, session, sessionID, opponentSession, opponentSessionID, io);
+    if (!opponentSessionID) {
+        io.to(sessionID).emit('error', 'invalid-game');
+        return;
     }
+
+    // Delete the entry from privateGameTable to prevent any other clients from joining game
+    privateGameTable.delete(gameID);
+
+    // Retrieve the opponent's session
+    const opponentSession = sessionStore.get(opponentSessionID);
+
+    // If opponent session doesn't exist, send an invalid game error to client
+    if (!opponentSession) {
+        io.to(sessionID).emit('error', 'invalid-game');
+        return;
+    }
+
+    // Start the game
+    startGame(gameID, session, sessionID, opponentSession, opponentSessionID, io);
 };
 
 // DEVELOPER TOOL
@@ -114,11 +113,19 @@ const handleDevPlay = (sessionID, session, io) => {
 };
 
 // Send Message handler
-const handleMessageSend = (message, gameData, session, io) => {
+const handleMessageSend = (message, gameData, sessionID, session, io) => {
 
-    // Make sure the message is a string under 500 characters
-    if (typeof message !== 'string') return;
-    if (message.length > 500) return;
+    // If the message isn't a string, send a message type error to client
+    if (typeof message !== 'string'){
+        io.to(sessionID).emit('error', 'message-type');
+        return;
+    }
+
+    // If the message is longer than 500 characters, send a message length error to client
+    if (message.length > 500){
+        io.to(sessionID).emit('error', 'message-length');
+        return;
+    }
 
     // Sanitize message to eliminate XSS
     message = sanitizeHtml(message, { allowedTags: [], allowedAttributes: {} });

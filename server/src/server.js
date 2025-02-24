@@ -166,7 +166,7 @@ io.on('connection', (socket) => {
 
             // Client requests to send a message in-game (in this case, 'arg' is the message)
             case 'send-message':
-                handler.handleMessageSend(arg, gameData, session, io);
+                handler.handleMessageSend(arg, gameData, sessionID, session, io);
                 break;
 
             // Client requests to roll for initiative
