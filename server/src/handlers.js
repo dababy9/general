@@ -175,42 +175,45 @@ const handleAction = ({ type, action }, gameData, session, io) => {
     // Make sure it's the client's turn
     if (gameData.gameState.turnPlayer !== session.color) return;
 
+    // Used to store result of action processing
+    let result;
+
     // Check the type of action
     switch (type) {
 
         // Move action
         case 'move':
-            game.moveAction(gameData, action);
+            result = game.moveAction(gameData, action);
             break;
 
         // CHMR action
         case 'chmr':
-            game.CHMRAction(gameData, action);
+            result = game.CHMRAction(gameData, action);
             break;
 
         // Humanitarian Aid action
         case 'humanitarian-aid':
-            game.humanitarianAidAction(gameData, action);
+            result = game.humanitarianAidAction(gameData, action);
             break;
 
         // Surge action
         case 'surge':
-            game.surgeAction(gameData, action);
+            result = game.surgeAction(gameData, action);
             break;
 
         // Influence Operation action
         case 'influence-operation':
-            game.influenceOperationAction(gameData, action);
+            result = game.influenceOperationAction(gameData, action);
             break;
 
         // Artillery Fire action
         case 'artillery-fire':
-            game.artilleryFireAction(gameData, action);
+            result = game.artilleryFireAction(gameData, action);
             break;
 
         // Air Strike action
         case 'air-strike':
-            game.airStrikeAction(gameData, action);
+            result = game.airStrikeAction(gameData, action);
             break;
     }
 };

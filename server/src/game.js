@@ -25,7 +25,7 @@ const newGame = (blueID, redID) => {
         redSessionID: redID,
         blueInitiative: false,
         redInitiative: false,
-        status: '',
+        status: 'default',
         messages: [{from: 'server', data: "Game Initialized!"}],
         gameState: createInitialState()
     }
