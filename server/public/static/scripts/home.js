@@ -1,6 +1,5 @@
 socket.on('game-start', () => {
     sessionStorage.setItem('sessionID', sessionID);
-    alert(sessionID);
     window.location.replace('/game');
 });
 

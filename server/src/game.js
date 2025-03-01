@@ -1,5 +1,5 @@
 // Import initial game state
-const { createInitialState } = require('./objects');
+const { createInitialState, nodeMap, fullMap } = require('./objects');
 
 // Returns a number 1-6, used as a digital 'dice roll'
 const d6 = () => {
@@ -16,6 +16,11 @@ const d6Sum = (rolls) => {
     return d6Array(rolls).reduce((sum, roll) => sum+roll, 0);
 };
 
+// Function that retrieves the correct player object from a gameState given the color
+const getPlayer = (gameData, color) => {
+    return (color === 'blue' ? gameData.gameState.bluePlayer : gameData.gameState.redPlayer);
+};
+
 // Function that creates and returns a new game given two sessionIDs
 const newGame = (blueID, redID) => {
 
@@ -26,6 +31,7 @@ const newGame = (blueID, redID) => {
         blueInitiative: false,
         redInitiative: false,
         status: 'default',
+        info: [],
         messages: [{from: 'server', data: "Game Initialized!"}],
         gameState: createInitialState()
     }
@@ -51,9 +57,76 @@ const initiativeRoll = () => {
     return { 'winner': blueRoll > redRoll ? 'blue' : 'red', 'blueRoll': blueRoll, 'redRoll': redRoll };
 };
 
-// Function that processes/validates a 'Move' action
-const moveAction = (gameData, action) => {
+// Used for validating an input of two nodes
+const twoNodeInputValidation = (input) => {
 
+    // Ensure that the input exists, is an array, and is exactly two elements
+    if (!input || !Array.isArray(input) || input.length != 2) return;
+
+    // Ensure that both elements are strings
+    if (typeof input[0] !== 'string' || typeof input[1] !== 'string') return;
+
+    // Ensure that both elements are valid node names
+    if (!nodeMap.has(input[0]) || !nodeMap.has(input[1])) return;
+
+    // Return true to indicate successful validation
+    return true;
+};
+
+// Function that processes/validates the client selecting two nodes to move from
+const moveSelectAction = (gameData, nodes, color) => {
+
+    // Input validation
+    if (!twoNodeInputValidation(nodes)) return;
+
+    // Grab individual elements
+    const [node1, node2] = nodes;
+
+    // Check if user selected nodes with moveable armies
+    if (!gameData.gameState.nodes[node1].some(x => x.type === color && !x.hasMoved) || !gameData.gameState.nodes[node2].some(x => x.type === color && !x.hasMoved))
+        return { type: 'error', error: 'no-moveable-army'};
+
+    // Set game status and info
+    gameData.status = 'move';
+    gameData.info = [node1, node2];
+
+    // Return lists of valid nodes to move to
+    return { type: 'move-lists', to: 'client', data: [nodeMap.get(node1), nodeMap.get(node2)]};
+};
+
+// Function that moves a given color piece from one node to another
+const movePiece = (fromNode, toNode, nodes, color) => {
+    nodes[fromNode].splice(nodes[fromNode].indexOf({ type: color, hasMoved: false }));
+    nodes[toNode].push({ type: color, hasMoved: true });
+};
+
+// Function that processes/validates the client actually moving armies
+const moveConfirmAction = (gameData, nodes, color) => {
+
+    // Input validation
+    if (!twoNodeInputValidation(nodes)) return;
+
+    // Grab individual elements
+    const [node1, node2] = nodes;
+
+    // Grab previous selections
+    const [from1, from2] = gameData.info;
+
+    if (!nodeMap.get(from1).includes(node1) || !nodeMap.get(from2).includes(node2))
+        return { type: 'error', error: 'unconnected-node' };
+
+    // Set game status
+    gameData.status = 'default';
+
+    // Subtract CP from turn player
+    getPlayer(gameData, color).cp--;
+
+    // Modify game state accordingly
+    movePiece(from1, node1, gameData.gameState.nodes, color);
+    movePiece(from2, node2, gameData.gameState.nodes, color);
+
+    // Return new game state
+    return { type: 'move', to: 'both', data: gameData.gameState };
 };
 
 // Function that processes/validates a 'CHMR' action
@@ -90,7 +163,8 @@ const airStrikeAction = (gameData, action) => {
 module.exports = {
     newGame,
     initiativeRoll,
-    moveAction,
+    moveSelectAction,
+    moveConfirmAction,
     CHMRAction,
     humanitarianAidAction,
     surgeAction,

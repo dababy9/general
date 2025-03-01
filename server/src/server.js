@@ -140,7 +140,7 @@ io.on('connection', (socket) => {
     });
 
     // General request for client to do something while in a game
-    socket.on('game', (type, arg = null) => {
+    socket.on('game', (type, arg) => {
 
         // Make sure the client is in the 'game' status
         if (session.stat !== 'game') return;
@@ -164,6 +164,11 @@ io.on('connection', (socket) => {
                 socket.emit('game-state', JSON.stringify(gameData.gameState));
                 break;
 
+            // Client requests their player color
+            case 'fetch-color':
+                socket.emit('color', session.color);
+                break;
+
             // Client requests to send a message in-game (in this case, 'arg' is the message)
             case 'send-message':
                 handler.handleMessageSend(arg, gameData, sessionID, session, io);
@@ -176,7 +181,7 @@ io.on('connection', (socket) => {
 
             // Client requests to take an action in-game (in this case, 'arg' is an object with the type of action and the actual action)
             case 'action':
-                handler.handleAction(arg, gameData, session, io);
+                handler.handleAction(arg, gameData, sessionID, session, io);
                 break;
 
             // Client requests to end their turn

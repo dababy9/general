@@ -5,7 +5,7 @@ const { sessionStore, gameStore, quickPlayQueue, privateGameTable } = require('.
 const game = require('./game');
 
 // Used for generating random gameIDs
-const randomID = () => randomBytes(16).toString('hex');
+const randomID = () => randomBytes(3).toString('hex');
 
 // Function that takes necessary variables and starts a game
 const startGame = (gameID, session, sessionID, opponentSession, opponentSessionID, io) => {
@@ -170,22 +170,30 @@ const handleInitiative = (gameData, session, io) => {
 }
 
 // Action handler
-const handleAction = ({ type, action }, gameData, session, io) => {
+const handleAction = ({ type, action }, gameData, sessionID, session, io) => {
 
     // Make sure it's the client's turn
     if (gameData.gameState.turnPlayer !== session.color) return;
 
+    // Retrieve game status
+    const status = gameData.status;
+
     // Used to store result of action processing
-    let result;
+    let result = null;
 
     // Check the type of action
     switch (type) {
 
-        // Move action
-        case 'move':
-            result = game.moveAction(gameData, action);
+        // Move selection action
+        case 'move-select':
+            if (status === 'default') result = game.moveSelectAction(gameData, action, session.color);
             break;
 
+        // Move confirmation action
+        case 'move-confirm':
+            if (status === 'move') result = game.moveConfirmAction(gameData, action, session.color);
+            break;
+            
         // CHMR action
         case 'chmr':
             result = game.CHMRAction(gameData, action);
@@ -215,6 +223,19 @@ const handleAction = ({ type, action }, gameData, session, io) => {
         case 'air-strike':
             result = game.airStrikeAction(gameData, action);
             break;
+    }
+
+    // If the result is undefined, just return and do nothing
+    if (!result) return;
+
+    // If the result was an error, send it to the client
+    if (result.type === 'error')
+        io.to(sessionID).emit('error', result.error);
+
+    // Otherwise, send the result to one or both clients (depending on the 'to' field)
+    else {
+        if (result.to === 'client') io.to(sessionID).emit(result.type, JSON.stringify(result.data));
+        else io.to(session.gameID).emit(result.type, JSON.stringify(result.data));
     }
 };
 
