@@ -201,7 +201,7 @@ const handleAction = ({ type, action }, gameData, sessionID, session, io) => {
 
         // Humanitarian Aid action
         case 'humanitarian-aid':
-            result = game.humanitarianAidAction(gameData, action);
+            result = game.humanitarianAidAction(gameData, session.color);
             break;
 
         // Surge action

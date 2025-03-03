@@ -76,6 +76,9 @@ const twoNodeInputValidation = (input) => {
 // Function that processes/validates the client selecting two nodes to move from
 const moveSelectAction = (gameData, nodes, color) => {
 
+    // Make sure turn player has enough CP
+    if (getPlayer(gameData, color).cp < 1) return;
+
     // Input validation
     if (!twoNodeInputValidation(nodes)) return;
 
@@ -112,6 +115,7 @@ const moveConfirmAction = (gameData, nodes, color) => {
     // Grab previous selections
     const [from1, from2] = gameData.info;
 
+    // Check if the selected nodes are actually connected
     if (!nodeMap.get(from1).includes(node1) || !nodeMap.get(from2).includes(node2))
         return { type: 'error', error: 'unconnected-node' };
 
@@ -135,13 +139,45 @@ const CHMRAction = (gameData, action) => {
 };
 
 // Function that processes/validates a 'Humanitarian Aid' action
-const humanitarianAidAction = (gameData, action) => {
+const humanitarianAidAction = (gameData, color) => {
 
+    // Retrieve player object
+    let player = getPlayer(gameData, color);
+
+    // Make sure turn player has enough CP
+    if (player.cp < 2) return;
+
+    // Subtract CP from turn player
+    player.cp -= 2;
+
+    // Perform dice roll
+    let roll = d6();
+
+    // Adjust turn player support tracker accordingly
+    if (roll === 6 && player.support < 6) player.support++;
+
+    // Return dice roll result and new game state
+    return { type: 'humanitarianAid', to: 'both', data: { result: roll, gameState: gameData.gameState }};
 };
 
 // Function that processes/validates a 'Surge' action
-const surgeAction = (gameData, action) => {
+const surgeAction = (gameData, color) => {
 
+    // Retrieve player object
+    let player = getPlayer(gameData, color);
+
+    // Make sure turn player has enough CP and availalbe units
+    if (player.cp < 3 || player.surgeArmies < 4) return;
+
+    // Subtract CP and surgeArmies from turn player
+    player.cp -= 3;
+    player.surgeArmies -= 4;
+    
+    // Add units to the corresponding base
+    gameData.gameState.nodes[color + 'Base'].push(...Array.from({ length: 4 }, () => ({ type: color, hasMoved: false })))
+
+    // Return new game state
+    return { type: 'surge', to: 'both', data: gameData.gameState };
 };
 
 // Function that processes/validates a 'Influence Operation' action
