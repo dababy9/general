@@ -166,7 +166,7 @@ const surgeAction = (gameData, color) => {
     // Retrieve player object
     let player = getPlayer(gameData, color);
 
-    // Make sure turn player has enough CP and availalbe units
+    // Make sure turn player has enough CP and available units
     if (player.cp < 3 || player.surgeArmies < 4) return;
 
     // Subtract CP and surgeArmies from turn player
@@ -181,8 +181,21 @@ const surgeAction = (gameData, color) => {
 };
 
 // Function that processes/validates a 'Influence Operation' action
-const influenceOperationAction = (gameData, action) => {
+const influenceOperationAction = (gameData, color) => {
 
+    // Retrieve player object
+    let player = getPlayer(gameData, color)
+
+    // Make sure turn player has enough CP
+    if (player.cp < 3) return;
+
+    // Subtract CP from turn player
+    player.cp -= 3;
+
+    // Retrieve opponent player object
+    let opponent = getPlayer(gameData, (color === 'blue' ? 'red' : 'blue'));
+
+    // TODO -------------------------------
 };
 
 // Function that processes/validates a 'Artillery Fire' action
