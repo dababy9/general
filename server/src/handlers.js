@@ -117,13 +117,13 @@ const handleMessageSend = (message, gameData, sessionID, session, io) => {
 
     // If the message isn't a string, send a message type error to client
     if (typeof message !== 'string'){
-        io.to(sessionID).emit('error', 'message-type');
+        io.to(sessionID).emit('message-type-error');
         return;
     }
 
     // If the message is longer than 500 characters, send a message length error to client
     if (message.length > 500){
-        io.to(sessionID).emit('error', 'message-length');
+        io.to(sessionID).emit('message-length-error');
         return;
     }
 
@@ -137,7 +137,7 @@ const handleMessageSend = (message, gameData, sessionID, session, io) => {
     gameData.messages.push(messageObject);
 
     // Send the message to both clients
-    io.to(session.gameID).emit('new-message', messageObject);
+    io.to(session.gameID).emit('new-message', JSON.stringify(messageObject));
 };
 
 // Initiative handler
@@ -165,7 +165,7 @@ const handleInitiative = (gameData, session, io) => {
         gameData.gameState.turnPlayer = result.winner;
 
         // Send results to clients
-        io.to(session.gameID).emit('initiative-result', result);
+        io.to(session.gameID).emit('initiative-result', JSON.stringify(result));
     }
 }
 
@@ -257,9 +257,10 @@ const handleEndTurn = (gameState, session, io) => {
         // Indicate to both clients that they need to roll for initiative
         io.to(session.gameID).emit('initiative-ready');
 
-    // Otherwise, simply switch the turn player to the opposite color
+    // Otherwise, simply switch the turn player to the opposite color and notify both clients
     } else
         gameState.turnPlayer = (gameState.turnPlayer === 'blue' ? 'red' : 'blue');
+        io.to(session.gameID).emit('new-turn', gameState.turnPlayer);
 };
 
 // Disconnect handler

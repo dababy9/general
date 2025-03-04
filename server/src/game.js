@@ -45,16 +45,16 @@ const newGame = (blueID, redID) => {
 const initiativeRoll = () => {
 
     // Rolls to be returned
-    let blueRoll = 0, redRoll = 0;
+    let bRoll = 0, rRoll = 0;
 
     // Roll until a tie is broken
-    while (blueRoll === redRoll){
-        blueRoll = d6();
-        redRoll = d6();
+    while (bRoll === rRoll){
+        bRoll = d6();
+        rRoll = d6();
     }
 
     // Return result
-    return { 'winner': blueRoll > redRoll ? 'blue' : 'red', 'blueRoll': blueRoll, 'redRoll': redRoll };
+    return { winner: bRoll > rRoll ? 'blue' : 'red', blueRoll: bRoll, redRoll: rRoll };
 };
 
 // Used for validating an input of two nodes
