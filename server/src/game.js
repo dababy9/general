@@ -11,14 +11,19 @@ const d6Array = (rolls) => {
     return Array.from({ length: rolls }, d6())
 };
 
-// Returns a sum total of a given number of d6 rolls
-const d6Sum = (rolls) => {
-    return d6Array(rolls).reduce((sum, roll) => sum+roll, 0);
-};
-
 // Function that retrieves the correct player object from a gameState given the color
 const getPlayer = (gameData, color) => {
     return (color === 'blue' ? gameData.gameState.bluePlayer : gameData.gameState.redPlayer);
+};
+
+// Function that returns a list of armies on a given node of a given color
+const getArmies = (gameData, color, node) => {
+    return gameData.gameState.nodes[node].filter(x => x.type === color);
+};
+
+// Return how many moveable armies of a given color exist on a given node
+const moveableArmies = (gameData, color, node) => {
+    return getArmies(gameData, color, node).filter(x => !x.hasMoved).length;
 };
 
 // Function that creates and returns a new game given two sessionIDs
@@ -58,16 +63,16 @@ const initiativeRoll = () => {
 };
 
 // Used for validating an input of two nodes
-const twoNodeInputValidation = (input) => {
+const moveInputValidation = (input) => {
 
-    // Ensure that the input exists, is an array, and is exactly two elements
-    if (!input || !Array.isArray(input) || input.length != 2) return;
+    // Ensure that the input exists, is an array, and is either one or two elements
+    if (!input || !Array.isArray(input) || !(input.length === 2 || input.length === 1)) return;
 
-    // Ensure that both elements are strings
-    if (typeof input[0] !== 'string' || typeof input[1] !== 'string') return;
+    // Ensure that first element is a string and the name of a node
+    if (typeof input[0] !== 'string' || !nodeMap.has(input[0])) return;
 
-    // Ensure that both elements are valid node names
-    if (!nodeMap.has(input[0]) || !nodeMap.has(input[1])) return;
+    // If there is a second element, ensure that it is a strign and the name of a node
+    if (input[1] && (typeof input[1] !== 'string' || !nodeMap.has(input[1]))) return;
 
     // Return true to indicate successful validation
     return true;
@@ -80,18 +85,28 @@ const moveSelectAction = (gameData, nodes, color) => {
     if (getPlayer(gameData, color).cp < 1) return;
 
     // Input validation
-    if (!twoNodeInputValidation(nodes)) return;
+    if (!moveInputValidation(nodes)) return;
 
     // Grab individual elements
     const [node1, node2] = nodes;
 
-    // Check if user selected nodes with moveable armies
-    if (!gameData.gameState.nodes[node1].some(x => x.type === color && !x.hasMoved) || !gameData.gameState.nodes[node2].some(x => x.type === color && !x.hasMoved))
-        return { type: 'error', error: 'no-moveable-army'};
+    // If client only selected one node, make sure it has a moveable army
+    if (!node2 && moveableArmies(gameData, color, node1) < 1)
+        return { type: 'error', error: 'no-moveable-army' };
+
+    // If the client selected two identical nodes, make sure the node has at least two moveable armies
+    if (node2 && node1 === node2 && moveableArmies(gameData, color, node1) < 2)
+        return { type: 'error', error: 'no-moveable-army' };
+
+    // If the client selected two different nodes, make sure they each have a moveable army
+    if (node2 && node1 !== node2 && (!moveableArmies(gameData, color, node1) || !moveableArmies(gameData, color, node2)))
+        return { type: 'error', error: 'no-moveable-army' };
 
     // Set game status and info
     gameData.status = 'move';
     gameData.info = [node1, node2];
+
+    // TODO ------------------------- MAYBE ONLY ADD ONE NODE TO LISTS IF THEY ONLY SELECTED ONE????
 
     // Return lists of valid nodes to move to
     return { type: 'move-lists', to: 'client', data: [nodeMap.get(node1), nodeMap.get(node2)]};
@@ -107,7 +122,7 @@ const movePiece = (fromNode, toNode, nodes, color) => {
 const moveConfirmAction = (gameData, nodes, color) => {
 
     // Input validation
-    if (!twoNodeInputValidation(nodes)) return;
+    if (!moveInputValidation(nodes)) return;
 
     // Grab individual elements
     const [node1, node2] = nodes;

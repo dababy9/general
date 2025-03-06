@@ -7,6 +7,7 @@ socket.on('game-state', (game) => {
 });
 
 socket.on('new-message', (message) => {
+    message = JSON.parse(message);
     console.log(message.from + ": " + message.data);
 });
 
@@ -17,6 +18,11 @@ socket.on('move-lists', (data) => {
 
 socket.on('move', (data) => {
     console.log('MOVE SUCCESS');
+    console.log(data);
+});
+
+socket.on('humanitarianAid', (data) => {
+    console.log('humAID');
     console.log(data);
 });
 
@@ -33,11 +39,15 @@ document.getElementById('sendmessage').addEventListener('click', () => {
 });
 
 document.getElementById('moveselect').addEventListener('click', () => {
-    socket.emit('game', 'action', {type: 'move-select', action: [document.getElementById('move1').value, document.getElementById('move2').value]})
+    socket.emit('game', 'action', {type: 'move-select', data: [document.getElementById('move1').value, document.getElementById('move2').value]})
 });
 
 document.getElementById('moveconfirm').addEventListener('click', () => {
-    socket.emit('game', 'action', {type: 'move-confirm', action: [document.getElementById('move1').value, document.getElementById('move2').value]})
+    socket.emit('game', 'action', {type: 'move-confirm', data: [document.getElementById('move1').value, document.getElementById('move2').value]})
+});
+
+document.getElementById('humaid').addEventListener('click', () => {
+    socket.emit('game', 'action', { type: 'humanitarian-aid'});
 });
 
 document.getElementById('initiative').addEventListener('click', () => {

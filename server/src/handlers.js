@@ -170,7 +170,7 @@ const handleInitiative = (gameData, session, io) => {
 }
 
 // Action handler
-const handleAction = ({ type, action }, gameData, sessionID, session, io) => {
+const handleAction = ({ type, data }, gameData, sessionID, session, io) => {
 
     // Make sure it's the client's turn
     if (gameData.gameState.turnPlayer !== session.color) return;
@@ -186,12 +186,12 @@ const handleAction = ({ type, action }, gameData, sessionID, session, io) => {
 
         // Move selection action
         case 'move-select':
-            if (status === 'default') result = game.moveSelectAction(gameData, action, session.color);
+            if (status === 'default') result = game.moveSelectAction(gameData, data, session.color);
             break;
 
         // Move confirmation action
         case 'move-confirm':
-            if (status === 'move') result = game.moveConfirmAction(gameData, action, session.color);
+            if (status === 'move') result = game.moveConfirmAction(gameData, data, session.color);
             break;
             
         // CHMR action
@@ -201,17 +201,17 @@ const handleAction = ({ type, action }, gameData, sessionID, session, io) => {
 
         // Humanitarian Aid action
         case 'humanitarian-aid':
-            result = game.humanitarianAidAction(gameData, session.color);
+            if (status === 'default') result = game.humanitarianAidAction(gameData, session.color);
             break;
 
         // Surge action
         case 'surge':
-            result = game.surgeAction(gameData, action);
+            if (status === 'default') result = game.surgeAction(gameData, session.color);
             break;
 
         // Influence Operation action
         case 'influence-operation':
-            result = game.influenceOperationAction(gameData, action);
+            if (status === 'default') result = game.influenceOperationAction(gameData, session.color);
             break;
 
         // Artillery Fire action
