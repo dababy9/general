@@ -47,39 +47,90 @@ class Game {
         // Return result
         return { winner: bRoll > rRoll ? 'blue' : 'red', blueRoll: bRoll, redRoll: rRoll };
     }
-}
 
-// Function that retrieves the correct player object from a gameState given the color
-const getPlayer = (gameData, color) => {
-    return (color === 'blue' ? gameData.gameState.bluePlayer : gameData.gameState.redPlayer);
-};
+    // Method to retrieve a player object given a corresponding color
+    getPlayer (color) {
 
-// Function that returns a list of armies on a given node of a given color
-const getArmies = (gameData, color, node) => {
-    return gameData.gameState.nodes[node].filter(x => x.type === color);
-};
+        // Return corresponding player given the string 'blue' or 'red'
+        switch (color) {
+            case 'blue': return this.gameState.bluePlayer;
+            case 'red': return this.gameState.redPlayer;
+        }
 
-// Return how many moveable armies of a given color exist on a given node
-const moveableArmies = (gameData, color, node) => {
-    return getArmies(gameData, color, node).filter(x => !x.hasMoved).length;
-};
-
-// Function that returns whether the given node contains armies of both colors
-
-const initiativeRoll = () => {
-
-    // Rolls to be returned
-    let bRoll = 0, rRoll = 0;
-
-    // Roll until a tie is broken
-    while (bRoll === rRoll){
-        bRoll = d6();
-        rRoll = d6();
+        // Return null if given anything else
+        return null;
     }
 
-    // Return result
-    return { winner: bRoll > rRoll ? 'blue' : 'red', blueRoll: bRoll, redRoll: rRoll };
-};
+    // Method to return a list of armies of a given color on a given node
+    getArmies (color, node) {
+        return this.gameState.nodes[node].filter(x => x.type === color);
+    }
+
+    // Method to return number of moveable armies of a given color are on a given node
+    getMoveableArmies (color, node) {
+        return this.getArmies(color, node).filter(x => !x.hasMoved).length;
+    }
+
+    // Method to validate and process a 'Humanitarian Aid' action
+    humanitarianAidAction (color) {
+
+        // Retrieve player object
+        const player = this.getPlayer(color);
+
+        // Make sure turn player has enough CP
+        if (player.cp < 2) return;
+
+        // Subtract CP from turn player
+        player.cp -= 2;
+
+        // Perform dice roll
+        const roll = d6();
+
+        // Adjust turn player support tracker accordingly
+        if (roll === 6 && player.support < 6) player.support++;
+
+        // Return dice roll result and new game state
+        return { type: 'humanitarianAid', to: 'both', data: { result: roll, gameState: this.gameState }};
+    }
+
+    // Method to validate and process a 'Surge' action
+    surgeAction (color) {
+
+        // Retrieve player object
+        const player = this.getPlayer(color);
+
+        // Make sure turn player has enough CP and available units
+        if (player.cp < 3 || player.surgeArmies < 4) return;
+
+        // Subtract CP and surgeArmies from turn player
+        player.cp -= 3;
+        player.surgeArmies -= 4;
+        
+        // Add units to the corresponding base
+        this.gameState.nodes[color + 'Base'].push(...Array.from({ length: 4 }, () => ({ type: color, hasMoved: false })))
+
+        // Return new game state
+        return { type: 'surge', to: 'both', data: this.gameState };
+    }
+
+    // Method to validate and process an 'Influence Operation' action
+    influenceOperationAction (color) {
+
+        // Retrieve player object
+        const player = this.getPlayer(color)
+
+        // Make sure turn player has enough CP
+        if (player.cp < 3) return;
+
+        // Subtract CP from turn player
+        player.cp -= 3;
+
+        // Retrieve opponent player object
+        const opponent = getPlayer((color === 'blue' ? 'red' : 'blue'));
+
+        // TODO -------------------------------
+    }
+}
 
 // Used for validating an input of two nodes
 const moveInputValidation = (input) => {
@@ -175,66 +226,6 @@ const CHMRAction = (gameData, action) => {
 
 };
 
-// Function that processes/validates a 'Humanitarian Aid' action
-const humanitarianAidAction = (gameData, color) => {
-
-    // Retrieve player object
-    let player = getPlayer(gameData, color);
-
-    // Make sure turn player has enough CP
-    if (player.cp < 2) return;
-
-    // Subtract CP from turn player
-    player.cp -= 2;
-
-    // Perform dice roll
-    let roll = d6();
-
-    // Adjust turn player support tracker accordingly
-    if (roll === 6 && player.support < 6) player.support++;
-
-    // Return dice roll result and new game state
-    return { type: 'humanitarianAid', to: 'both', data: { result: roll, gameState: gameData.gameState }};
-};
-
-// Function that processes/validates a 'Surge' action
-const surgeAction = (gameData, color) => {
-
-    // Retrieve player object
-    let player = getPlayer(gameData, color);
-
-    // Make sure turn player has enough CP and available units
-    if (player.cp < 3 || player.surgeArmies < 4) return;
-
-    // Subtract CP and surgeArmies from turn player
-    player.cp -= 3;
-    player.surgeArmies -= 4;
-    
-    // Add units to the corresponding base
-    gameData.gameState.nodes[color + 'Base'].push(...Array.from({ length: 4 }, () => ({ type: color, hasMoved: false })))
-
-    // Return new game state
-    return { type: 'surge', to: 'both', data: gameData.gameState };
-};
-
-// Function that processes/validates a 'Influence Operation' action
-const influenceOperationAction = (gameData, color) => {
-
-    // Retrieve player object
-    let player = getPlayer(gameData, color)
-
-    // Make sure turn player has enough CP
-    if (player.cp < 3) return;
-
-    // Subtract CP from turn player
-    player.cp -= 3;
-
-    // Retrieve opponent player object
-    let opponent = getPlayer(gameData, (color === 'blue' ? 'red' : 'blue'));
-
-    // TODO -------------------------------
-};
-
 // Function that processes/validates a 'Artillery Fire' action
 const artilleryFireAction = (gameData, action) => {
 
@@ -247,14 +238,5 @@ const airStrikeAction = (gameData, action) => {
 
 // Set up export to be used in handlers.js
 module.exports = {
-    newGame,
-    initiativeRoll,
-    moveSelectAction,
-    moveConfirmAction,
-    CHMRAction,
-    humanitarianAidAction,
-    surgeAction,
-    influenceOperationAction,
-    artilleryFireAction,
-    airStrikeAction
+    Game
 };
