@@ -1,15 +1,53 @@
 // Import initial game state
 const { createInitialState, nodeMap, fullMap } = require('./objects');
 
-// Returns a number 1-6, used as a digital 'dice roll'
-const d6 = () => {
-    return Math.floor(Math.random()*6)+1;
-};
+// Define Game class
+class Game {
 
-// Returns an array of a given number of d6 rolls
-const d6Array = (rolls) => {
-    return Array.from({ length: rolls }, d6())
-};
+    // Constructor takes both client sessionIDs
+    constructor (blueID, redID) {
+
+        // Player session IDs
+        this.blueSessionID = blueID;
+        this.redSessionID = redID;
+
+        // Initiative trackers
+        this.blueInitiative = false;
+        this.redInitiative = false;
+
+        // Status and info fields used to hold extra state
+        this.status = 'default';
+        this.info = [];
+
+        // Game message log
+        this.messages = [{from: 'server', data: "Game Initialized!"}];
+
+        // Actual game state
+        this.gameState = createInitialState();
+    }
+
+    // Static method to return a number 1-6, simulated die roll
+    static d6 () { return Math.floor(Math.random()*6)+1; }
+
+    // Static method to return an array of a given number of d6 rolls
+    static d6Array (rolls) { return Array.from({ length: rolls }, Game.d6()); }
+
+    // Static method to conduct a roll for initiative and return the result
+    static initiative () {
+
+        // Rolls to be returned
+        let bRoll = 0, rRoll = 0;
+
+        // Roll until a tie is broken
+        while (bRoll === rRoll){
+            bRoll = Game.d6();
+            rRoll = Game.d6();
+        }
+
+        // Return result
+        return { winner: bRoll > rRoll ? 'blue' : 'red', blueRoll: bRoll, redRoll: rRoll };
+    }
+}
 
 // Function that retrieves the correct player object from a gameState given the color
 const getPlayer = (gameData, color) => {
@@ -26,27 +64,8 @@ const moveableArmies = (gameData, color, node) => {
     return getArmies(gameData, color, node).filter(x => !x.hasMoved).length;
 };
 
-// Function that creates and returns a new game given two sessionIDs
-const newGame = (blueID, redID) => {
+// Function that returns whether the given node contains armies of both colors
 
-    // Create gameData with both sessionIDs, the message log, and the actual game state
-    const gameData = {
-        blueSessionID: blueID,
-        redSessionID: redID,
-        blueInitiative: false,
-        redInitiative: false,
-        status: 'default',
-        info: [],
-        messages: [{from: 'server', data: "Game Initialized!"}],
-        gameState: createInitialState()
-    }
-
-    // Return the game object
-    return gameData;
-};
-
-// Conduct a roll for initiative and return results
-// Automatically re-rolls if a tie occurs
 const initiativeRoll = () => {
 
     // Rolls to be returned
@@ -102,9 +121,12 @@ const moveSelectAction = (gameData, nodes, color) => {
     if (node2 && node1 !== node2 && (!moveableArmies(gameData, color, node1) || !moveableArmies(gameData, color, node2)))
         return { type: 'error', error: 'no-moveable-army' };
 
-    // Set game status and info
+    // Set game status
     gameData.status = 'move';
-    gameData.info = [node1, node2];
+
+    // Save chosen node(s) for move confirm
+    gameData.info = [node1];
+    if (node2) gameData.info.push(node2);
 
     // TODO ------------------------- MAYBE ONLY ADD ONE NODE TO LISTS IF THEY ONLY SELECTED ONE????
 
