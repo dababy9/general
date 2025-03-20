@@ -131,12 +131,16 @@ io.on('connection', (socket) => {
     socket.on('leave', (type) => {
 
         // Client attempts to leave the quick-play queue
-        if (type === 'quick' && session.stat === 'quick-play')
-            handler.handleLeaveQuickPlay(sessionID);
+        if (type === 'quick' && session.stat === 'quick-play') {
+            quickPlayQueue.delete(sessionID);
+            session.stat = 'base';
+        }
 
         // Client attempts to leave private game (before another client joins it)
-        if (type === 'private' && session.stat === 'private-play' && session.gameID)
+        if (type === 'private' && session.stat === 'private-play') {
             privateGameTable.delete(session.gameID);
+            session.stat = 'base';
+        }
     });
 
     // General request for client to do something while in a game
@@ -146,22 +150,22 @@ io.on('connection', (socket) => {
         if (session.stat !== 'game') return;
 
         // Attempt to retrieve the game
-        const gameData = gameStore.get(session.gameID);
+        const game = gameStore.get(session.gameID);
 
         // Make sure the client is actually in a game
-        if (!gameData) return;
+        if (!game) return;
 
         // Check the type of request
         switch (type) {
 
             // Client requests to fetch the message log
             case 'fetch-message-log':
-                socket.emit('message-log', JSON.stringify(gameData.messages));
+                socket.emit('message-log', JSON.stringify(game.messages));
                 break;
 
             // Client requests to fetch the game state
             case 'fetch-game-state':
-                socket.emit('game-state', JSON.stringify(gameData.gameState));
+                socket.emit('game-state', JSON.stringify(game.gameState));
                 break;
 
             // Client requests their player color
@@ -171,22 +175,22 @@ io.on('connection', (socket) => {
 
             // Client requests to send a message in-game (in this case, 'arg' is the message)
             case 'send-message':
-                handler.handleMessageSend(arg, gameData, sessionID, session, io);
+                handler.handleMessageSend(arg, game, sessionID, session, io);
                 break;
 
             // Client requests to roll for initiative
             case 'initiative':
-                handler.handleInitiative(gameData, session, io);
+                handler.handleInitiative(game, session, io);
                 break;
 
             // Client requests to take an action in-game (in this case, 'arg' is an object with the type of action and the actual action)
             case 'action':
-                handler.handleAction(arg, gameData, sessionID, session, io);
+                handler.handleAction(arg, game, sessionID, session, io);
                 break;
 
             // Client requests to end their turn
             case 'end-turn':
-                handler.handleEndTurn(gameData.gameState, session, io);
+                handler.handleEndTurn(game.gameState, session, io);
                 break;
         }
     });

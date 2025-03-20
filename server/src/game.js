@@ -26,12 +26,6 @@ class Game {
         this.gameState = createInitialState();
     }
 
-    // Static method to return a number 1-6, simulated die roll
-    static d6 () { return Math.floor(Math.random()*6)+1; }
-
-    // Static method to return an array of a given number of d6 rolls
-    static d6Array (rolls) { return Array.from({ length: rolls }, Game.d6()); }
-
     // Static method to conduct a roll for initiative and return the result
     static initiative () {
 
@@ -40,8 +34,8 @@ class Game {
 
         // Roll until a tie is broken
         while (bRoll === rRoll){
-            bRoll = Game.d6();
-            rRoll = Game.d6();
+            bRoll = d6();
+            rRoll = d6();
         }
 
         // Return result
@@ -71,6 +65,95 @@ class Game {
         return this.getArmies(color, node).filter(x => !x.hasMoved).length;
     }
 
+    // Method to return nodes that a piece of a given color can move to from a given node
+    getValidNodes (color, node) {
+        const nodes = nodeMap.get(node);
+        if (!this.isContested(node)) return nodes;
+        else return nodes.filter(x => this.gameState.nodes[x].some(y => y.type === color));
+    }
+
+    // Method to move a given color piece from one node to another
+    movePiece (fromNode, toNode, color) {
+        const nodes = this.gameState.nodes;
+        nodes[fromNode].splice(nodes[fromNode].indexOf({ type: color, hasMoved: false }));
+        nodes[toNode].push({ type: color, hasMoved: true });
+    }
+
+    // Method to return whether a node is contested or not
+    isContested (node) {
+        const n = this.gameState.nodes[node];
+        return n.some(x => x.type === 'blue') && n.some(x => x.type === 'red');
+    }
+
+    // Method to validate and process the client selecting node(s) to move from
+    moveSelectAction (nodes, color) {
+
+        // Make sure turn player has enough CP
+        if (this.getPlayer(color).cp < 1) return;
+
+        // Input validation
+        if (!moveInputValidation(nodes)) return;
+
+        // Grab individual elements
+        const [node1, node2] = nodes;
+
+        // If client only selected one node, make sure it has a moveable army
+        if (!node2 && this.getMoveableArmies(color, node1) < 1)
+            return { type: 'error', error: 'no-moveable-army' };
+
+        // If the client selected two identical nodes, make sure the node has at least two moveable armies
+        if (node2 && node1 === node2 && this.getMoveableArmies(color, node1) < 2)
+            return { type: 'error', error: 'no-moveable-army' };
+
+        // If the client selected two different nodes, make sure they each have a moveable army
+        if (node2 && node1 !== node2 && (!this.getMoveableArmies(color, node1) || !this.getMoveableArmies(color, node2)))
+            return { type: 'error', error: 'no-moveable-army' };
+
+        // Set game status
+        this.status = 'move';
+
+        // Save chosen node(s) for move confirm, and create list(s) of valid nodes to move to
+        this.info = [node1];
+        const response = [this.getValidNodes(color, node1)];
+        if (node2) {
+            this.info.push(node2);
+            response.push(this.getValidNodes(color, node2));
+        }
+
+        // Return lists of valid nodes to move to
+        return { type: 'move-lists', to: 'client', data: response};
+    };
+
+    // Method to validate and process the client actually moving armies
+    moveConfirmAction (nodes, color) {
+
+        // Input validation
+        if (!moveInputValidation(nodes)) return;
+
+        // Grab individual elements
+        const [node1, node2] = nodes;
+
+        // Grab previous selections
+        const [from1, from2] = this.info;
+
+        // Check if the selected nodes are actually connected
+        if (!this.getValidNodes(color, from1).includes(node1) || (from2 && !this.getValidNodes(color, from2).includes(node2)))
+            return { type: 'error', error: 'unconnected-node' };
+
+        // Set game status
+        this.status = 'default';
+
+        // Subtract CP from turn player
+        this.getPlayer(color).cp--;
+
+        // Modify game state accordingly
+        this.movePiece(from1, node1, color);
+        if (from2) this.movePiece(from2, node2, color);
+
+        // Return new game state
+        return { type: 'move', to: 'both', data: this.gameState };
+    };
+
     // Method to validate and process a 'Humanitarian Aid' action
     humanitarianAidAction (color) {
 
@@ -89,7 +172,7 @@ class Game {
         // Adjust turn player support tracker accordingly
         if (roll === 6 && player.support < 6) player.support++;
 
-        // Return dice roll result and new game state
+        // Return die roll result and new game state
         return { type: 'humanitarianAid', to: 'both', data: { result: roll, gameState: this.gameState }};
     }
 
@@ -126,11 +209,40 @@ class Game {
         player.cp -= 3;
 
         // Retrieve opponent player object
-        const opponent = getPlayer((color === 'blue' ? 'red' : 'blue'));
+        const opponent = this.getPlayer((color === 'blue' ? 'red' : 'blue'));
 
-        // TODO -------------------------------
+        // Perform dice rolls
+        const rolls = d6Array(Math.floor(opponent.casualties/2));
+
+        // Decrease opponent support tracker by one for each 6 rolled
+        opponent.support -= rolls.filter(x => x === 6).length;
+
+        // End the game if opponent support is at or below zero
+        if (opponent.support <= 0) {
+            opponent.support = 0;
+            // TODO (end game) ----------------------------------------------------
+        }
+
+        // Return dice roll results and new game state
+        return { type: 'influenceOperation', to: 'both', data: { result: rolls, gameState: this.gameState }};
     }
+
+    // Method to validate and process a 'Artillery Fire' action
+    artilleryFireAction () {
+
+    };
+
+    // Method to validate and process a 'Air Strike' action
+    airStrikeAction () {
+
+    };
 }
+
+// Return a number 1-6, simulated die roll
+const d6 = () => { return Math.floor(Math.random()*6)+1; }
+
+// Return an array of a given number of d6 rolls
+const d6Array = (rolls) => { return Array.from({ length: rolls }, d6()); }
 
 // Used for validating an input of two nodes
 const moveInputValidation = (input) => {
@@ -146,94 +258,6 @@ const moveInputValidation = (input) => {
 
     // Return true to indicate successful validation
     return true;
-};
-
-// Function that processes/validates the client selecting two nodes to move from
-const moveSelectAction = (gameData, nodes, color) => {
-
-    // Make sure turn player has enough CP
-    if (getPlayer(gameData, color).cp < 1) return;
-
-    // Input validation
-    if (!moveInputValidation(nodes)) return;
-
-    // Grab individual elements
-    const [node1, node2] = nodes;
-
-    // If client only selected one node, make sure it has a moveable army
-    if (!node2 && moveableArmies(gameData, color, node1) < 1)
-        return { type: 'error', error: 'no-moveable-army' };
-
-    // If the client selected two identical nodes, make sure the node has at least two moveable armies
-    if (node2 && node1 === node2 && moveableArmies(gameData, color, node1) < 2)
-        return { type: 'error', error: 'no-moveable-army' };
-
-    // If the client selected two different nodes, make sure they each have a moveable army
-    if (node2 && node1 !== node2 && (!moveableArmies(gameData, color, node1) || !moveableArmies(gameData, color, node2)))
-        return { type: 'error', error: 'no-moveable-army' };
-
-    // Set game status
-    gameData.status = 'move';
-
-    // Save chosen node(s) for move confirm
-    gameData.info = [node1];
-    if (node2) gameData.info.push(node2);
-
-    // TODO ------------------------- MAYBE ONLY ADD ONE NODE TO LISTS IF THEY ONLY SELECTED ONE????
-
-    // Return lists of valid nodes to move to
-    return { type: 'move-lists', to: 'client', data: [nodeMap.get(node1), nodeMap.get(node2)]};
-};
-
-// Function that moves a given color piece from one node to another
-const movePiece = (fromNode, toNode, nodes, color) => {
-    nodes[fromNode].splice(nodes[fromNode].indexOf({ type: color, hasMoved: false }));
-    nodes[toNode].push({ type: color, hasMoved: true });
-};
-
-// Function that processes/validates the client actually moving armies
-const moveConfirmAction = (gameData, nodes, color) => {
-
-    // Input validation
-    if (!moveInputValidation(nodes)) return;
-
-    // Grab individual elements
-    const [node1, node2] = nodes;
-
-    // Grab previous selections
-    const [from1, from2] = gameData.info;
-
-    // Check if the selected nodes are actually connected
-    if (!nodeMap.get(from1).includes(node1) || !nodeMap.get(from2).includes(node2))
-        return { type: 'error', error: 'unconnected-node' };
-
-    // Set game status
-    gameData.status = 'default';
-
-    // Subtract CP from turn player
-    getPlayer(gameData, color).cp--;
-
-    // Modify game state accordingly
-    movePiece(from1, node1, gameData.gameState.nodes, color);
-    movePiece(from2, node2, gameData.gameState.nodes, color);
-
-    // Return new game state
-    return { type: 'move', to: 'both', data: gameData.gameState };
-};
-
-// Function that processes/validates a 'CHMR' action
-const CHMRAction = (gameData, action) => {
-
-};
-
-// Function that processes/validates a 'Artillery Fire' action
-const artilleryFireAction = (gameData, action) => {
-
-};
-
-// Function that processes/validates a 'Air Strike' action
-const airStrikeAction = (gameData, action) => {
-
 };
 
 // Set up export to be used in handlers.js

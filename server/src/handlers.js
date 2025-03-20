@@ -2,7 +2,7 @@
 const { randomBytes } = require('crypto');
 const sanitizeHtml = require('sanitize-html');
 const { sessionStore, gameStore, quickPlayQueue, privateGameTable } = require('./objects.js');
-const game = require('./game');
+const { Game } = require('./game');
 
 // Used for generating random gameIDs
 const randomID = () => randomBytes(3).toString('hex');
@@ -12,14 +12,14 @@ const startGame = (gameID, session, sessionID, opponentSession, opponentSessionI
 
     // Create new game, choosing blue/red player based on coin flip
     const coin = Math.random() < 0.5;
-    const gameData = game.newGame((coin ? sessionID : opponentSessionID), (!coin ? sessionID : opponentSessionID));
+    const game = new Game((coin ? sessionID : opponentSessionID), (!coin ? sessionID : opponentSessionID));
 
     // Set the color field for both sessions
     session.color = (coin ? 'blue' : 'red');
     opponentSession.color = (!coin ? 'blue' : 'red');
 
     // Store new game in gameStore
-    gameStore.set(gameID, gameData);
+    gameStore.set(gameID, game);
 
     // Update both sessions with new gameID and status
     Object.assign(opponentSession, { gameID, stat: 'game' });
@@ -113,7 +113,7 @@ const handleDevPlay = (sessionID, session, io) => {
 };
 
 // Send Message handler
-const handleMessageSend = (message, gameData, sessionID, session, io) => {
+const handleMessageSend = (message, game, sessionID, session, io) => {
 
     // If the message isn't a string, send a message type error to client
     if (typeof message !== 'string'){
@@ -134,35 +134,35 @@ const handleMessageSend = (message, gameData, sessionID, session, io) => {
     const messageObject = {from: session.color, data: message};
 
     // Append the message to the log
-    gameData.messages.push(messageObject);
+    game.messages.push(messageObject);
 
     // Send the message to both clients
     io.to(session.gameID).emit('new-message', JSON.stringify(messageObject));
 };
 
 // Initiative handler
-const handleInitiative = (gameData, session, io) => {
+const handleInitiative = (game, session, io) => {
 
     // Make sure that there isn't a turn player
-    if (gameData.gameState.turnPlayer) return;
+    if (game.gameState.turnPlayer) return;
 
     // Update the initiative flag corresponding to the client's color
     if (session.color === 'blue')
-        gameData.blueInitiative = true;
+        game.blueInitiative = true;
     else
-        gameData.redInitiative = true;
+        game.redInitiative = true;
 
     // If both flags are true, then conduct a roll for initiative
-    if (gameData.blueInitiative && gameData.redInitiative) {
+    if (game.blueInitiative && game.redInitiative) {
 
         // Reset flags
-        gameData.blueInitiative = gameData.redInitiative = false;
+        game.blueInitiative = game.redInitiative = false;
 
         // Get roll results: { winner, blueRoll, redRoll }
-        let result = game.initiativeRoll();
+        let result = Game.initiative();
 
         // Set the turn player based on results
-        gameData.gameState.turnPlayer = result.winner;
+        game.gameState.turnPlayer = result.winner;
 
         // Send results to clients
         io.to(session.gameID).emit('initiative-result', JSON.stringify(result));
@@ -170,13 +170,13 @@ const handleInitiative = (gameData, session, io) => {
 }
 
 // Action handler
-const handleAction = ({ type, data }, gameData, sessionID, session, io) => {
+const handleAction = ({ type, data }, game, sessionID, session, io) => {
 
     // Make sure it's the client's turn
-    if (gameData.gameState.turnPlayer !== session.color) return;
+    if (game.gameState.turnPlayer !== session.color) return;
 
     // Retrieve game status
-    const status = gameData.status;
+    const status = game.status;
 
     // Used to store result of action processing
     let result = null;
@@ -186,42 +186,42 @@ const handleAction = ({ type, data }, gameData, sessionID, session, io) => {
 
         // Move selection action
         case 'move-select':
-            if (status === 'default') result = game.moveSelectAction(gameData, data, session.color);
+            if (status === 'default') result = game.moveSelectAction(data, session.color);
             break;
 
         // Move confirmation action
         case 'move-confirm':
-            if (status === 'move') result = game.moveConfirmAction(gameData, data, session.color);
+            if (status === 'move') result = game.moveConfirmAction(data, session.color);
             break;
             
         // CHMR action
         case 'chmr':
-            result = game.CHMRAction(gameData, action);
+            result = null; // TODO ------------------------------------------
             break;
 
         // Humanitarian Aid action
         case 'humanitarian-aid':
-            if (status === 'default') result = game.humanitarianAidAction(gameData, session.color);
+            if (status === 'default') result = game.humanitarianAidAction(session.color);
             break;
 
         // Surge action
         case 'surge':
-            if (status === 'default') result = game.surgeAction(gameData, session.color);
+            if (status === 'default') result = game.surgeAction(session.color);
             break;
 
         // Influence Operation action
         case 'influence-operation':
-            if (status === 'default') result = game.influenceOperationAction(gameData, session.color);
+            if (status === 'default') result = game.influenceOperationAction(session.color);
             break;
 
         // Artillery Fire action
         case 'artillery-fire':
-            result = game.artilleryFireAction(gameData, action);
+            if (status === 'default') result = game.artilleryFireAction(action);
             break;
 
         // Air Strike action
         case 'air-strike':
-            result = game.airStrikeAction(gameData, action);
+            if (status === 'default') result = game.airStrikeAction(action);
             break;
     }
 
@@ -279,22 +279,21 @@ const handleDisconnect = (sessionID, session, io) => {
             if (session.stat === 'game') {
 
                 // Attempt to retrieve the game
-                const gameData = gameStore.get(session.gameID);
+                const game = gameStore.get(session.gameID);
 
                 // If the game exists, send disconnect message and mark the game as over
-                if (gameData) {
+                if (game) {
 
                     // Define message object to be added to message log
                     const messageObject = {from: 'server', data: "Opponent has disconnected"};
 
                     // Append the message to the log
-                    gameData.messages.push(messageObject);
+                    game.messages.push(messageObject);
 
                     // Send the message to both clients
                     io.to(session.gameID).emit('new-message', messageObject);
 
-                    // Mark the game as over
-                    gameData.inPlay = false;
+                    // TODO (end game) --------------------------------------------------
                 }
             }
 

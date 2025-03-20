@@ -1,6 +1,2 @@
-- check when game is over
 - redirect based on status?
-- start on action functionality
-- leaving quick play
-- check if user is moving two armies from same node
-- add functionality to only move one army
+- end game function (call when disconnection, on influence op, any long-range combat, and in end turn)
