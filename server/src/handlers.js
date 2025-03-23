@@ -164,6 +164,9 @@ const handleInitiative = (game, session, io) => {
         // Set the turn player based on results
         game.gameState.turnPlayer = result.winner;
 
+        // Set game status
+        game.status = 'default';
+
         // Send results to clients
         io.to(session.gameID).emit('initiative-result', JSON.stringify(result));
     }
@@ -214,14 +217,19 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
             if (status === 'default') result = game.influenceOperationAction(session.color);
             break;
 
-        // Artillery Fire action
-        case 'artillery-fire':
-            if (status === 'default') result = game.artilleryFireAction(action);
+        // Artillery Fire selection action
+        case 'artillery-select':
+            if (status === 'default') result = game.artillerySelectAction(session.color);
+            break;
+
+        // Artillery Fire confirmation action
+        case 'artillery-confirm':
+            if (status === 'artillery') result = game.artilleryConfirmAction(session.color);
             break;
 
         // Air Strike action
         case 'air-strike':
-            if (status === 'default') result = game.airStrikeAction(action);
+            if (status === 'default') result = game.airStrikeAction(session.color);
             break;
     }
 
@@ -239,29 +247,40 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
     }
 };
 
+// Close Combat handler
+const handleCloseCombat = (game, session, io) => {
+
+};
+
 // End Turn handler
-const handleEndTurn = (gameState, session, io) => {
+const handleEndTurn = (game, session, io) => {
 
     // Make sure it's the client's turn
-    if (gameState.turnPlayer !== session.color) return;
+    if (game.gameState.turnPlayer !== session.color) return;
 
-    // Increment turn counter
-    gameState.turnCounter++;
+    // Reset all piece data for movement
+    game.resetMovement();
 
-    // If turn counter is even, players must roll for initiative
-    if (gameState.turnCounter % 2 === 0) {
+    // Initiate close combat
+    game.initiateCloseCombat();
 
-        // Set the turn player to empty
-        gameState.turnPlayer = '';
+    // If no close combat required, immediately end turn
+    if (!game.info.length) endTurn();
 
-        // Indicate to both clients that they need to roll for initiative
-        io.to(session.gameID).emit('initiative-ready');
-
-    // Otherwise, simply switch the turn player to the opposite color and notify both clients
-    } else
-        gameState.turnPlayer = (gameState.turnPlayer === 'blue' ? 'red' : 'blue');
-        io.to(session.gameID).emit('new-turn', gameState.turnPlayer);
+    // Otherwise, send first close combat message to clients
+    else return;
 };
+
+// Helper function to actually end the turn
+const endTurn = (game, session, io) => {
+
+    // Update game state with new turn, and use result to determine initiative
+    // True means initiative required, false means new turn player is determined automatically
+    if (game.switchTurn())
+        io.to(session.gameID).emit('initiative-ready');
+    else
+        io.to(session.gameID).emit('new-turn', game.gameState.turnPlayer);
+}
 
 // Disconnect handler
 const handleDisconnect = (sessionID, session, io) => {
@@ -312,6 +331,7 @@ module.exports = {
     handleMessageSend,
     handleInitiative,
     handleAction,
+    handleCloseCombat,
     handleEndTurn,
     handleDisconnect
 };

@@ -44,15 +44,11 @@ class Game {
 
     // Method to retrieve a player object given a corresponding color
     getPlayer (color) {
-
-        // Return corresponding player given the string 'blue' or 'red'
         switch (color) {
             case 'blue': return this.gameState.bluePlayer;
             case 'red': return this.gameState.redPlayer;
+            default: return null;
         }
-
-        // Return null if given anything else
-        return null;
     }
 
     // Method to return a list of armies of a given color on a given node
@@ -72,17 +68,60 @@ class Game {
         else return nodes.filter(x => this.gameState.nodes[x].some(y => y.type === color));
     }
 
+    // Method to return whether a node is contested or not
+    isContested (node) {
+        const n = this.gameState.nodes[node];
+        return n.some(x => x.type === 'blue') && n.some(x => x.type === 'red');
+    }
+
+    // Method to initiate close combat (add contested nodes to game.info)
+    initiateCloseCombat () {
+
+        // Set game status
+        this.status = 'closeCombat';
+
+        // Reset game info to store contested nodes
+        this.info = [];
+
+        // Loop over each node
+        for (const node in this.gameState.nodes)
+
+            // If the node is contested, add it to the list
+            if (this.isContested(node)) this.info.push(node);
+    }
+
+    // Method to reset piece movement data
+    resetMovement () {
+        for (const [_, node] of Object.entries(this.gameState.nodes)) {
+            console.log(node);
+            for (const piece of node)
+                if (piece.hasMoved) piece.hasMoved = false;
+        }
+    }
+
+    // Method to switch turn player, returning true or false depending on whether initiative is required
+    switchTurn () {
+
+        // Increment turn counter
+        this.gameState.turnCounter++;
+
+        // If turn counter is even, set turn player to empty and return true
+        if (this.gameState.turnCounter % 2 === 0) {
+            this.gameState.turnPlayer = '';
+            return true;
+
+        // Otherwise, simply switch the turn player to the opposite color and return false
+        } else {
+            gameState.turnPlayer = (gameState.turnPlayer === 'blue' ? 'red' : 'blue');
+            return false;
+        }
+    }
+
     // Method to move a given color piece from one node to another
     movePiece (fromNode, toNode, color) {
         const nodes = this.gameState.nodes;
         nodes[fromNode].splice(nodes[fromNode].indexOf({ type: color, hasMoved: false }));
         nodes[toNode].push({ type: color, hasMoved: true });
-    }
-
-    // Method to return whether a node is contested or not
-    isContested (node) {
-        const n = this.gameState.nodes[node];
-        return n.some(x => x.type === 'blue') && n.some(x => x.type === 'red');
     }
 
     // Method to validate and process the client selecting node(s) to move from
@@ -227,15 +266,24 @@ class Game {
         return { type: 'influenceOperation', to: 'both', data: { result: rolls, gameState: this.gameState }};
     }
 
-    // Method to validate and process a 'Artillery Fire' action
-    artilleryFireAction () {
+    // Method to validate and process the client selecting node to fire from
+    artillerySelectAction (color) {
 
-    };
+        // Set game status
+        this.status = 'artillery';
+    }
+
+    // Method to validate and process the client selecting node to fire on
+    artilleryConfirmAction (color) {
+
+        // Set game status
+        this.status = 'default';
+    }
 
     // Method to validate and process a 'Air Strike' action
-    airStrikeAction () {
+    airStrikeAction (color) {
 
-    };
+    }
 }
 
 // Return a number 1-6, simulated die roll

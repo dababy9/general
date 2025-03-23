@@ -188,9 +188,14 @@ io.on('connection', (socket) => {
                 handler.handleAction(arg, game, sessionID, session, io);
                 break;
 
+            // Client requests a close combat choice
+            case 'close-combat':
+                handler.handleCloseCombat(game, session, io);
+                break;
+
             // Client requests to end their turn
             case 'end-turn':
-                handler.handleEndTurn(game.gameState, session, io);
+                handler.handleEndTurn(game, session, io);
                 break;
         }
     });
