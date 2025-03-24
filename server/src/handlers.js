@@ -146,17 +146,17 @@ const handleInitiative = (game, session, io) => {
     // Make sure that there isn't a turn player
     if (game.gameState.turnPlayer) return;
 
-    // Update the initiative flag corresponding to the client's color
+    // Update the flag corresponding to the client's color
     if (session.color === 'blue')
-        game.blueInitiative = true;
+        game.blueFlag = true;
     else
-        game.redInitiative = true;
+        game.redFlag = true;
 
     // If both flags are true, then conduct a roll for initiative
-    if (game.blueInitiative && game.redInitiative) {
+    if (game.blueFlag && game.redFlag) {
 
         // Reset flags
-        game.blueInitiative = game.redInitiative = false;
+        game.blueFlag = game.redFlag = false;
 
         // Get roll results: { winner, blueRoll, redRoll }
         let result = Game.initiative();
@@ -261,14 +261,11 @@ const handleEndTurn = (game, session, io) => {
     // Reset all piece data for movement
     game.resetMovement();
 
-    // Initiate close combat
-    game.initiateCloseCombat();
-
-    // If no close combat required, immediately end turn
-    if (!game.info.length) endTurn();
+    // Initiate close combat, and if it isn't required, immediately end turn
+    if (!game.initiateCloseCombat()) endTurn();
 
     // Otherwise, send first close combat message to clients
-    else return;
+    else return; // TODO ---------------------------------------------------------
 };
 
 // Helper function to actually end the turn
@@ -300,19 +297,18 @@ const handleDisconnect = (sessionID, session, io) => {
                 // Attempt to retrieve the game
                 const game = gameStore.get(session.gameID);
 
-                // If the game exists, send disconnect message and mark the game as over
+                // If the game exists, end the game
                 if (game) {
 
-                    // Define message object to be added to message log
-                    const messageObject = {from: 'server', data: "Opponent has disconnected"};
+                    // Set status of both players' sessions back to base
+                    sessionStore.get(game.blueSessionID).stat = 'base';
+                    sessionStore.get(game.redSessionID).stat = 'base';
 
-                    // Append the message to the log
-                    game.messages.push(messageObject);
+                    // Send game over message to clients
+                    io.to(session.gameID).emit('game-over', 'disconnection');
 
-                    // Send the message to both clients
-                    io.to(session.gameID).emit('new-message', messageObject);
-
-                    // TODO (end game) --------------------------------------------------
+                    // Delete the game from memory
+                    gameStore.delete(session.gameID);
                 }
             }
 

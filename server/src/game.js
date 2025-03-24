@@ -11,9 +11,9 @@ class Game {
         this.blueSessionID = blueID;
         this.redSessionID = redID;
 
-        // Initiative trackers
-        this.blueInitiative = false;
-        this.redInitiative = false;
+        // Flags for actions requiring both players
+        this.blueFlag = false;
+        this.redFlag = false;
 
         // Status and info fields used to hold extra state
         this.status = 'default';
@@ -88,6 +88,8 @@ class Game {
 
             // If the node is contested, add it to the list
             if (this.isContested(node)) this.info.push(node);
+
+        return !this.info.length;
     }
 
     // Method to reset piece movement data
