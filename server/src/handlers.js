@@ -248,8 +248,34 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
 };
 
 // Close Combat handler
-const handleCloseCombat = (game, session, io) => {
+const handleCloseCombat = (numDice, game, session, io) => {
 
+    // Make sure the client send a valid number of dice to roll
+    if (!Number.isInteger(numDice) || numDice < 0 || numDice > game.gameState.nodes[game.info.combat[0]].filter((x) => x.type === session.color).length) {
+
+        // If not, send back another close combat response
+        io.to(session.gameID).emit('close-combat', { next: game.info.combat[0] });
+        return;
+    }
+
+    // Update the flag corresponding to the client's color
+    if (session.color === 'blue'){
+        game.blueFlag = true;
+        game.info.blueCC = numDice;
+    } else {
+        game.redFlag = true;
+        game.info.redCC = numDice;
+    }
+
+    // If both flags are true, then conduct close combat
+    if (game.blueFlag && game.redFlag) {
+
+        // Conduct close combat fully, and get dice roll results
+        rolls = game.performCloseCombat();
+
+        // Send clients the next close combat response
+        io.to(session.gameID).emit('close-combat', JSON.stringify({ result: { rolls: rolls, gameState: game.gameState }, next: game.info.combat[0] }));
+    }
 };
 
 // End Turn handler
@@ -262,10 +288,10 @@ const handleEndTurn = (game, session, io) => {
     game.resetMovement();
 
     // Initiate close combat, and if it isn't required, immediately end turn
-    if (!game.initiateCloseCombat()) endTurn();
+    if (!game.initiateCloseCombat()) endTurn(game, session, io);
 
     // Otherwise, send first close combat message to clients
-    else return; // TODO ---------------------------------------------------------
+    else io.to(session.gameID).emit('close-combat', { next: game.info.combat[0] });
 };
 
 // Helper function to actually end the turn

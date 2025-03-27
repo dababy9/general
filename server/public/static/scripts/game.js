@@ -47,7 +47,7 @@ document.getElementById('moveconfirm').addEventListener('click', () => {
 });
 
 document.getElementById('humaid').addEventListener('click', () => {
-    socket.emit('game', 'action', { type: 'humanitarian-aid'});
+    socket.emit('game', 'action', { type: 'influence-operation'});
 });
 
 document.getElementById('initiative').addEventListener('click', () => {

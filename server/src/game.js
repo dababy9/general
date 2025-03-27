@@ -17,7 +17,7 @@ class Game {
 
         // Status and info fields used to hold extra state
         this.status = 'default';
-        this.info = [];
+        this.info = {};
 
         // Game message log
         this.messages = [{from: 'server', data: "Game Initialized!"}];
@@ -74,28 +74,70 @@ class Game {
         return n.some(x => x.type === 'blue') && n.some(x => x.type === 'red');
     }
 
-    // Method to initiate close combat (add contested nodes to game.info)
+    // Method to initiate close combat (add contested nodes to game.info.combat)
     initiateCloseCombat () {
 
         // Set game status
         this.status = 'closeCombat';
 
         // Reset game info to store contested nodes
-        this.info = [];
+        this.info.combat = [];
 
         // Loop over each node
         for (const node in this.gameState.nodes)
 
             // If the node is contested, add it to the list
-            if (this.isContested(node)) this.info.push(node);
+            if (this.isContested(node)) this.info.combat.push(node);
 
-        return !this.info.length;
+        // Return whether close combat is required
+        return this.info.combat.length !== 0;
+    }
+
+    // Method to perform close combat
+    performCloseCombat () {
+
+        // Roll all dice
+        const result = {
+            blueRolls: d6Array(this.info.blueCC),           
+            redRolls: d6Array(this.info.redCC),
+            blueCivRolls: d6Array(this.info.blueCC),
+            redCivRolls: d6Array(this.info.redCC)
+        };
+
+        // Retrieve close combat node
+        const node = this.gameState.nodes[this.info.combat[0]];
+
+        // Remove armies based on rolls
+        this.removePieces('blue', result.redRolls.filter(x => x === 5 || x === 6).length, node);
+        this.removePieces('red', result.blueRolls.filter(x => x === 5 || x === 6).length, node);
+
+        // Remove node from close combat list
+        this.info.combat.shift();
+
+        // Return rolls
+        return result;
+    }
+
+    // Method to remove a given number of a given type of piece from a given node
+    removePieces (type, num, node) {
+
+        // Counter to keep track of how many pieces have been removed
+        let removed = 0;
+
+        // Loop through pieces of the node and remove them by type
+        for (let i = 0; i < node.length; i++) {
+            if (removed >= num) break;
+            if (node[i].type === type) {
+                node.splice(i, 1);
+                removed++;
+                i--;
+            }
+        }
     }
 
     // Method to reset piece movement data
     resetMovement () {
         for (const [_, node] of Object.entries(this.gameState.nodes)) {
-            console.log(node);
             for (const piece of node)
                 if (piece.hasMoved) piece.hasMoved = false;
         }
@@ -107,6 +149,9 @@ class Game {
         // Increment turn counter
         this.gameState.turnCounter++;
 
+        // Reset game status
+        this.status = 'default';
+
         // If turn counter is even, set turn player to empty and return true
         if (this.gameState.turnCounter % 2 === 0) {
             this.gameState.turnPlayer = '';
@@ -114,7 +159,7 @@ class Game {
 
         // Otherwise, simply switch the turn player to the opposite color and return false
         } else {
-            gameState.turnPlayer = (gameState.turnPlayer === 'blue' ? 'red' : 'blue');
+            this.gameState.turnPlayer = (this.gameState.turnPlayer === 'blue' ? 'red' : 'blue');
             return false;
         }
     }
@@ -154,10 +199,10 @@ class Game {
         this.status = 'move';
 
         // Save chosen node(s) for move confirm, and create list(s) of valid nodes to move to
-        this.info = [node1];
+        this.info.move = [node1];
         const response = [this.getValidNodes(color, node1)];
         if (node2) {
-            this.info.push(node2);
+            this.info.move.push(node2);
             response.push(this.getValidNodes(color, node2));
         }
 
@@ -175,7 +220,7 @@ class Game {
         const [node1, node2] = nodes;
 
         // Grab previous selections
-        const [from1, from2] = this.info;
+        const [from1, from2] = this.info.move;
 
         // Check if the selected nodes are actually connected
         if (!this.getValidNodes(color, from1).includes(node1) || (from2 && !this.getValidNodes(color, from2).includes(node2)))
@@ -292,7 +337,7 @@ class Game {
 const d6 = () => { return Math.floor(Math.random()*6)+1; }
 
 // Return an array of a given number of d6 rolls
-const d6Array = (rolls) => { return Array.from({ length: rolls }, d6()); }
+const d6Array = (rolls) => { return Array.from({ length: rolls }, () => d6()); }
 
 // Used for validating an input of two nodes
 const moveInputValidation = (input) => {
