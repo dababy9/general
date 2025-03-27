@@ -98,7 +98,7 @@ class Game {
 
         // Roll all dice
         const result = {
-            blueRolls: d6Array(this.meta.blueCC),           
+            blueRolls: d6Array(this.meta.blueCC),
             redRolls: d6Array(this.meta.redCC),
             blueCivRolls: d6Array(this.meta.blueCC),
             redCivRolls: d6Array(this.meta.redCC)
