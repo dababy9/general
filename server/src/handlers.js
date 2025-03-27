@@ -30,6 +30,21 @@ const startGame = (gameID, session, sessionID, opponentSession, opponentSessionI
     io.to(sessionID).emit('game-start');
 };
 
+// Function that ends a game
+const endGame = (gameID, reason, io) => {
+
+    // Send game over message to both clients
+    io.to(gameID).emit('game-over', reason);
+
+    // Erase gameID from both sessions
+    const game = gameStore.get(gameID);
+    sessionStore.get(game.blueSessionID).gameID = '';
+    sessionStore.get(game.redSessionID).gameID = '';
+
+    // Delete game from memory
+    gameStore.delete(gameID);
+};
+
 // Quick-Play handler
 const handleQuickPlay = (sessionID, session, io) => {
 
@@ -170,7 +185,7 @@ const handleInitiative = (game, session, io) => {
         // Send results to clients
         io.to(session.gameID).emit('initiative-result', JSON.stringify(result));
     }
-}
+};
 
 // Action handler
 const handleAction = ({ type, data }, game, sessionID, session, io) => {
@@ -237,8 +252,10 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
     if (!result) return;
 
     // If the result was an error, send it to the client
-    if (result.type === 'error')
-        io.to(sessionID).emit('error', result.error);
+    if (result.type === 'error') io.to(sessionID).emit('error', result.error);
+
+    // If the result type is empty, end game
+    if (!result.type) endGame(session.gameID, result.reason, io);
 
     // Otherwise, send the result to one or both clients (depending on the 'to' field)
     else {
@@ -250,21 +267,24 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
 // Close Combat handler
 const handleCloseCombat = (numDice, game, session, io) => {
 
+    // Get node for close combat
+    const node = game.meta.combat[0];
+
     // Make sure the client send a valid number of dice to roll
-    if (!Number.isInteger(numDice) || numDice < 0 || numDice > game.gameState.nodes[game.info.combat[0]].filter((x) => x.type === session.color).length) {
+    if (!Number.isInteger(numDice) || numDice < 0 || numDice > game.getArmies(session.color, node).length) {
 
         // If not, send back another close combat response
-        io.to(session.gameID).emit('close-combat', { next: game.info.combat[0] });
+        io.to(session.gameID).emit('close-combat', { next: node });
         return;
     }
 
     // Update the flag corresponding to the client's color
     if (session.color === 'blue'){
         game.blueFlag = true;
-        game.info.blueCC = numDice;
+        game.meta.blueCC = numDice;
     } else {
         game.redFlag = true;
-        game.info.redCC = numDice;
+        game.meta.redCC = numDice;
     }
 
     // If both flags are true, then conduct close combat
@@ -274,7 +294,7 @@ const handleCloseCombat = (numDice, game, session, io) => {
         rolls = game.performCloseCombat();
 
         // Send clients the next close combat response
-        io.to(session.gameID).emit('close-combat', JSON.stringify({ result: { rolls: rolls, gameState: game.gameState }, next: game.info.combat[0] }));
+        io.to(session.gameID).emit('close-combat', JSON.stringify({ result: { rolls: rolls, gameState: game.gameState }, next: game.meta.combat[0] }));
     }
 };
 
@@ -291,7 +311,7 @@ const handleEndTurn = (game, session, io) => {
     if (!game.initiateCloseCombat()) endTurn(game, session, io);
 
     // Otherwise, send first close combat message to clients
-    else io.to(session.gameID).emit('close-combat', { next: game.info.combat[0] });
+    else io.to(session.gameID).emit('close-combat', { next: game.meta.combat[0] });
 };
 
 // Helper function to actually end the turn
@@ -299,11 +319,9 @@ const endTurn = (game, session, io) => {
 
     // Update game state with new turn, and use result to determine initiative
     // True means initiative required, false means new turn player is determined automatically
-    if (game.switchTurn())
-        io.to(session.gameID).emit('initiative-ready');
-    else
-        io.to(session.gameID).emit('new-turn', game.gameState.turnPlayer);
-}
+    if (game.switchTurn()) io.to(session.gameID).emit('initiative-ready');
+    else io.to(session.gameID).emit('new-turn', game.gameState.turnPlayer);
+};
 
 // Disconnect handler
 const handleDisconnect = (sessionID, session, io) => {
@@ -330,11 +348,8 @@ const handleDisconnect = (sessionID, session, io) => {
                     sessionStore.get(game.blueSessionID).stat = 'base';
                     sessionStore.get(game.redSessionID).stat = 'base';
 
-                    // Send game over message to clients
-                    io.to(session.gameID).emit('game-over', 'disconnection');
-
-                    // Delete the game from memory
-                    gameStore.delete(session.gameID);
+                    // End game
+                    endGame(session.gameID, 'disconnection', io);
                 }
             }
 

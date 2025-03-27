@@ -15,9 +15,9 @@ class Game {
         this.blueFlag = false;
         this.redFlag = false;
 
-        // Status and info fields used to hold extra state
+        // Status and meta fields used to hold extra state
         this.status = 'default';
-        this.info = {};
+        this.meta = {};
 
         // Game message log
         this.messages = [{from: 'server', data: "Game Initialized!"}];
@@ -74,23 +74,23 @@ class Game {
         return n.some(x => x.type === 'blue') && n.some(x => x.type === 'red');
     }
 
-    // Method to initiate close combat (add contested nodes to game.info.combat)
+    // Method to initiate close combat (add contested nodes to game.meta.combat)
     initiateCloseCombat () {
 
         // Set game status
         this.status = 'closeCombat';
 
-        // Reset game info to store contested nodes
-        this.info.combat = [];
+        // Reset meta field to store contested nodes
+        this.meta.combat = [];
 
         // Loop over each node
         for (const node in this.gameState.nodes)
 
             // If the node is contested, add it to the list
-            if (this.isContested(node)) this.info.combat.push(node);
+            if (this.isContested(node)) this.meta.combat.push(node);
 
         // Return whether close combat is required
-        return this.info.combat.length !== 0;
+        return this.meta.combat.length !== 0;
     }
 
     // Method to perform close combat
@@ -98,28 +98,31 @@ class Game {
 
         // Roll all dice
         const result = {
-            blueRolls: d6Array(this.info.blueCC),           
-            redRolls: d6Array(this.info.redCC),
-            blueCivRolls: d6Array(this.info.blueCC),
-            redCivRolls: d6Array(this.info.redCC)
+            blueRolls: d6Array(this.meta.blueCC),           
+            redRolls: d6Array(this.meta.redCC),
+            blueCivRolls: d6Array(this.meta.blueCC),
+            redCivRolls: d6Array(this.meta.redCC)
         };
 
         // Retrieve close combat node
-        const node = this.gameState.nodes[this.info.combat[0]];
+        const node = this.gameState.nodes[this.meta.combat[0]];
 
         // Remove armies based on rolls
         this.removePieces('blue', result.redRolls.filter(x => x === 5 || x === 6).length, node);
         this.removePieces('red', result.blueRolls.filter(x => x === 5 || x === 6).length, node);
 
+        // Turn player civilian casualties
+        this.removePieces()
+
         // Remove node from close combat list
-        this.info.combat.shift();
+        this.meta.combat.shift();
 
         // Return rolls
         return result;
     }
 
-    // Method to remove a given number of a given type of piece from a given node
-    removePieces (type, num, node) {
+    // Method to handle piece removal (modifying game state and bookkeeping)
+    removePieces (type, num, node, actingColor) {
 
         // Counter to keep track of how many pieces have been removed
         let removed = 0;
@@ -133,6 +136,13 @@ class Game {
                 i--;
             }
         }
+
+        // If the pieces removed were armies, subtract from variable in game state
+        const target = this.getPlayer(type);
+        if (target) target.totalArmies -= removed;
+
+        // Otherwise, add civilian casualties to acting player
+        this.getPlayer(actingColor).casualties += removed;
     }
 
     // Method to reset piece movement data
@@ -199,10 +209,10 @@ class Game {
         this.status = 'move';
 
         // Save chosen node(s) for move confirm, and create list(s) of valid nodes to move to
-        this.info.move = [node1];
+        this.meta.move = [node1];
         const response = [this.getValidNodes(color, node1)];
         if (node2) {
-            this.info.move.push(node2);
+            this.meta.move.push(node2);
             response.push(this.getValidNodes(color, node2));
         }
 
@@ -220,7 +230,7 @@ class Game {
         const [node1, node2] = nodes;
 
         // Grab previous selections
-        const [from1, from2] = this.info.move;
+        const [from1, from2] = this.meta.move;
 
         // Check if the selected nodes are actually connected
         if (!this.getValidNodes(color, from1).includes(node1) || (from2 && !this.getValidNodes(color, from2).includes(node2)))
@@ -306,7 +316,7 @@ class Game {
         // End the game if opponent support is at or below zero
         if (opponent.support <= 0) {
             opponent.support = 0;
-            // TODO (end game) ----------------------------------------------------
+            return { reason: 'support' };
         }
 
         // Return dice roll results and new game state

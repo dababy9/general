@@ -24,7 +24,8 @@ const createInitialState = () => {
         cp: 6,
         support: 7,
         surgeArmies: 8,
-        casualties: 0
+        casualties: 0,
+        totalArmies: 24
     }
 
     const gameState = {
