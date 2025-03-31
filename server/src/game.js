@@ -108,11 +108,13 @@ class Game {
         const node = this.gameState.nodes[this.meta.combat[0]];
 
         // Remove armies based on rolls
-        this.removePieces('blue', result.redRolls.filter(x => x === 5 || x === 6).length, node);
-        this.removePieces('red', result.blueRolls.filter(x => x === 5 || x === 6).length, node);
+        this.removePieces('red', result.blueRolls.filter(x => x === 5 || x === 6).length, node, 'blue');
+        this.removePieces('blue', result.redRolls.filter(x => x === 5 || x === 6).length, node, 'red');
 
         // Turn player civilian casualties
-        this.removePieces()
+        //if (this.gameState.turnPlayer === 'blue') {
+            //this.removePieces('civ', )
+        //}
 
         // Remove node from close combat list
         this.meta.combat.shift();
@@ -147,10 +149,9 @@ class Game {
 
     // Method to reset piece movement data
     resetMovement () {
-        for (const [_, node] of Object.entries(this.gameState.nodes)) {
+        for (const [_, node] of Object.entries(this.gameState.nodes))
             for (const piece of node)
                 if (piece.hasMoved) piece.hasMoved = false;
-        }
     }
 
     // Method to switch turn player, returning true or false depending on whether initiative is required
@@ -158,6 +159,10 @@ class Game {
 
         // Increment turn counter
         this.gameState.turnCounter++;
+
+        // Reset CP
+        this.gameState.bluePlayer.cp = 6;
+        this.gameState.redPlayer.cp = 6;
 
         // Reset game status
         this.status = 'default';

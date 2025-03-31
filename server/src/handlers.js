@@ -274,7 +274,7 @@ const handleCloseCombat = (numDice, game, session, io) => {
     if (!Number.isInteger(numDice) || numDice < 0 || numDice > game.getArmies(session.color, node).length) {
 
         // If not, send back another close combat response
-        io.to(session.gameID).emit('close-combat', { next: node });
+        io.to(session.gameID).emit('close-combat', JSON.stringify({ next: node }));
         return;
     }
 
@@ -311,7 +311,7 @@ const handleEndTurn = (game, session, io) => {
     if (!game.initiateCloseCombat()) endTurn(game, session, io);
 
     // Otherwise, send first close combat message to clients
-    else io.to(session.gameID).emit('close-combat', { next: game.meta.combat[0] });
+    else io.to(session.gameID).emit('close-combat', JSON.stringify({ next: game.meta.combat[0] }));
 };
 
 // Helper function to actually end the turn
