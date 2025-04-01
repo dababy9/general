@@ -271,7 +271,7 @@ const handleCloseCombat = (numDice, game, session, io) => {
     const node = game.meta.combat[0];
 
     // Make sure the client send a valid number of dice to roll
-    if (!Number.isInteger(numDice) || numDice < 0 || numDice > game.getArmies(session.color, node).length) {
+    if (!Number.isInteger(numDice) || numDice < 0 || numDice > game.getPieces(session.color, node).length) {
 
         // If not, send back another close combat response
         io.to(session.gameID).emit('close-combat', JSON.stringify({ next: node }));

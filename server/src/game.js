@@ -1,4 +1,4 @@
-// Import initial game state
+// Import initial game state and game maps
 const { createInitialState, nodeMap, fullMap } = require('./objects');
 
 // Define Game class
@@ -30,13 +30,13 @@ class Game {
     static initiative () {
 
         // Rolls to be returned
-        let bRoll = 0, rRoll = 0;
+        let bRoll, rRoll;
 
         // Roll until a tie is broken
-        while (bRoll === rRoll){
+        do {
             bRoll = d6();
             rRoll = d6();
-        }
+        } while (bRoll === rRoll);
 
         // Return result
         return { winner: bRoll > rRoll ? 'blue' : 'red', blueRoll: bRoll, redRoll: rRoll };
@@ -51,14 +51,9 @@ class Game {
         }
     }
 
-    // Method to return a list of armies of a given color on a given node
-    getArmies (color, node) {
-        return this.gameState.nodes[node].filter(x => x.type === color);
-    }
-
-    // Method to return number of moveable armies of a given color are on a given node
-    getMoveableArmies (color, node) {
-        return this.getArmies(color, node).filter(x => !x.hasMoved).length;
+    // Method to return a list of pieces of a given type on a given node
+    getPieces (type, node) {
+        return this.gameState.nodes[node].filter(x => x.type === type);
     }
 
     // Method to return nodes that a piece of a given color can move to from a given node
@@ -80,47 +75,54 @@ class Game {
         // Set game status
         this.status = 'closeCombat';
 
-        // Reset meta field to store contested nodes
-        this.meta.combat = [];
-
-        // Loop over each node
-        for (const node in this.gameState.nodes)
-
-            // If the node is contested, add it to the list
-            if (this.isContested(node)) this.meta.combat.push(node);
+        // Create list of contested nodes in meta variable
+        this.meta.combat = Object.keys(this.gameState.nodes).filter(x => this.isContested(x));
 
         // Return whether close combat is required
-        return this.meta.combat.length !== 0;
+        return this.meta.combat.length > 0;
     }
 
     // Method to perform close combat
     performCloseCombat () {
 
+        // Helper function to count army casualties
+        const armyCasualties = (rolls) => rolls.filter(x => x === 5 || x === 6).length;
+
+        // Helper function to handle civilian casualties
+        const handleCivilians = (rolls1, rolls2, color1, color2) => {
+
+            // Calculate civilian casualties for turn player
+            this.removePieces('civ', rolls1.filter(x => x === 6).length, node, color1);
+
+            // If civilians remain, continue calculation for opposing player
+            if (this.getPieces('civ', node).length)
+                this.removePieces('civ', rolls2.filter(x => x === 6).length, node, color2);
+        }
+
         // Roll all dice
-        const result = {
-            blueRolls: d6Array(this.meta.blueCC),
-            redRolls: d6Array(this.meta.redCC),
-            blueCivRolls: d6Array(this.meta.blueCC),
-            redCivRolls: d6Array(this.meta.redCC)
-        };
+        const blueRolls = d6Array(this.meta.blueCC);
+        const redRolls = d6Array(this.meta.redCC);
+        const blueCivRolls = d6Array(this.meta.blueCC);
+        const redCivRolls = d6Array(this.meta.redCC);
 
         // Retrieve close combat node
         const node = this.gameState.nodes[this.meta.combat[0]];
 
         // Remove armies based on rolls
-        this.removePieces('red', result.blueRolls.filter(x => x === 5 || x === 6).length, node, 'blue');
-        this.removePieces('blue', result.redRolls.filter(x => x === 5 || x === 6).length, node, 'red');
+        this.removePieces('red', armyCasualties(blueRolls), node, 'blue');
+        this.removePieces('blue', armyCasualties(redRolls), node, 'red');
 
-        // Turn player civilian casualties
-        //if (this.gameState.turnPlayer === 'blue') {
-            //this.removePieces('civ', )
-        //}
+        // If it's the blue player's turn, they do casualties first
+        if (this.gameState.turnPlayer === 'blue') handleCivilians(blueRolls, redRolls, 'blue', 'red');
+
+        // Otherwise, red player does them first
+        else handleCivilians(redRolls, blueRolls, 'red', 'blue');
 
         // Remove node from close combat list
         this.meta.combat.shift();
 
         // Return rolls
-        return result;
+        return { blueRolls, redRolls, blueCivRolls, redCivRolls };
     }
 
     // Method to handle piece removal (modifying game state and bookkeeping)
@@ -179,15 +181,13 @@ class Game {
         }
     }
 
-    // Method to move a given color piece from one node to another
-    movePiece (fromNode, toNode, color) {
-        const nodes = this.gameState.nodes;
-        nodes[fromNode].splice(nodes[fromNode].indexOf({ type: color, hasMoved: false }));
-        nodes[toNode].push({ type: color, hasMoved: true });
-    }
-
     // Method to validate and process the client selecting node(s) to move from
     moveSelectAction (nodes, color) {
+
+        // Helper function to return number of moveable armies of a given color on a given node
+        const getMoveableArmies = (color, node) => {
+            return this.getPieces(color, node).filter(x => !x.hasMoved).length;
+        }
 
         // Make sure turn player has enough CP
         if (this.getPlayer(color).cp < 1) return;
@@ -198,18 +198,10 @@ class Game {
         // Grab individual elements
         const [node1, node2] = nodes;
 
-        // If client only selected one node, make sure it has a moveable army
-        if (!node2 && this.getMoveableArmies(color, node1) < 1)
+        // Ensure the turn player has correct amount of armies to move
+        if (getMoveableArmies(color, node1) < (node2 ? (node1 === node2 ? 2 : 1) : 1) || (node2 && (node2 ? getMoveableArmies(color, node2) : 0) < 1))
             return { type: 'error', error: 'no-moveable-army' };
-
-        // If the client selected two identical nodes, make sure the node has at least two moveable armies
-        if (node2 && node1 === node2 && this.getMoveableArmies(color, node1) < 2)
-            return { type: 'error', error: 'no-moveable-army' };
-
-        // If the client selected two different nodes, make sure they each have a moveable army
-        if (node2 && node1 !== node2 && (!this.getMoveableArmies(color, node1) || !this.getMoveableArmies(color, node2)))
-            return { type: 'error', error: 'no-moveable-army' };
-
+ 
         // Set game status
         this.status = 'move';
 
@@ -227,6 +219,15 @@ class Game {
 
     // Method to validate and process the client actually moving armies
     moveConfirmAction (nodes, color) {
+
+        // Helper function to move a given color piece from one node to another
+        const movePiece = (fromNode, toNode, color) => {
+            const nodes = this.gameState.nodes;
+            const index = nodes[fromNode].findIndex(x => x.type === color && !x.hasMoved);
+            const [piece] = nodes[fromNode].splice(index, 1);
+            piece.hasMoved = true;
+            nodes[toNode].push(piece);
+        }
 
         // Input validation
         if (!moveInputValidation(nodes)) return;
@@ -248,8 +249,8 @@ class Game {
         this.getPlayer(color).cp--;
 
         // Modify game state accordingly
-        this.movePiece(from1, node1, color);
-        if (from2) this.movePiece(from2, node2, color);
+        movePiece(from1, node1, color);
+        if (from2) movePiece(from2, node2, color);
 
         // Return new game state
         return { type: 'move', to: 'both', data: this.gameState };
@@ -358,13 +359,13 @@ const d6Array = (rolls) => { return Array.from({ length: rolls }, () => d6()); }
 const moveInputValidation = (input) => {
 
     // Ensure that the input exists, is an array, and is either one or two elements
-    if (!input || !Array.isArray(input) || !(input.length === 2 || input.length === 1)) return;
+    if (!input || !Array.isArray(input) || !(input.length === 2 || input.length === 1)) return false;
 
     // Ensure that first element is a string and the name of a node
-    if (typeof input[0] !== 'string' || !nodeMap.has(input[0])) return;
+    if (typeof input[0] !== 'string' || !nodeMap.has(input[0])) return false;
 
     // If there is a second element, ensure that it is a strign and the name of a node
-    if (input[1] && (typeof input[1] !== 'string' || !nodeMap.has(input[1]))) return;
+    if (input[1] && (typeof input[1] !== 'string' || !nodeMap.has(input[1]))) return false;
 
     // Return true to indicate successful validation
     return true;
