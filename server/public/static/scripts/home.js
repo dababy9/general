@@ -93,11 +93,29 @@ const VVStyle = new PIXI.TextStyle({
 
 const VVText = new PIXI.Text({text: "Violent Victory", style: VVStyle})
 VVText.x= 310;
-VVText.y=60;
+VVText.y=45;
 VVText.zIndex=105;
 app.stage.addChild(VVText);
 
 
+const VVCredit = new PIXI.Text({text: "by Rachel McVicker and Sebastian J. Bae", style: new PIXI.TextStyle({fontFamily:'Legend',fontSize : 30, fill: 0x000000, align: 'center'})})
+VVCredit.x= 255;
+VVCredit.y=112;
+VVCredit.zIndex=105;
+app.stage.addChild(VVCredit);
+
+
+const VVCredit2 = new PIXI.Text({text: "Digitized By:\nJoshua Clark\nLauren Leckelt\nCaleb Walker", style: new PIXI.TextStyle({fontFamily:'Legend',fontSize : 20, fill: 0x000000, align: 'left'})})
+VVCredit2.x = 10;
+VVCredit2.y = 430;
+VVCredit2.xIndex = 105;
+app.stage.addChild(VVCredit2);
+
+const startInst = new PIXI.Text({text: "", style: new PIXI.TextStyle({fontFamily:'Legend', fontSize:25,fill:0x000000, align: 'left'})});
+startInst.x = 635;
+startInst.y = 180;
+startInst.text = 'To start a game, click Create Game.\nGive the code that appears to your \nopponent. Your opponent then\ntypes the code into the text box and\npresses enter and the game starts.';
+app.stage.addChild(startInst);
 
 
 
