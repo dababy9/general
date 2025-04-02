@@ -89,14 +89,19 @@ class Game {
         const armyCasualties = (rolls) => rolls.filter(x => x === 5 || x === 6).length;
 
         // Helper function to handle civilian casualties
+        // Returns true if second player's roll was needed, false if not
         const handleCivilians = (rolls1, rolls2, color1, color2) => {
 
             // Calculate civilian casualties for turn player
             this.removePieces('civ', rolls1.filter(x => x === 6).length, node, color1);
 
-            // If civilians remain, continue calculation for opposing player
-            if (this.getPieces('civ', node).length)
+            // If civilians remain, continue calculation for opposing player and return true
+            if (this.getPieces('civ', node).length) {
                 this.removePieces('civ', rolls2.filter(x => x === 6).length, node, color2);
+                return true;
+
+            // Otherwise, return false
+            } else return false;
         }
 
         // Roll all dice
@@ -112,17 +117,25 @@ class Game {
         this.removePieces('red', armyCasualties(blueRolls), node, 'blue');
         this.removePieces('blue', armyCasualties(redRolls), node, 'red');
 
+        // Variable to store result
+        let result = { blueRolls, redRolls };
+
         // If it's the blue player's turn, they do casualties first
-        if (this.gameState.turnPlayer === 'blue') handleCivilians(blueRolls, redRolls, 'blue', 'red');
+        if (this.gameState.turnPlayer === 'blue') {
+            result.blueCivRolls = blueCivRolls;
+            if (handleCivilians(blueRolls, redRolls, 'blue', 'red')) result.redCivRolls = redCivRolls;
 
         // Otherwise, red player does them first
-        else handleCivilians(redRolls, blueRolls, 'red', 'blue');
+        } else {
+            result.redCivRolls = redCivRolls;
+            if (handleCivilians(redRolls, blueRolls, 'red', 'blue')) result.blueCivRolls = blueCivRolls;
+        }
 
         // Remove node from close combat list
         this.meta.combat.shift();
 
-        // Return rolls
-        return { blueRolls, redRolls, blueCivRolls, redCivRolls };
+        // Return result
+        return result;
     }
 
     // Method to handle piece removal (modifying game state and bookkeeping)
@@ -146,14 +159,58 @@ class Game {
         if (target) target.totalArmies -= removed;
 
         // Otherwise, add civilian casualties to acting player
-        this.getPlayer(actingColor).casualties += removed;
+        const acting = this.getPlayer(actingColor);
+        if (acting) acting.casualties += removed;
     }
 
-    // Method to reset piece movement data
-    resetMovement () {
+    // Method to reset values for new turn
+    resetValues () {
+
+        // Reset CP
+        this.gameState.bluePlayer.cp = 6;
+        this.gameState.redPlayer.cp = 6;
+
+        // Reset piece movement
         for (const [_, node] of Object.entries(this.gameState.nodes))
             for (const piece of node)
                 if (piece.hasMoved) piece.hasMoved = false;
+    }
+
+    // Method to add or subtract civilian population(s) after each turn
+    // Returns 
+    civilianPopulation () {
+
+        // Helper function to return a random element from an array
+        const randomElement = (list) => list[Math.floor(Math.random()*list.length)];
+
+        // Choose two random nodes
+        const nodes = this.gameState.nodes;
+        const nodeNames = nodes.keys().toArray();
+
+        // Helper function to randomly change population on a node
+        // Will return an object containing the node and the rolls
+        const change = () => {
+
+            // Select a random node and roll 3 dice
+            const nodeName = randomElement(nodeNames);
+            const node = nodes[nodeName];
+            const rolls = d6Array(3);
+
+            // Calculate total civilian population change
+            const popChange = rolls.reduce((sum, x) => sum + ((x % 2) ? -1 : 1));
+
+            // If positive, add civilian pieces to node
+            if (popChange > 0)
+                for (let i = 0; i < popChange; i++) node.push({ type: 'civ' });
+
+            // Otherwise, remove civilian pieces from node
+            else
+                this.removePieces('civ', -1*popChange, node);
+            return { nodeName, rolls };
+        }
+
+        // Return results of two civilian population changes
+        return [change(), change()];
     }
 
     // Method to switch turn player, returning true or false depending on whether initiative is required
@@ -161,10 +218,6 @@ class Game {
 
         // Increment turn counter
         this.gameState.turnCounter++;
-
-        // Reset CP
-        this.gameState.bluePlayer.cp = 6;
-        this.gameState.redPlayer.cp = 6;
 
         // Reset game status
         this.status = 'default';

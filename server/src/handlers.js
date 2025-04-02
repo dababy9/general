@@ -264,6 +264,25 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
     }
 };
 
+// End Turn handler
+const handleEndTurn = (game, session, io) => {
+
+    // Make sure it's the client's turn
+    if (game.gameState.turnPlayer !== session.color) return;
+
+    // Reset all values for new turn
+    game.resetValues();
+
+    // Variable to store close combat data sent to both clients
+    let data = {};
+
+    // Initiate close combat, and if it's required, add a 'next' node to data
+    if (!game.initiateCloseCombat()) data = { next: game.meta.combat[0] };
+    
+    // Send close combat message
+    io.to(session.gameID).emit('close-combat', JSON.stringify(data));
+};
+
 // Close Combat handler
 const handleCloseCombat = (numDice, game, session, io) => {
 
@@ -294,24 +313,24 @@ const handleCloseCombat = (numDice, game, session, io) => {
         rolls = game.performCloseCombat();
 
         // Send clients the next close combat response
-        io.to(session.gameID).emit('close-combat', JSON.stringify({ result: { rolls: rolls, gameState: game.gameState }, next: game.meta.combat[0] }));
+        io.to(session.gameID).emit('close-combat', JSON.stringify({ rolls: rolls, gameState: game.gameState, next: game.meta.combat[0] }));
     }
 };
 
-// End Turn handler
-const handleEndTurn = (game, session, io) => {
+// Civilian Return from Haven handler
+const handleCivReturn = (choice, game, session, io) => {
 
-    // Make sure it's the client's turn
-    if (game.gameState.turnPlayer !== session.color) return;
+    // If choice is undefined, civilian movement has just finished
+    if (!choice) {
 
-    // Reset all piece data for movement
-    game.resetMovement();
+        // If there was no CHMR performed, simply end the turn
+        // TODO (add if statement) --------------------------------------------
+        endTurn();
+    
+    // Otherwise, send the next haven that CHMR was performed on
+    } else {
 
-    // Initiate close combat, and if it isn't required, immediately end turn
-    if (!game.initiateCloseCombat()) endTurn(game, session, io);
-
-    // Otherwise, send first close combat message to clients
-    else io.to(session.gameID).emit('close-combat', JSON.stringify({ next: game.meta.combat[0] }));
+    }
 };
 
 // Helper function to actually end the turn
@@ -368,7 +387,8 @@ module.exports = {
     handleMessageSend,
     handleInitiative,
     handleAction,
-    handleCloseCombat,
     handleEndTurn,
+    handleCloseCombat,
+    handleCivReturn,
     handleDisconnect
 };
