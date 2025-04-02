@@ -1,7 +1,7 @@
 // Import modules
 const { randomBytes } = require('crypto');
 const sanitizeHtml = require('sanitize-html');
-const { sessionStore, gameStore, quickPlayQueue, privateGameTable } = require('./objects.js');
+const { SESSION_TIMEOUT, MAX_MESSAGE_LENGTH, sessionStore, gameStore, quickPlayQueue, privateGameTable } = require('./objects.js');
 const { Game } = require('./game');
 
 // Used for generating random gameIDs
@@ -22,8 +22,8 @@ const startGame = (gameID, session, sessionID, opponentSession, opponentSessionI
     gameStore.set(gameID, game);
 
     // Update both sessions with new gameID and status
-    Object.assign(opponentSession, { gameID, stat: 'game' });
-    Object.assign(session, { gameID, stat: 'game' });
+    opponentSession.gameID = session.gameID = gameID;
+    opponentSession.stat = session.stat = 'game';
 
     // Send the 'game-start' response to both clients
     io.to(opponentSessionID).emit('game-start');
@@ -31,10 +31,10 @@ const startGame = (gameID, session, sessionID, opponentSession, opponentSessionI
 };
 
 // Function that ends a game
-const endGame = (gameID, reason, io) => {
+const endGame = (gameID, reason, winner, io) => {
 
     // Send game over message to both clients
-    io.to(gameID).emit('game-over', reason);
+    io.to(gameID).emit('game-over', { reason, winner });
 
     // Erase gameID from both sessions
     const game = gameStore.get(gameID);
@@ -65,10 +65,7 @@ const handleQuickPlay = (sessionID, session, io) => {
         const opponentSession = sessionStore.get(opponentSessionID);
 
         // If opponent session doesn't exist, just re-call this handler function
-        if (!opponentSession) {
-            handleQuickPlay(sessionID, session, io);
-            return;
-        }
+        if (!opponentSession) return handleQuickPlay(sessionID, session, io);
 
         // Generate a random ID for the game
         const gameID = randomID();
@@ -101,10 +98,7 @@ const handleJoinGame = (gameID, sessionID, session, io) => {
     const opponentSessionID = privateGameTable.get(gameID);
 
     // If no entry was found, send an invalid game error to client
-    if (!opponentSessionID) {
-        io.to(sessionID).emit('error', 'invalid-game');
-        return;
-    }
+    if (!opponentSessionID) return io.to(sessionID).emit('error', 'invalid-game');
 
     // Delete the entry from privateGameTable to prevent any other clients from joining game
     privateGameTable.delete(gameID);
@@ -136,8 +130,8 @@ const handleMessageSend = (message, game, sessionID, session, io) => {
         return;
     }
 
-    // If the message is longer than 500 characters, send a message length error to client
-    if (message.length > 500){
+    // If the message is longer than a given number of characters, send a message length error to client
+    if (message.length > MAX_MESSAGE_LENGTH){
         io.to(sessionID).emit('message-length-error');
         return;
     }
@@ -252,16 +246,14 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
     if (!result) return;
 
     // If the result was an error, send it to the client
-    if (result.type === 'error') io.to(sessionID).emit('error', result.error);
+    if (result.type === 'error') return io.to(sessionID).emit('error', result.error);
 
     // If the result type is empty, end game
-    if (!result.type) endGame(session.gameID, result.reason, io);
+    if (!result.type) return endGame(session.gameID, result.reason, result.winner, io);
 
     // Otherwise, send the result to one or both clients (depending on the 'to' field)
-    else {
-        if (result.to === 'client') io.to(sessionID).emit(result.type, JSON.stringify(result.data));
-        else io.to(session.gameID).emit(result.type, JSON.stringify(result.data));
-    }
+    if (result.to === 'client') io.to(sessionID).emit(result.type, JSON.stringify(result.data));
+    else io.to(session.gameID).emit(result.type, JSON.stringify(result.data));
 };
 
 // End Turn handler
@@ -368,14 +360,14 @@ const handleDisconnect = (sessionID, session, io) => {
                     sessionStore.get(game.redSessionID).stat = 'base';
 
                     // End game
-                    endGame(session.gameID, 'disconnection', io);
+                    endGame(session.gameID, 'disconnection', (session.color === 'blue' ? 'red' : 'blue'), io);
                 }
             }
 
             // Delete the session from sessionStore
             sessionStore.delete(sessionID);
         }
-    }, 5000);
+    }, SESSION_TIMEOUT);
 };
 
 // Set up export to be used in server.js

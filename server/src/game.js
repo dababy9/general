@@ -258,16 +258,11 @@ class Game {
         // Set game status
         this.status = 'move';
 
-        // Save chosen node(s) for move confirm, and create list(s) of valid nodes to move to
-        this.meta.move = [node1];
-        const response = [this.getValidNodes(color, node1)];
-        if (node2) {
-            this.meta.move.push(node2);
-            response.push(this.getValidNodes(color, node2));
-        }
+        // Save chosen node(s) for move confirm
+        this.meta.move = (node2 ? [node1, node2] : [node1]);
 
         // Return lists of valid nodes to move to
-        return { type: 'move-lists', to: 'client', data: response};
+        return { type: 'move-lists', to: 'client', data: this.meta.move.map(x => this.getValidNodes(color, x))};
     };
 
     // Method to validate and process the client actually moving armies
@@ -375,7 +370,7 @@ class Game {
         // End the game if opponent support is at or below zero
         if (opponent.support <= 0) {
             opponent.support = 0;
-            return { reason: 'support' };
+            return { reason: 'support', winner: color };
         }
 
         // Return dice roll results and new game state

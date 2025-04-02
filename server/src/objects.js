@@ -1,3 +1,7 @@
+// Constants
+const SESSION_TIMEOUT = 10000; // Time in milliseconds to keep a disconnected session alive before deletion
+const MAX_MESSAGE_LENGTH = 500; // Maximum character length a message may be
+
 // Initialize in-memory 'storages'
 const sessionStore = new Map();
 const gameStore = new Map();
@@ -100,6 +104,8 @@ const fullMap = new Map([
 
 // Set up export to be used in server.js and handlers.js
 module.exports = {
+    SESSION_TIMEOUT,
+    MAX_MESSAGE_LENGTH,
     sessionStore,
     gameStore,
     quickPlayQueue,
