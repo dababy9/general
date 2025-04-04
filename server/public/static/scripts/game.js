@@ -472,30 +472,6 @@ function clearMessage() {
     cpMessage.text = "";
 }
 
-// const cpButtonText = new PIXI.Text({ text: "Open CP Menu", style: new PIXI.TextStyle({ fontSize: 20, fill: '#ffffff', align: 'center' }) });
-// cpButtonText.x = 790;
-// cpButtonText.y = 45;
-// cpButtonText.zIndex = 100;
-// cpButtonText.visible=false;
-// app.stage.addChild(cpButtonText);
-
-
-// //buttons that are used to test functions
-// const cpButton = new PIXI.Graphics();
-// cpButton.roundRect(780,40, cpButtonText.width+20,cpButtonText.height+10,10);
-// cpButton.alpha = 0.7
-// cpButton.zIndex = 90;
-// cpButton.fill(0x000000);
-// cpButton.stroke(10,0x101010)
-// cpButton.eventMode = 'static';
-// cpButton.visible=false;
-// cpButton.on('pointerdown', () => {
-//     if (cpQuery.visible == false) 
-//         openCPQuery();
-//     else
-//         closeCPQuery();
-// });
-
 
 //locations where the highlight appear on node.
 const highLoc = {
@@ -1270,7 +1246,7 @@ function chmr1(name){
 
     console.log("sending the name to server "+name + " " + maxVal+"armies");
 
-    let counter = selectArmyNumber(400,200,maxVal,sendCHMRMessage1, name);
+    let counter = selectArmyNumber(400,200,1, maxVal,sendCHMRMessage1, name);
     changeMessage("Select the number of armies to conduct CHMR");
     app.stage.addChild(counter);
 
@@ -1286,7 +1262,7 @@ function sendCHMRMessage1(nodeName, selectedNumber){
     clearMessage();
 }
 
-function selectArmyNumber(x,y,maxValue,onSelect,nodeName){
+function selectArmyNumber(x,y,minValue, maxValue,onSelect,nodeName){
 
     const container = new PIXI.Container();
     container.position.set(x,y);
@@ -1325,7 +1301,7 @@ function selectArmyNumber(x,y,maxValue,onSelect,nodeName){
     minusButton.interactive = true;
     minusButton.buttonMode = true;
     minusButton.on('pointerdown', () => {
-        if (selectedNumber > 1) {
+        if (selectedNumber > minValue) {
             selectedNumber--;
             text.text = selectedNumber;
         }
@@ -1725,7 +1701,168 @@ function cancelStrike(){
 
 
 
+//////CLOSE COMBAT START
+//////CLOSE COMBAT START
+//////CLOSE COMBAT START
+// function closeCombat(){
+socket.on('close-combat', (data) => {
+    let parsedData = JSON.parse(data);
+    console.log(parsedData.rolls); // Should print all four arrays of rolls
+    console.log(parsedData.gameState); // Should print the entire updated gameState
+    console.log(parsedData.next); // Should print name of a node (or undefined if close combat is over)
 
+    // let rolls = parsedData.rolls;
+    let next = parsedData.next;
+    // gameState = parsedData.gameState;
+    // updateBoard(gameState);
+
+    // let rolls=
+    //  {
+    //     blueRolls:[1,2,3],
+    //     redRolls:[2,3,4],
+    //     blueCivRolls:[3,4,5],
+    //     redCivRolls: [4,5,6]
+    // }
+    // let next = "redBase";
+
+    if (!rolls && next){
+       combatSelect(next); 
+        // socket.emit('game','action',{type:'chmr-select',data:safeNode}) 
+    }
+    if (rolls && next){
+        displayRolls(rolls, next);
+        gameState = parsedResponse.gameState;
+        updateBoard(gameState);
+    }
+
+    // if (parsedData.next) {
+    //     socket.emit('game', 'close-combat', 0); // Always choose 0 dice to roll
+    // }
+});
+
+let rolls=
+     {
+        blueRolls:[1,2,3,4,5],
+        redRolls:[2,3,4],
+        blueCivRolls:[3,4,5,4,5],
+        redCivRolls: [4,5,6]
+    }
+
+function displayRolls(rolls, next){
+
+    let playerRolls = [];
+    let otherPlayerRolls = [];
+    let playerCivRolls = [];
+    let otherPlayerCivRolls = [];
+
+    if (gameState.turnPlayer == 'blue'){
+        playerRolls = rolls.blueRolls;
+        otherPlayerRolls = rolls.redRolls;
+        playerCivRolls = rolls.blueCivRolls;
+        otherPlayerCivRolls = rolls.redCivRolls;
+    }
+    else{
+        otherPlayerRolls = rolls.blueRolls;
+        playerRolls = rolls.redRolls;
+        otherPlayerCivRolls = rolls.blueCivRolls;
+        playerCivRolls = rolls.redCivRolls;
+    }
+
+
+    let height = 3;
+    if (rolls.blueCivRolls && rolls.redCivRolls){
+        height = 4;
+    }
+
+    height = 95 * height + 20 * height + 20;
+
+    let length = (rolls.blueRolls.length > rolls.redRolls.length) ? rolls.blueRolls.length : rolls.redRolls.length;
+    length = length * 95+20;
+
+    const rollDisplay = Board.makeRoundRect(290,160,length,height,10,0x808080,3,0xffffff,1000,true);
+    for (let i = 0; i < playerRolls.length; i++) {
+        let dice = Board.drawDice(310+i*95,195,1001,playerRolls[i],gameState.turnPlayer);
+        app.stage.addChild(dice);
+        rollDisplay.on('pointerdown',()=>{app.stage.removeChild(dice)});
+    }
+    for (let i = 0; i < otherPlayerRolls.length; i++) {
+        let dice = Board.drawDice(310+i*95,305,1001,otherPlayerRolls[i],(gameState.turnPlayer == 'blue'? 'red':'blue'));
+        app.stage.addChild(dice);
+        rollDisplay.on('pointerdown',()=>{app.stage.removeChild(dice)});
+    }
+
+    for (let i = 0; i < playerCivRolls.length; i++) {
+        let dice = Board.drawDice(310+i*95,415,1001,playerCivRolls[i],gameState.turnPlayer);
+        app.stage.addChild(dice);
+        rollDisplay.on('pointerdown',()=>{app.stage.removeChild(dice)});
+    }
+    if (otherPlayerCivRolls){
+        for (let i = 0; i < otherPlayerCivRolls.length; i++) {
+            let dice = Board.drawDice(310+i*95,525,1001,otherPlayerCivRolls[i],(gameState.turnPlayer == 'blue'? 'red':'blue'));
+            app.stage.addChild(dice);
+            rollDisplay.on('pointerdown',()=>{app.stage.removeChild(dice)});
+        }
+    }
+    let text1 = Board.makeBoardText(310,170,gameState.turnPlayer+" rolled for armies:",new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }))
+    let text2 = Board.makeBoardText(310,280,gameState.turnPlayer == 'blue'? 'red':'blue'+" rolled for armies:",new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }))
+    let text3 = Board.makeBoardText(310,390,gameState.turnPlayer+" rolled for civilians:",new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }))
+    let cont = Board.makeBoardText(310,610,"Click to continue",new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }))
+    let text4 = "none";
+    if(otherPlayerCivRolls)
+        {text4 = Board.makeBoardText(310,500,gameState.turnPlayer == 'blue'? 'red':'blue'+" rolled for civilians:",new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }))}
+    text1.zIndex=10000;
+    text2.zIndex=10000;
+    cont.zIndex=10000;
+    text3.zIndex=10000;
+    if(text4 != "none"){
+        text4.zIndex=10000;
+    app.stage.addChild(text4);
+    }
+    app.stage.addChild(text1,text2,text3,cont);
+
+
+
+
+
+    rollDisplay.eventMode = 'static';
+    rollDisplay.on('pointerdown',()=>{
+        app.stage.removeChild(rollDisplay);
+        app.stage.removeChild(text1,text2,text3,cont);
+        if(text4!="none") app.stage.removeChild(text4);
+    })
+    
+
+
+
+    app.stage.addChild(rollDisplay);
+
+}
+
+function combatSelect(next){
+    console.log("In combat select");
+        highlight([next], clicked, "Select Number of Armies for close combat in " + next);
+    
+        let numbers = getCount(gameState.nodes);
+        let maxVal = 0;
+        if (playerColor == 'blue') {
+            maxVal = numbers[next].blueArmies;
+        }
+        else
+            maxVal = numbers[next].redArmies;
+
+        let counter = selectArmyNumber(highLoc[next].x - 57, highLoc[next].y +100, 0, maxVal, closeCombatMessage, next);
+        
+        app.stage.addChild(counter);
+}
+
+//////
+function closeCombatMessage(number, name){
+        removeHighlight();
+        // console.log(number + " " + name);
+        clearMessage();
+        socket.emit('game','action',{type:'chmr-select',data:number});
+
+    }
 
 
 //CLOSE COMBAT ANIMATION FUNCTION! 
@@ -1904,7 +2041,12 @@ function createDebugTable() {
         { name: 'CHMR Received 2', func: chmr3Received},
         { name: "Close Combat animation", func: doCC},
         { name: "Arrow animation", func: doArrow},
-        {name: "CP Button", func: Board.openCPQuery}
+        { name: "CP Button", func: Board.openCPQuery},
+        { name: "Display Rolls",func: ()=>{displayRolls(rolls)}},
+        { name: "send civ-move", func: ()=>{socket.emit('civ-move');console.log("send civ-move");}},
+        { name: "send civ-return", func: ()=> {socket.emit('civ-return');console.log("send civ-return");}}
+
+        
     ];
 
     // Number of columns per row
@@ -1936,12 +2078,6 @@ function createDebugTable() {
     }
 
     debugDiv.appendChild(table);
-}
-
-// Example response functions (replace these with your actual functions)
-function moveResponse() {
-    console.log("Move response triggered");
-    // Your game logic for moving something
 }
 
 // Call function to generate the debug table

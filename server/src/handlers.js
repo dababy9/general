@@ -258,9 +258,13 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
 
 // End Turn handler
 const handleEndTurn = (game, session, io) => {
+    console.log('end turn');
 
     // Make sure it's the client's turn
     if (game.gameState.turnPlayer !== session.color) return;
+
+    // Make sure the game is in default status
+    if (game.status !== 'default') return;
 
     // Reset all values for new turn
     game.resetValues();
@@ -309,15 +313,39 @@ const handleCloseCombat = (numDice, game, session, io) => {
     }
 };
 
+// Civilian Move handler
+const handleCivMove = (game, session, io) => {
+    console.log('civ move');
+
+    // Make sure it's the client's turn
+    if (game.gameState.turnPlayer !== session.color) return;
+    
+    // Make sure close combat has just ended
+    if (game.status !== 'closeCombat') return;
+
+    // Set game status for civilian return
+    game.status = 'civReturn';
+
+    // Send clients the result of civilian movement
+    io.to(session.gameID).emit('civ-move', JSON.stringify({ result: game.civilianPopulation(), gameState: game.gameState }));
+};
+
 // Civilian Return from Haven handler
 const handleCivReturn = (choice, game, session, io) => {
+    console.log('civ return');
+
+    // Make sure it's the client's turn
+    if (game.gameState.turnPlayer !== session.color) return;
+
+    // Make sure the game is in civilian return status
+    if (game.status !== 'civReturn') return;
 
     // If choice is undefined, civilian movement has just finished
     if (!choice) {
 
         // If there was no CHMR performed, simply end the turn
         // TODO (add if statement) --------------------------------------------
-        endTurn();
+        endTurn(game, session, io);
     
     // Otherwise, send the next haven that CHMR was performed on
     } else {
@@ -381,6 +409,7 @@ module.exports = {
     handleAction,
     handleEndTurn,
     handleCloseCombat,
+    handleCivMove,
     handleCivReturn,
     handleDisconnect
 };

@@ -185,7 +185,7 @@ class Game {
 
         // Choose two random nodes
         const nodes = this.gameState.nodes;
-        const nodeNames = nodes.keys().toArray();
+        const nodeNames = Object.keys(nodes);
 
         // Helper function to randomly change population on a node
         // Will return an object containing the node and the rolls

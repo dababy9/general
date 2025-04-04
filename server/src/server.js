@@ -200,7 +200,7 @@ io.on('connection', (socket) => {
 
             // Client requests to conduct civilian movement
             case 'civ-move':
-                io.to(session.gameID).emit('civ-move', JSON.stringify({ result: game.civilianPopulation(), gameState: game.gameState }));
+                handler.handleCivMove(game, session, io);
                 break;
 
             // Client requests to conduct a civilian return from haven

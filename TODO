@@ -1,5 +1,4 @@
-- redirect based on status?
-- Finish documentation
-- Look at civilian movement
 - CHMR?
+- Don't put civs on haven
+- figure out close combat (not recognizing contested node)
 - end game function (call when disconnection, on influence op, any long-range combat, and in end turn)

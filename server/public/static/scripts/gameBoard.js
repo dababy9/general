@@ -167,6 +167,7 @@ export function drawDice(dx, dy, dz, number, color) {
 const cpButtonText = new PIXI.Text({ text: "Open CP Menu", style: new PIXI.TextStyle({ fontSize: 20, fill: '#ffffff', align: 'center' }) });
 cpButtonText.x = 790;
 cpButtonText.y = 45;
+cpButtonText.visible = false;
 cpButtonText.zIndex = 100;
 
 //buttons that are used to test functions
