@@ -159,8 +159,10 @@ class Game {
         if (target) target.totalArmies -= removed;
 
         // Otherwise, add civilian casualties to acting player
-        const acting = this.getPlayer(actingColor);
-        if (acting) acting.casualties += removed;
+        else {
+            const acting = this.getPlayer(actingColor);
+            if (acting) acting.casualties += removed;
+        }
     }
 
     // Method to reset values for new turn
@@ -185,7 +187,7 @@ class Game {
 
         // Choose two random nodes
         const nodes = this.gameState.nodes;
-        const nodeNames = Object.keys(nodes);
+        const nodeNames = Array.from(nodeMap.keys());
 
         // Helper function to randomly change population on a node
         // Will return an object containing the node and the rolls
@@ -197,7 +199,7 @@ class Game {
             const rolls = d6Array(3);
 
             // Calculate total civilian population change
-            const popChange = rolls.reduce((sum, x) => sum + ((x % 2) ? -1 : 1));
+            const popChange = rolls.reduce((sum, x) => sum + ((x % 2) ? -1 : 1), 0);
 
             // If positive, add civilian pieces to node
             if (popChange > 0)

@@ -2043,8 +2043,8 @@ function createDebugTable() {
         { name: "Arrow animation", func: doArrow},
         { name: "CP Button", func: Board.openCPQuery},
         { name: "Display Rolls",func: ()=>{displayRolls(rolls)}},
-        { name: "send civ-move", func: ()=>{socket.emit('civ-move');console.log("send civ-move");}},
-        { name: "send civ-return", func: ()=> {socket.emit('civ-return');console.log("send civ-return");}}
+        { name: "send civ-move", func: ()=>{socket.emit('game', 'civ-move');}},
+        { name: "send civ-return", func: ()=> {socket.emit('game', 'civ-return');}}
 
         
     ];

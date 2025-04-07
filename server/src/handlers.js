@@ -258,7 +258,6 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
 
 // End Turn handler
 const handleEndTurn = (game, session, io) => {
-    console.log('end turn');
 
     // Make sure it's the client's turn
     if (game.gameState.turnPlayer !== session.color) return;
@@ -315,7 +314,6 @@ const handleCloseCombat = (numDice, game, session, io) => {
 
 // Civilian Move handler
 const handleCivMove = (game, session, io) => {
-    console.log('civ move');
 
     // Make sure it's the client's turn
     if (game.gameState.turnPlayer !== session.color) return;
@@ -332,7 +330,6 @@ const handleCivMove = (game, session, io) => {
 
 // Civilian Return from Haven handler
 const handleCivReturn = (choice, game, session, io) => {
-    console.log('civ return');
 
     // Make sure it's the client's turn
     if (game.gameState.turnPlayer !== session.color) return;
