@@ -1707,9 +1707,9 @@ function cancelStrike(){
 // function closeCombat(){
 socket.on('close-combat', (data) => {
     let parsedData = JSON.parse(data);
-    console.log(parsedData.rolls); // Should print all four arrays of rolls
-    console.log(parsedData.gameState); // Should print the entire updated gameState
-    console.log(parsedData.next); // Should print name of a node (or undefined if close combat is over)
+    console.log("rolls: " + parsedData.rolls); // Should print all four arrays of rolls
+    console.log("gameState: "+parsedData.gameState); // Should print the entire updated gameState
+    console.log("next: "+parsedData.next); // Should print name of a node (or undefined if close combat is over)
 
     // let rolls = parsedData.rolls;
     let next = parsedData.next;

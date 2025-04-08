@@ -272,7 +272,7 @@ const handleEndTurn = (game, session, io) => {
     let data = {};
 
     // Initiate close combat, and if it's required, add a 'next' node to data
-    if (!game.initiateCloseCombat()) data = { next: game.meta.combat[0] };
+    if (game.initiateCloseCombat()) data = { next: game.meta.combat[0] };
     
     // Send close combat message
     io.to(session.gameID).emit('close-combat', JSON.stringify(data));
@@ -305,10 +305,15 @@ const handleCloseCombat = (numDice, game, session, io) => {
     if (game.blueFlag && game.redFlag) {
 
         // Conduct close combat fully, and get dice roll results
-        rolls = game.performCloseCombat();
+        let result = game.performCloseCombat();
 
-        // Send clients the next close combat response
-        io.to(session.gameID).emit('close-combat', JSON.stringify({ rolls: rolls, gameState: game.gameState, next: game.meta.combat[0] }));
+        // If a player ran out of armies, end the game
+        if (result.winner)
+            endGame(session.gameID, 'army', result.winner, io);
+
+        // Otherwise, send clients the next close combat response
+        else
+            io.to(session.gameID).emit('close-combat', JSON.stringify({ rolls: result, gameState: game.gameState, next: game.meta.combat[0] }));
     }
 };
 

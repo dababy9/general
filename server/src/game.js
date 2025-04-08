@@ -113,9 +113,11 @@ class Game {
         // Retrieve close combat node
         const node = this.gameState.nodes[this.meta.combat[0]];
 
-        // Remove armies based on rolls
-        this.removePieces('red', armyCasualties(blueRolls), node, 'blue');
-        this.removePieces('blue', armyCasualties(redRolls), node, 'red');
+        // Remove armies based on rolls, and return if a player loses the game
+        if (this.removePieces('red', armyCasualties(blueRolls), node, 'blue'))
+            return { winner: this.removePieces('blue', armyCasualties(redRolls), node, 'red') ? 'tie' : 'blue' };
+        else if (this.removePieces('blue', armyCasualties(redRolls), node, 'red'))
+            return { winner: this.removePieces('red', armyCasualties(blueRolls), node, 'blue') ? 'tie' : 'red' };
 
         // Variable to store result
         let result = { blueRolls, redRolls };
@@ -156,13 +158,18 @@ class Game {
 
         // If the pieces removed were armies, subtract from variable in game state
         const target = this.getPlayer(type);
-        if (target) target.totalArmies -= removed;
+        if (target) {
+            target.totalArmies -= removed;
+
+            // Return true if the player is out of armies
+            if (target.totalArmies <= 0) return true;
 
         // Otherwise, add civilian casualties to acting player
-        else {
+        } else {
             const acting = this.getPlayer(actingColor);
             if (acting) acting.casualties += removed;
         }
+        return false;
     }
 
     // Method to reset values for new turn
