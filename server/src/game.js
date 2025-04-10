@@ -51,6 +51,11 @@ class Game {
         }
     }
 
+    // Method to return the opposite color given
+    otherColor(color) {
+        return (color === 'blue' ? 'red' : 'blue');
+    }
+
     // Method to return a list of pieces of a given type on a given node
     getPieces (type, node) {
         return this.gameState.nodes[node].filter(x => x.type === type);
@@ -88,21 +93,11 @@ class Game {
         // Helper function to count army casualties
         const armyCasualties = (rolls) => rolls.filter(x => x === 5 || x === 6).length;
 
-        // Helper function to handle civilian casualties
-        // Returns true if second player's roll was needed, false if not
-        const handleCivilians = (rolls1, rolls2, color1, color2) => {
+        // Retrieve close combat node
+        const node = this.gameState.nodes[this.meta.combat[0]];
 
-            // Calculate civilian casualties for turn player
-            this.removePieces('civ', rolls1.filter(x => x === 6).length, node, color1);
-
-            // If civilians remain, continue calculation for opposing player and return true
-            if (this.getPieces('civ', node).length) {
-                this.removePieces('civ', rolls2.filter(x => x === 6).length, node, color2);
-                return true;
-
-            // Otherwise, return false
-            } else return false;
-        }
+        // Variable to store result
+        const result = { blueRolls, redRolls, redCivRolls, blueCivRolls };
 
         // Roll all dice
         const blueRolls = d6Array(this.meta.blueCC);
@@ -110,27 +105,53 @@ class Game {
         const blueCivRolls = d6Array(this.meta.blueCC);
         const redCivRolls = d6Array(this.meta.redCC);
 
-        // Retrieve close combat node
-        const node = this.gameState.nodes[this.meta.combat[0]];
-
-        // Remove armies based on rolls, and return if a player loses the game
-        if (this.removePieces('red', armyCasualties(blueRolls), node, 'blue'))
-            return { winner: this.removePieces('blue', armyCasualties(redRolls), node, 'red') ? 'tie' : 'blue' };
-        else if (this.removePieces('blue', armyCasualties(redRolls), node, 'red'))
-            return { winner: this.removePieces('red', armyCasualties(blueRolls), node, 'blue') ? 'tie' : 'red' };
-
-        // Variable to store result
-        let result = { blueRolls, redRolls };
+        // Remove armies based on rolls
+        const blueWin = this.removeArmies('red', armyCasualties(blueRolls), node);
+        const redWin = this.removeArmies('blue', armyCasualties(redRolls), node);
+        
+        // End the game if necessary
+        if (blueWin || redWin) {
+            if (blueWin && redWin) return { winner: 'tie', reason: 'army' };
+            else return { winner: (blueWin ? 'blue' : 'red'), reason: 'army' };
+        }
 
         // If it's the blue player's turn, they do casualties first
         if (this.gameState.turnPlayer === 'blue') {
-            result.blueCivRolls = blueCivRolls;
-            if (handleCivilians(blueRolls, redRolls, 'blue', 'red')) result.redCivRolls = redCivRolls;
 
-        // Otherwise, red player does them first
+            // Assign blue roll to result
+            result.blueCivRolls = blueCivRolls;
+
+            // Remove civilians and end game if necessary
+            if (this.removeCivilians('blue', blueCivRolls.filter(x => x === 6).length, node)) return { winner: 'red', reason: 'support' };
+
+            // If there are civilians remaining, have red player conduct civilian casualties
+            if (this.getPieces('civ', node).length) {
+
+                // Remove civilians and end game if necessary
+                if (this.removePieces('red', redCivRolls.filter(x => x === 6).length, node)) return { winner: 'blue', reason: 'support' };
+
+                // Assign red roll to result
+                result.redCivRolls = redCivRolls;
+            }
+
+        // Otherwise, red player does casualties first
         } else {
+            
+            // Assign red roll to result
             result.redCivRolls = redCivRolls;
-            if (handleCivilians(redRolls, blueRolls, 'red', 'blue')) result.blueCivRolls = blueCivRolls;
+
+            // Remove civilians and end game if necessary
+            if (this.removeCivilians('red', redCivRolls.filter(x => x === 6).length, node)) return { winner: 'blue', reason: 'support' };
+
+            // If there are civilians remaining, have blue player conduct civilian casualties
+            if (this.getPieces('civ', node).length) {
+
+                // Remove civilians and end game if necessary
+                if (this.removePieces('blue', blueCivRolls.filter(x => x === 6).length, node)) return { winner: 'red', reason: 'support' };
+
+                // Assign blue roll to result
+                result.blueCivRolls = blueCivRolls;
+            }
         }
 
         // Remove node from close combat list
@@ -140,8 +161,55 @@ class Game {
         return result;
     }
 
-    // Method to handle piece removal (modifying game state and bookkeeping)
-    removePieces (type, num, node, actingColor) {
+    // Method to handle army removal
+    removeArmies (color, num, node) {
+
+        // Remove the armies and get the number removed
+        const removed = removePieces(color, num, node);
+
+        // Just return if no armies were removed
+        if (!removed) return;
+
+        // Retrieve target player object
+        const player = this.getPlayer(type);
+
+        // Remove armies from game state
+        player.totalArmies -= removed;
+
+        // If the target player is out of armies, indicate game over
+        return player.totalArmies <= 0;
+    }
+
+    // Method to handle civilian removal
+    removeCivilians (color, num, node) {
+
+        // Remove the civilians and get the number removed
+        const removed = removePieces('civ', num, node);
+
+        // Just return if no civilians were removed or if civilians were removed naturally
+        if (!removed || !color) return;
+
+        // Retrieve acting player object
+        const player = this.getPlayer(color);
+
+        // Adjust player support based on civilians removed
+        if (removed % 2 === 0) player.support -= removed/2;
+        else player.support -= (removed-1)/2 + player.casualties % 2;
+
+        // Add civilian casualties to acting player
+        player.casualties += removed;
+
+        // If support is at or below zero, set it to zero and indicate game over
+        if (player.support <= 0) {
+            player.support = 0;
+            return true;
+
+        // Otherwise, just return false
+        } else return false;
+    }
+
+    // Method to remove pieces and return the actual number removed
+    removePieces (type, num, node) {
 
         // Counter to keep track of how many pieces have been removed
         let removed = 0;
@@ -156,20 +224,8 @@ class Game {
             }
         }
 
-        // If the pieces removed were armies, subtract from variable in game state
-        const target = this.getPlayer(type);
-        if (target) {
-            target.totalArmies -= removed;
-
-            // Return true if the player is out of armies
-            if (target.totalArmies <= 0) return true;
-
-        // Otherwise, add civilian casualties to acting player
-        } else {
-            const acting = this.getPlayer(actingColor);
-            if (acting) acting.casualties += removed;
-        }
-        return false;
+        // Return number of pieces removed
+        return removed;
     }
 
     // Method to reset values for new turn
@@ -214,7 +270,7 @@ class Game {
 
             // Otherwise, remove civilian pieces from node
             else
-                this.removePieces('civ', -1*popChange, node);
+                this.removeCivilians(false, -1*popChange, node);
             return { nodeName, rolls };
         }
 
@@ -271,7 +327,7 @@ class Game {
         this.meta.move = (node2 ? [node1, node2] : [node1]);
 
         // Return lists of valid nodes to move to
-        return { type: 'move-lists', to: 'client', data: this.meta.move.map(x => this.getValidNodes(color, x))};
+        return { type: 'move-lists', to: 'client', data: this.meta.move.map(x => this.getValidNodes(color, x)) };
     };
 
     // Method to validate and process the client actually moving armies
@@ -332,7 +388,7 @@ class Game {
         if (roll === 6 && player.support < 6) player.support++;
 
         // Return die roll result and new game state
-        return { type: 'humanitarianAid', to: 'both', data: { result: roll, gameState: this.gameState }};
+        return { type: 'humanitarianAid', to: 'both', data: { result: roll, gameState: this.gameState } };
     }
 
     // Method to validate and process a 'Surge' action
@@ -368,7 +424,7 @@ class Game {
         player.cp -= 3;
 
         // Retrieve opponent player object
-        const opponent = this.getPlayer((color === 'blue' ? 'red' : 'blue'));
+        const opponent = this.getPlayer(this.otherColor(color));
 
         // Perform dice rolls
         const rolls = d6Array(Math.floor(opponent.casualties/2));
@@ -383,26 +439,101 @@ class Game {
         }
 
         // Return dice roll results and new game state
-        return { type: 'influenceOperation', to: 'both', data: { result: rolls, gameState: this.gameState }};
+        return { type: 'influenceOperation', to: 'both', data: { result: rolls, gameState: this.gameState } };
     }
 
     // Method to validate and process the client selecting node to fire from
-    artillerySelectAction (color) {
+    artillerySelectAction (node, color) {
+
+        // Input validation
+        if (typeof node !== 'string' || !nodeMap.has(node)) return;
+
+        // Retrieve player object
+        const player = this.getPlayer(color);
+
+        // Make sure turn player has enough CP
+        if (player.cp < 1) return;
+        
+        // Make sure node has a player's army on it
+        if (this.getPieces(color, node).length === 0) return;
+
+        // Generate list of valid adjacent nodes
+        const adjacentNodes = nodeMap.get(node).filter(x => this.getPieces(this.otherColor(color), x).length > 0);
+
+        // Make sure there is at least one node that the player can fire on
+        if (adjacentNodes.length <= 0) return;
 
         // Set game status
         this.status = 'artillery';
+
+        // Save chosen node for artillery confirm
+        this.meta.fire = node;
+
+        // Send list of adjacent nodes with opposing armies to client
+        return { type: 'fire-list', to: 'client', data: adjacentNodes };
     }
 
     // Method to validate and process the client selecting node to fire on
-    artilleryConfirmAction (color) {
+    artilleryConfirmAction (node, color) {
+
+        // Input validation
+        if (typeof node !== 'string' || !nodeMap.has(node)) return;
+
+        // Retrieve previously selected node
+        const from = this.meta.fire;
+
+        // Make sure nodes are connected
+        if (!nodeMap.get(from).includes(node)) return;
+
+        // Subtract CP from turn player
+        this.getPlayer(color).cp--;
 
         // Set game status
         this.status = 'default';
+
+        // Perform and return long range combat
+        return this.longRange('fire', 2, node, color);
     }
 
     // Method to validate and process a 'Air Strike' action
-    airStrikeAction (color) {
+    airStrikeAction (node, color) {
 
+        // Input validation
+        if (typeof node !== 'string' || !nodeMap.has(node)) return;
+
+        // Retrieve player object
+        const player = this.getPlayer(color);
+
+        // Make sure turn player has enough CP
+        if (player.cp < 2) return;
+
+        // Subtract CP from turn player
+        player.cp -= 2;
+
+        // Perform and return long range combat
+        return this.longRange('strike', 4, node, color);
+    }
+
+    // Handle rolls and piece removal for long range combat
+    longRange (type, civMin, node, color) {
+
+        // Perform rolls
+        const combatRoll = d6Array(3);
+        const civRoll = d6Array(3);
+
+        // Retrieve the node
+        const n = this.gameState.nodes[node];
+
+        // Calculate combat casualties and end the game if necessary
+        if (this.removeArmies(this.otherColor(color), combatRoll.filter(x => x > 3 && x < 7).length, n))
+            return { reason: 'army', winner: color };
+
+        // Calculate civilian casualties and end the game if necessary
+        if (this.removeCivilians(color, civRoll.filter(x => x > civMin && x < 6).length, n))
+            return { reason: 'support', winner: this.otherColor(color) };
+
+        // Return rolls and game state
+        return { type, to: 'both', data: { rolls: { combatRoll, civRoll }, gameState: this.gameState } };
     }
 }
 

@@ -2040,7 +2040,7 @@ function createDebugTable() {
         { name: "CHMR Received 1" , func: chmrReceived},
         { name: 'CHMR Received 2', func: chmr3Received},
         { name: "Close Combat animation", func: doCC},
-        { name: "Arrow animation", func: doArrow},
+        { name: "Arrow animation", func: ()=> {socket.emit('game', 'action', {type:'artillery-select', data: 'blueBase'});}},
         { name: "CP Button", func: Board.openCPQuery},
         { name: "Display Rolls",func: ()=>{displayRolls(rolls)}},
         { name: "send civ-move", func: ()=>{socket.emit('game', 'civ-move');}},

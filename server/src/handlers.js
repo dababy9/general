@@ -228,17 +228,17 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
 
         // Artillery Fire selection action
         case 'artillery-select':
-            if (status === 'default') result = game.artillerySelectAction(session.color);
+            if (status === 'default') result = game.artillerySelectAction(data, session.color);
             break;
 
         // Artillery Fire confirmation action
         case 'artillery-confirm':
-            if (status === 'artillery') result = game.artilleryConfirmAction(session.color);
+            if (status === 'artillery') result = game.artilleryConfirmAction(data, session.color);
             break;
 
         // Air Strike action
         case 'air-strike':
-            if (status === 'default') result = game.airStrikeAction(session.color);
+            if (status === 'default') result = game.airStrikeAction(data, session.color);
             break;
     }
 
@@ -309,7 +309,7 @@ const handleCloseCombat = (numDice, game, session, io) => {
 
         // If a player ran out of armies, end the game
         if (result.winner)
-            endGame(session.gameID, 'army', result.winner, io);
+            endGame(session.gameID, result.reason, result.winner, io);
 
         // Otherwise, send clients the next close combat response
         else

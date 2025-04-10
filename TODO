@@ -1,3 +1,5 @@
 - CHMR?
 - figure out close combat (not recognizing contested node)
 - end game function (call when disconnection, on influence op, any long-range combat, and in end turn)
+- return casualties from combat actions
+- Not getting second close combat ( after sending choices )
