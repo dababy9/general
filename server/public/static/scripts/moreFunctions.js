@@ -8,3 +8,4 @@ export function makeTextStyle(font, size, fill, align){
     });
     return style;
 }
+

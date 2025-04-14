@@ -208,6 +208,13 @@ export function makeCPContainer(actionFunctions,app) {
         align: 'center'
     });
 
+    const descriptionStyle = new PIXI.TextStyle({
+        fontSize: 14,
+        fill: 0x000000,
+        wordWrap: true,
+        wordWrapWidth: 200
+    });
+
     app.stage.addChild(cpButtonText,cpButton);
     
     const cpQueryText = new PIXI.Text({ text: "Spend CP?", style: new PIXI.TextStyle({ fontSize: 30, fill: '#FFFFFF', align: 'center' }) });
@@ -219,6 +226,18 @@ export function makeCPContainer(actionFunctions,app) {
     const actions = [
         "Move [1]", "CHMR[2]", "Humanitarian Aid [2]", "Surge [3]", "Influence Operation [3]", "Artillery Fires [1]", "Air Strike [2]"
     ];
+
+    const actionDescription = [
+        "Move up to two Armies to an adjacent node. The two Armies do not have to travel to the same node. Armies cannot move through a space occupied by the opponent. Each Army can only move once per turn.",
+        "Target one node for CHMR. Select the number of armies to move to the selected temporary haven adjacent to the targeted node. Roll 1 d6 for each Army. Based on the roll, the CIV value will be decreased from the node and added to the temporary haven.\nRoll 6: 2 CIV\nRoll 5-3: 1 CIV\nRoll 1-2: 0 CIV",
+        "Roll 1 d6. On a roll of 6, increase your Influence by 1 on the Support Tracker. If your Support Marker is already on 6, nothing happens",
+        "Add an additional 4 Armies to your team's base from your \"Available to Surge\" box. This action can only be used twice during the game.",
+        "Roll 1 d6 for every 2 Civilians your opponent has in their Civilian casualties space. For each 6 rolled, reduce the opponent's influence on Support Tracker by one",
+        "Select an Army to fire, roll 3 d6 to target an adjacent node.\nFirst Roll - Casualties occur on rolls of 4-6.\nSecond Roll - Civ Casualties occur on rolls of 3-6.",
+        "Roll 2 d6 to air strike any node on the map.\nFirst Roll - Combat casualties occur on rolls of 4-6.\nSecond Roll - Civ Casualties occur on rolls of 5-6."
+    ];
+
+
 
     const buttons = [];
     for (let i = 0; i < actions.length; i++) {
@@ -233,15 +252,36 @@ export function makeCPContainer(actionFunctions,app) {
         buttonText.x = actionButton.x + (180 - buttonText.width) / 2;
         buttonText.y = actionButton.y + 10;
 
+        let descriptionText = new PIXI.Text({text:actionDescription[i], style:descriptionStyle});
+        descriptionText.x = 80;
+        descriptionText.y = 200;
+        descriptionText.visible=false;
+        descriptionText.zIndex=101;
+
+        let descBack = new PIXI.Graphics();
+        descBack.roundRect(70,190,descriptionText.width + 20, descriptionText.height+20,10);
+        descBack.fill('0xE4EFE7');
+        descBack.stroke(2,0x000000);
+        descBack.visible=false;
+        descBack.zIndex = 100;
+
         actionButton.eventMode = 'static';
         actionButton.on("pointerdown", () => {
             actionFunctions[i]();
             closeCPQuery();
         });
+        actionButton.on("mouseover",()=>{
+            descriptionText.visible=true;
+            descBack.visible=true;
+        });
+        actionButton.on("mouseout",()=>{
+            descriptionText.visible=false;
+            descBack.visible=false;
+        });
 
         buttons.push(actionButton);
         cpQuery.addChild(actionButton);
-        cpQuery.addChild(buttonText);
+        cpQuery.addChild(buttonText,descBack,descriptionText);
     }
 
     const endTurnButton = makeRoundRect(510,320,180,40,10,0x823939,0,0x000000,1001,true);
@@ -273,4 +313,15 @@ export function openCPQuery() {
     cpButton.visible = true;
     cpButtonText.visible=true;
     cpButtonText.text = "Close CP Menu";
+}
+
+ //finds all of the nodes that have armies of the given color
+export function findNodes(color,num) {
+    if (color == 'blue') {
+        return Object.keys(num).filter(key => num[key].blueArmies > num[key].blueMoved);
+    }
+    else {
+        return Object.keys(num).filter(key => num[key].redArmies > num[key].redMoved);
+
+    }
 }
