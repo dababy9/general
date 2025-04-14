@@ -128,7 +128,7 @@ class Game {
             if (this.getPieces('civ', node).length) {
 
                 // Remove civilians and end game if necessary
-                if (this.removePieces('red', redCivRolls.filter(x => x === 6).length, node)) return { winner: 'blue', reason: 'support' };
+                if (this.removeCivilians('red', redCivRolls.filter(x => x === 6).length, node)) return { winner: 'blue', reason: 'support' };
 
                 // Assign red roll to result
                 result.redCivRolls = redCivRolls;
@@ -147,7 +147,7 @@ class Game {
             if (this.getPieces('civ', node).length) {
 
                 // Remove civilians and end game if necessary
-                if (this.removePieces('blue', blueCivRolls.filter(x => x === 6).length, node)) return { winner: 'red', reason: 'support' };
+                if (this.removeCivilians('blue', blueCivRolls.filter(x => x === 6).length, node)) return { winner: 'red', reason: 'support' };
 
                 // Assign blue roll to result
                 result.blueCivRolls = blueCivRolls;
@@ -165,7 +165,7 @@ class Game {
     removeArmies (color, num, node) {
 
         // Remove the armies and get the number removed
-        const removed = removePieces(color, num, node);
+        const removed = this.removePieces(color, num, node);
 
         // Just return if no armies were removed
         if (!removed) return;
@@ -184,7 +184,7 @@ class Game {
     removeCivilians (color, num, node) {
 
         // Remove the civilians and get the number removed
-        const removed = removePieces('civ', num, node);
+        const removed = this.removePieces('civ', num, node);
 
         // Just return if no civilians were removed or if civilians were removed naturally
         if (!removed || !color) return;
