@@ -96,15 +96,15 @@ class Game {
         // Retrieve close combat node
         const node = this.gameState.nodes[this.meta.combat[0]];
 
-        // Variable to store result
-        const result = { blueRolls, redRolls, redCivRolls, blueCivRolls };
-
         // Roll all dice
         const blueRolls = d6Array(this.meta.blueCC);
         const redRolls = d6Array(this.meta.redCC);
         const blueCivRolls = d6Array(this.meta.blueCC);
         const redCivRolls = d6Array(this.meta.redCC);
 
+        // Variable to store result
+        const result = { blueRolls, redRolls };
+        
         // Remove armies based on rolls
         const blueWin = this.removeArmies('red', armyCasualties(blueRolls), node);
         const redWin = this.removeArmies('blue', armyCasualties(redRolls), node);
@@ -125,7 +125,7 @@ class Game {
             if (this.removeCivilians('blue', blueCivRolls.filter(x => x === 6).length, node)) return { winner: 'red', reason: 'support' };
 
             // If there are civilians remaining, have red player conduct civilian casualties
-            if (this.getPieces('civ', node).length) {
+            if (this.getPieces('civ', this.meta.combat[0]).length) {
 
                 // Remove civilians and end game if necessary
                 if (this.removeCivilians('red', redCivRolls.filter(x => x === 6).length, node)) return { winner: 'blue', reason: 'support' };
@@ -144,7 +144,7 @@ class Game {
             if (this.removeCivilians('red', redCivRolls.filter(x => x === 6).length, node)) return { winner: 'blue', reason: 'support' };
 
             // If there are civilians remaining, have blue player conduct civilian casualties
-            if (this.getPieces('civ', node).length) {
+            if (this.getPieces('civ', this.meta.combat[0]).length) {
 
                 // Remove civilians and end game if necessary
                 if (this.removeCivilians('blue', blueCivRolls.filter(x => x === 6).length, node)) return { winner: 'red', reason: 'support' };
@@ -171,7 +171,7 @@ class Game {
         if (!removed) return;
 
         // Retrieve target player object
-        const player = this.getPlayer(type);
+        const player = this.getPlayer(color);
 
         // Remove armies from game state
         player.totalArmies -= removed;

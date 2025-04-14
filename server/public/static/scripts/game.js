@@ -1707,31 +1707,24 @@ function cancelStrike(){
 // function closeCombat(){
 socket.on('close-combat', (data) => {
     let parsedData = JSON.parse(data);
-    console.log("rolls: " + parsedData.rolls); // Should print all four arrays of rolls
-    console.log("gameState: "+parsedData.gameState); // Should print the entire updated gameState
-    console.log("next: "+parsedData.next); // Should print name of a node (or undefined if close combat is over)
+    console.log("rolls:", parsedData.rolls); // Should print all four arrays of rolls
+    console.log("gameState:", parsedData.gameState); // Should print the entire updated gameState
+    console.log("next:", parsedData.next); // Should print name of a node (or undefined if close combat is over)
 
-    // let rolls = parsedData.rolls;
+    let rolls = parsedData.rolls;
     let next = parsedData.next;
+    if (parsedData.gameState) console.log(JSON.stringify(parsedData.gameState));
     // gameState = parsedData.gameState;
     // updateBoard(gameState);
 
-    // let rolls=
-    //  {
-    //     blueRolls:[1,2,3],
-    //     redRolls:[2,3,4],
-    //     blueCivRolls:[3,4,5],
-    //     redCivRolls: [4,5,6]
-    // }
-    // let next = "redBase";
-
     if (!rolls && next){
-       combatSelect(next); 
+       // combatSelect(next);
+       socket.emit('game', 'close-combat', 1);
         // socket.emit('game','action',{type:'chmr-select',data:safeNode}) 
     }
     if (rolls && next){
         displayRolls(rolls, next);
-        gameState = parsedResponse.gameState;
+        gameState = parsedData.gameState;
         updateBoard(gameState);
     }
 
