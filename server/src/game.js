@@ -299,6 +299,11 @@ class Game {
         }
     }
 
+    // Method to tally up VP and determine a winner
+    winnerByVP () {
+        
+    }
+
     // Method to validate and process the client selecting node(s) to move from
     moveSelectAction (nodes, color) {
 
