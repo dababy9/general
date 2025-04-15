@@ -281,6 +281,9 @@ const handleEndTurn = (game, session, io) => {
 // Close Combat handler
 const handleCloseCombat = (numDice, game, session, io) => {
 
+    // Make sure the game is in close combat status
+    if (game.status !== 'closeCombat') return;
+
     // Get node for close combat
     const node = game.meta.combat[0];
 
@@ -324,13 +327,16 @@ const handleCivMove = (game, session, io) => {
     if (game.gameState.turnPlayer !== session.color) return;
     
     // Make sure close combat has just ended
-    if (game.status !== 'closeCombat') return;
+    if (game.status !== 'closeCombat' || game.meta.combat[0]) return;
 
     // Set game status for civilian return
     game.status = 'civReturn';
 
+    // Perform civilian repopulation and save result
+    const result = game.civilianPopulation();
+
     // Send clients the result of civilian movement
-    io.to(session.gameID).emit('civ-move', JSON.stringify({ result: game.civilianPopulation(), gameState: game.gameState }));
+    io.to(session.gameID).emit('civ-move', JSON.stringify({ result, gameState: game.gameState }));
 };
 
 // Civilian Return from Haven handler
