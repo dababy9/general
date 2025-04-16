@@ -316,12 +316,12 @@ export function openCPQuery() {
 }
 
  //finds all of the nodes that have armies of the given color
-export function findNodes(color,num) {
+export function findNodes(color,num, move = true) {
     if (color == 'blue') {
-        return Object.keys(num).filter(key => num[key].blueArmies > num[key].blueMoved);
+        return Object.keys(num).filter(key => (move ? (num[key].blueArmies > num[key].blueMoved): num[key].blueArmies > 0));
     }
     else {
-        return Object.keys(num).filter(key => num[key].redArmies > num[key].redMoved);
+        return Object.keys(num).filter(key => (move ? (num[key].redArmies > num[key].redMoved): num[key].redArmies > 0));
 
     }
 }

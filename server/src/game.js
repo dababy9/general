@@ -88,7 +88,7 @@ class Game {
     }
 
     // Method to perform close combat
-    performCloseCombat () {
+    performCloseCombat (keepNode) {
 
         // Helper function to count army casualties
         const armyCasualties = (rolls) => rolls.filter(x => x === 5 || x === 6).length;
@@ -154,8 +154,13 @@ class Game {
             }
         }
 
-        // Remove node from close combat list
-        this.meta.combat.shift();
+        // Remove the current node from contested list based on keepNode
+        if ((keepNode && !this.isContested(this.meta.combat[0])) || !keepNode)
+            this.meta.combat.shift();
+
+        // Reset flags
+        this.blueFlag = false;
+        this.redFlag = false;
 
         // Return result
         return result;
@@ -301,7 +306,41 @@ class Game {
 
     // Method to tally up VP and determine a winner
     winnerByVP () {
-        
+
+        // Initiate VP variables
+        let blueVP = 0, redVP = 0;
+
+        // Method to calculate VP from support
+        const supportVP = (support) => {
+            switch (support) {
+                case 1: case 2: return -2;
+                case 3: case 4: return 2;
+                default: return 6;
+            }
+        }
+
+        // Method to adjust VP on a given node
+        const nodeVP = (node) => {
+            let vp;
+            switch (node[0]) {
+                case "c": vp = 4; break;
+                case "v": vp = 2; break;
+                default: return;
+            }
+            if (this.getPieces('blue', node).length > 0) blueVP += vp;
+            if (this.getPieces('red', node).length > 0) redVP += vp;
+        }
+
+        // Calculate support VP
+        blueVP += supportVP(this.gameState.bluePlayer.support);
+        redVP += supportVP(this.gameState.redPlayer.support);
+
+        // Calculate VP from nodes
+        Object.keys(this.gameState.nodes).forEach(nodeVP);
+
+        // Return winner
+        if (blueVP === redVP) return 'tie';
+        return (blueVP > redVP ? 'blue' : 'red');
     }
 
     // Method to validate and process the client selecting node(s) to move from
@@ -333,7 +372,7 @@ class Game {
 
         // Return lists of valid nodes to move to
         return { type: 'move-lists', to: 'client', data: this.meta.move.map(x => this.getValidNodes(color, x)) };
-    };
+    }
 
     // Method to validate and process the client actually moving armies
     moveConfirmAction (nodes, color) {
@@ -372,7 +411,34 @@ class Game {
 
         // Return new game state
         return { type: 'move', to: 'both', data: this.gameState };
-    };
+    }
+
+    chmrSelectAction (data,color){
+
+        // Input validation
+        if (typeof data.node !== 'string' || !nodeMap.has(data.node)) return;
+
+        // Retrieve player object
+        const player = this.getPlayer(color);
+
+        // Make sure turn player has enough CP
+        if (player.cp < 2) return;
+        
+        // Make sure node has a player's army on it
+        if (this.getPieces(color, data.node).length === 0) return;
+
+        // Set game status
+        this.status = 'chmr1';
+
+        // Save chosen node for artillery confirm
+        this.meta.chmr = data.node;
+        
+        console.log('here');
+
+        // Send list of adjacent havens
+        return { type: 'chmr-list', to: 'client', data: fullMap.get(data.node)};
+
+    }
 
     // Method to validate and process a 'Humanitarian Aid' action
     humanitarianAidAction (color) {

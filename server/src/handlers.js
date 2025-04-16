@@ -211,6 +211,10 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
             result = null; // TODO ------------------------------------------
             break;
 
+        case 'chmr-select':
+            if (status === 'default') result = game.chmrSelectAction(data,session.color);
+            break;
+
         // Humanitarian Aid action
         case 'humanitarian-aid':
             if (status === 'default') result = game.humanitarianAidAction(session.color);
@@ -271,8 +275,8 @@ const handleEndTurn = (game, session, io) => {
     // Variable to store close combat data sent to both clients
     let data = {};
 
-    // Initiate close combat, and if it's required, add a 'next' node to data
-    if (game.initiateCloseCombat()) data = { next: game.meta.combat[0] };
+    // Initiate close combat, and if it's required, add a 'minValue' and 'next' field to data
+    if (game.initiateCloseCombat()) data = { minValue: 0, next: game.meta.combat[0] };
     
     // Send close combat message
     io.to(session.gameID).emit('close-combat', JSON.stringify(data));
@@ -281,17 +285,20 @@ const handleEndTurn = (game, session, io) => {
 // Close Combat handler
 const handleCloseCombat = (numDice, game, session, io) => {
 
-    // Make sure the game is in close combat status
-    if (game.status !== 'closeCombat') return;
+    // Make sure the game is in close combat (or final combat) status
+    if (game.status !== 'closeCombat' && game.status !== 'finalCombat') return;
 
     // Get node for close combat
     const node = game.meta.combat[0];
 
-    // Make sure the client send a valid number of dice to roll
-    if (!Number.isInteger(numDice) || numDice < 0 || numDice > game.getPieces(session.color, node).length) {
+    // Define minimum value based on game status
+    const minValue = (game.status === 'closeCombat' ? 0 : 1);
+
+    // Make sure the client sends a valid number of dice to roll
+    if (!Number.isInteger(numDice) || numDice < minValue || numDice > game.getPieces(session.color, node).length) {
 
         // If not, send back another close combat response
-        io.to(session.gameID).emit('close-combat', JSON.stringify({ next: node }));
+        io.to(session.gameID).emit('close-combat', JSON.stringify({ minValue, next: node }));
         return;
     }
 
@@ -308,7 +315,7 @@ const handleCloseCombat = (numDice, game, session, io) => {
     if (game.blueFlag && game.redFlag) {
 
         // Conduct close combat fully, and get dice roll results
-        let result = game.performCloseCombat();
+        let result = game.performCloseCombat(minValue);
 
         // If a player ran out of armies, end the game
         if (result.winner)
@@ -316,7 +323,7 @@ const handleCloseCombat = (numDice, game, session, io) => {
 
         // Otherwise, send clients the next close combat response
         else
-            io.to(session.gameID).emit('close-combat', JSON.stringify({ rolls: result, gameState: game.gameState, next: game.meta.combat[0] }));
+            io.to(session.gameID).emit('close-combat', JSON.stringify({ rolls: result, gameState: game.gameState, minValue, next: game.meta.combat[0] }));
     }
 };
 
@@ -325,6 +332,12 @@ const handleCivMove = (game, session, io) => {
 
     // Make sure it's the client's turn
     if (game.gameState.turnPlayer !== session.color) return;
+
+    // If the game is in 'finalCombat' status with no remaining contested nodes
+    if (game.status === 'finalCombat' && !game.meta.combat[0])
+
+        // End game appropriately
+        return endGame(session.gameID, 'vp', game.winnerByVP(), io); 
     
     // Make sure close combat has just ended
     if (game.status !== 'closeCombat' || game.meta.combat[0]) return;
@@ -363,6 +376,26 @@ const handleCivReturn = (choice, game, session, io) => {
 
 // Helper function to actually end the turn
 const endTurn = (game, session, io) => {
+
+    // Check if 6 rounds have been played
+    if (game.gameState.turnCounter === 11) {
+
+        // Initiate final close combat and check if it's required
+        if(!game.initiateCloseCombat())
+
+            // End game appropriately
+            return endGame(session.gameID, 'vp', game.winnerByVP(), io);
+
+        // If close combat is required
+        else {
+
+            // Set status to final combat
+            game.status = 'finalCombat';
+
+            // Send clients first final close combat message
+            io.to(session.gameID).emit('close-combat', JSON.stringify({ minValue: 1, next: game.meta.combat[0] }));
+        }
+    }
 
     // Update game state with new turn, and use result to determine initiative
     // True means initiative required, false means new turn player is determined automatically

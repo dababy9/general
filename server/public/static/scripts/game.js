@@ -1,5 +1,5 @@
 import * as Board from './gameBoard.js';
-import {makeTextStyle} from './moreFunctions.js';
+import { makeTextStyle } from './moreFunctions.js';
 
 //Client responses
 
@@ -28,6 +28,24 @@ socket.on('connect_error', (error) => {
     console.log('Connection error:', error);
 });
 
+socket.on('chmr-list', (result)=>{
+
+    console.log(result);
+});
+
+socket.on('civ-move', (data) => {
+    let newdata = JSON.parse(data);
+    console.log(newdata.result[0]); // Should print the first result's node name and rolls
+    console.log(newdata.gameState); // Should print the entire updated gameStatea
+
+    // doArrow(newdata.result[0].name);
+    // doArrow(newdata.result[1].name);
+    gameState = newdata.gameState;
+    updateBoard(gameState);
+    changeMessage("Civilians Updated");
+});
+
+
 //where the gamestate is saved that allows for the board to be updated
 //updates the board upon first gamestate receipt
 var gameState;
@@ -43,21 +61,25 @@ socket.on('new-message', (message) => {
 });
 
 socket.on('new-turn', (player) => {
-   gameState.turnPlayer = player; 
-   if (playerColor == player){
-    Board.openCPQuery();
-   }
-   playerTurnBanner();
+    //asks for the game state after the values in update board have been created
+    socket.emit('game', 'fetch-game-state');
+    gameState.turnPlayer = player;
+    if (playerColor == player) {
+        Board.openCPQuery();
+    }
+    playerTurnBanner();
 });
 
 
 socket.on('initiative-ready', () => {
+    //asks for the game state after the values in update board have been created
+    socket.emit('game', 'fetch-game-state');
     startInitiative();
 });
 
 //start the pixi application to make canvas to add sprites to
 const app = new PIXI.Application();
-await app.init({ height:650, width:1000, background: '#DFE8F3' });
+await app.init({ height: 650, width: 1000, background: '#DFE8F3' });
 // Append PixiJS canvas to the correct container
 document.getElementById("pixi-container").appendChild(app.canvas);
 // document.body.appendChild(app.canvas);
@@ -82,31 +104,31 @@ const background = await Board.makeBackground();
 const board = await Board.makeGameBoard();
 
 //add the left gravestone
-const blueGrave = await Board.makeBoardPiece(128,450,100,175,'/content/blueGrave.png');
-const redGrave = await Board.makeBoardPiece(848,450,100,175,'/content/redGrave.png');
+const blueGrave = await Board.makeBoardPiece(128, 450, 100, 175, '/content/blueGrave.png');
+const redGrave = await Board.makeBoardPiece(848, 450, 100, 175, '/content/redGrave.png');
 
-app.stage.addChild(background, board,blueGrave,redGrave);
+app.stage.addChild(background, board, blueGrave, redGrave);
 
 //add the command point trackers (value updated from gamestate in update board)
-const redCPTracker = Board.makeBoardPiece(750,350,193,89,'/content/redCPTracker.png');
-const blueCPTracker = Board.makeBoardPiece(30,350,193,89,'/content/blueCPTracker.png');
+const redCPTracker = Board.makeBoardPiece(750, 350, 193, 89, '/content/redCPTracker.png');
+const blueCPTracker = Board.makeBoardPiece(30, 350, 193, 89, '/content/blueCPTracker.png');
 
-const blueSur = Board.makeBoardPiece(20,450,95,170,'/content/blueSurgeNew.png');
-const redSur = Board.makeBoardPiece(740,450,95,170,'/content/redSurgeNew.png');
-app.stage.addChild(redCPTracker,blueCPTracker,redSur,blueSur);
+const blueSur = Board.makeBoardPiece(20, 450, 95, 170, '/content/blueSurgeNew.png');
+const redSur = Board.makeBoardPiece(740, 450, 95, 170, '/content/redSurgeNew.png');
+app.stage.addChild(redCPTracker, blueCPTracker, redSur, blueSur);
 
 //add the support tracker
-const suppTrack = Board.makeBoardPiece(230,490,500,115,'/content/support_tracker.png');
+const suppTrack = Board.makeBoardPiece(230, 490, 500, 115, '/content/support_tracker.png');
 app.stage.addChild(suppTrack);
 
 //adds the menu button to the top left
-const menubutton = Board.makeBoardPiece(15,15,25,25,'/content/button.png');
+const menubutton = Board.makeBoardPiece(15, 15, 25, 25, '/content/button.png');
 menubutton.eventMode = 'static';
 menubutton.cursor = 'pointer';
 
 //creates a sprite that shows the Instructions. this pops up and disappears 
 //by clicking the menu button
-const menuInstructions = Board.makeBoardPiece(40,40,950,534,'/content/VVInstructions.jpg',1200)
+const menuInstructions = Board.makeBoardPiece(40, 40, 950, 534, '/content/VVInstructions.jpg', 1200)
 menuInstructions.visible = false;
 app.stage.addChild(menuInstructions);
 
@@ -128,27 +150,27 @@ const supportLoc = {
 }
 
 // Create a text style 
-const redArmy = makeTextStyle('Arial',30,'#520e05','center');
+const redArmy = makeTextStyle('Arial', 30, '#520e05', 'center');
 
-const blueArmy = makeTextStyle('Arial',30,'#000080','center');
+const blueArmy = makeTextStyle('Arial', 30, '#000080', 'center');
 
-const civStyle = makeTextStyle('Arial',35,'#FFFFFF','center');
-civStyle.fontWeight= 'bold';
+const civStyle = makeTextStyle('Arial', 35, '#FFFFFF', 'center');
+civStyle.fontWeight = 'bold';
 
 ////circles for representing the amount of support points 
-const redSupport = Board.makeCircle(0,0,20,0xFF0000,2,0xFF0FF0,0.75);
-const blueSupport = Board.makeCircle(0,0,20,0x0000FF,2,0x0F0FFF,0.75);
-app.stage.addChild(redSupport,blueSupport);
+const redSupport = Board.makeCircle(0, 0, 20, 0xFF0000, 2, 0xFF0FF0, 0.75);
+const blueSupport = Board.makeCircle(0, 0, 20, 0x0000FF, 2, 0x0F0FFF, 0.75);
+app.stage.addChild(redSupport, blueSupport);
 
 //Civilian Casualties trackers
-const redCas = Board.makeBoardText(888,492,'0',redArmy);
-const blueCas = Board.makeBoardText(168,492,'0',blueArmy);
+const redCas = Board.makeBoardText(888, 492, '0', redArmy);
+const blueCas = Board.makeBoardText(168, 492, '0', blueArmy);
 //surge trackers
-const redSurge = Board.makeBoardText(778,492,'0',redArmy);
-const blueSurge = Board.makeBoardText(58,492,'0',blueArmy);
+const redSurge = Board.makeBoardText(778, 492, '0', redArmy);
+const blueSurge = Board.makeBoardText(58, 492, '0', blueArmy);
 //command point trackers
-const redCP = Board.makeBoardText(833,385,'0',redArmy);
-const blueCP = Board.makeBoardText(113,385,'0',blueArmy);
+const redCP = Board.makeBoardText(833, 385, '0', redArmy);
+const blueCP = Board.makeBoardText(113, 385, '0', blueArmy);
 
 app.stage.addChild(redCas, blueCas, redSurge, blueSurge, redCP, blueCP);
 
@@ -158,7 +180,7 @@ async function updateBoard(gameState) {
     // console.log(gameState);
     //update the player turn banner
     playerTurnBanner();
-    roundNum.text = gameState.turnCounter;
+    roundNum.text = Math.floor(gameState.turnCounter/2)+1;
 
     //starts initiative if no turn player is assigned
     if (!gameState.turnPlayer) {
@@ -166,10 +188,10 @@ async function updateBoard(gameState) {
     }
 
     //update the surge and casualites
-    redSurge.text=gameState['redPlayer'].surgeArmies;
-    blueSurge.text=gameState['bluePlayer'].surgeArmies;
-    redCas.text=gameState['redPlayer'].casualties;
-    blueCas.text=gameState['bluePlayer'].casualties;
+    redSurge.text = gameState['redPlayer'].surgeArmies;
+    blueSurge.text = gameState['bluePlayer'].surgeArmies;
+    redCas.text = gameState['redPlayer'].casualties;
+    blueCas.text = gameState['bluePlayer'].casualties;
 
     //update support tracker locations
     let redS = gameState.redPlayer.support;
@@ -191,10 +213,10 @@ async function updateBoard(gameState) {
         nodeSprites[data].redSprite.text = numberedGameState[data].redArmies;
         nodeSprites[data].blueSprite.text = numberedGameState[data].blueArmies;
         nodeSprites[data].civSprite.text = numberedGameState[data].civilians;
-        
+
 
         if (nodeSprites[data].civSprite.text == '0') {
-            nodeSprites[data].civSprite.visible = false; 
+            nodeSprites[data].civSprite.visible = false;
             nodeSprites[data].civImg.visible = false;
         }
         else {
@@ -263,27 +285,27 @@ let i = 0
 for (const data in locations) {
 
     //text for the pieces
-    const redText = Board.makeBoardText(locations[data].x,locations[data].y,'0',redArmy);
+    const redText = Board.makeBoardText(locations[data].x, locations[data].y, '0', redArmy);
     redText.visible = false;
     redText.zIndex = 80;
-    const blueText = Board.makeBoardText(locations[data].x + 52, locations[data].y,'0',blueArmy);
-    blueText.visible=false;
+    const blueText = Board.makeBoardText(locations[data].x + 52, locations[data].y, '0', blueArmy);
+    blueText.visible = false;
     blueText.zIndex = 80;
-    const civText = Board.makeBoardText(locations[data].x + 35, locations[data].y + 40, '0',civStyle);
+    const civText = Board.makeBoardText(locations[data].x + 35, locations[data].y + 40, '0', civStyle);
     civText.zIndex = 80;
-    civText.visible=false;
+    civText.visible = false;
 
-    app.stage.addChild(redText, blueText,civText);
+    app.stage.addChild(redText, blueText, civText);
 
     //icons for the pieces
-    const redIFV = Board.makeBoardPiece(locations[data].x - 5,locations[data].y - 10,50,50,'/content/IFV_Red.png',79);
-    const blueIFV = Board.makeBoardPiece(locations[data].x + 47,locations[data].y - 10,50,50,'/content/IFV_Blue.png',79);
-    const civImg = Board.makeBoardPiece(locations[data].x + 20,locations[data].y + 35,50,50,'/content/civilians2.png',79);
+    const redIFV = Board.makeBoardPiece(locations[data].x - 5, locations[data].y - 10, 50, 50, '/content/IFV_Red.png', 79);
+    const blueIFV = Board.makeBoardPiece(locations[data].x + 47, locations[data].y - 10, 50, 50, '/content/IFV_Blue.png', 79);
+    const civImg = Board.makeBoardPiece(locations[data].x + 20, locations[data].y + 35, 50, 50, '/content/civilians2.png', 79);
     redIFV.visible = false;
-    blueIFV.visible=false;
-    civImg.visible=false;
+    blueIFV.visible = false;
+    civImg.visible = false;
 
-    app.stage.addChild(redIFV, blueIFV,civImg);
+    app.stage.addChild(redIFV, blueIFV, civImg);
 
     //add the node to the map
     nodeSprites[data] = {
@@ -297,21 +319,21 @@ for (const data in locations) {
 }
 
 //making the initiative button
-const initiative = Board.makeRoundRect(0,0,350,75,30,0x77a1b5,3,0x426779,100,false);
-initiative.x=280;
-initiative.y=280;
+const initiative = Board.makeRoundRect(0, 0, 350, 75, 30, 0x77a1b5, 3, 0x426779, 100, false);
+initiative.x = 280;
+initiative.y = 280;
 initiative.eventMode = 'static';
 initiative.zIndex = 100;
 app.stage.addChild(initiative);
 
-const initiativeText = Board.makeBoardText(300,300,"",redArmy);
+const initiativeText = Board.makeBoardText(300, 300, "", redArmy);
 initiativeText.zIndex = 101;
 app.stage.addChild(initiativeText);
 
 function startInitiative() {
     initiative.width = 350;
     initiative.removeAllListeners();
-    initiative.on('pointerdown', ()=>{
+    initiative.on('pointerdown', () => {
         initiativeText.text = 'Waiting on Opponent';
         socket.emit('game', 'initiative');
     });
@@ -329,9 +351,9 @@ socket.on('initiative-result', (result) => {
     initiativeText.text = result.winner + " wins! Click again to continue";
     initiative.width = 480
     initiative.removeAllListeners();
-    let blueDice = Board.drawDice(280,370,950,result.blueRoll,'blue');
-    let redDice = Board.drawDice(375,370,950,result.redRoll,'red');
-    app.stage.addChild(blueDice,redDice);
+    let blueDice = Board.drawDice(280, 370, 950, result.blueRoll, 'blue');
+    let redDice = Board.drawDice(375, 370, 950, result.redRoll, 'red');
+    app.stage.addChild(blueDice, redDice);
 
     initiative.on('pointerdown', () => {
         endInit()
@@ -363,7 +385,7 @@ const actionFunctions = [moveClicked, chmrClicked, humanAid, surge, influenceOp,
 // // QUERY user for using combat points (combat and non combat both use.)
 // // chat 4o used for this 
 // const cpQuery = new PIXI.Container();
-const cpQuery = Board.makeCPContainer(actionFunctions,app);
+const cpQuery = Board.makeCPContainer(actionFunctions, app);
 // cpQuery.visible = false;
 // cpQuery.zIndex = 200;
 app.stage.addChild(cpQuery);
@@ -445,7 +467,7 @@ function moveClicked() {
         Board.openCPQuery();
         return;
     }
-    var find = Board.findNodes(playerColor,getCount(gameState.nodes));
+    var find = Board.findNodes(playerColor, getCount(gameState.nodes));
     cancelMove();
     highlight(find, move1, "Pick the node where your first army will move from");
 }
@@ -461,10 +483,10 @@ function move1(name) {
         hideDone();
     }
 
-    if (selections.length === 1) {  
+    if (selections.length === 1) {
         //give the user the option to pick a second node or just send one. 
         showDone();
-        highlight(Board.findNodes(playerColor,getCount(gameState.nodes)), move1, "You picked " + name + ". Click done to continue or\nselect a second node to move from.");
+        highlight(Board.findNodes(playerColor, getCount(gameState.nodes)), move1, "You picked " + name + ". Click done to continue or\nselect a second node to move from.");
     }
 }
 
@@ -482,7 +504,7 @@ let nodeList2 = [];
 
 let selections2 = [];
 function moveReceived(nodes1, nodes2) {
-    
+
     highlight(nodes1, move2, "Pick the node where army from " + selections[0] + " should go");
     nodeList2 = nodes2;
 
@@ -510,7 +532,7 @@ function move2(name) {
 socket.on('move', (game) => {
     gameState = JSON.parse(game); // Parse the JSON string
     updateBoard(gameState);
-    
+
     if (playerColor == gameState.turnPlayer) {
         Board.openCPQuery();
     }
@@ -522,7 +544,7 @@ socket.on('move', (game) => {
 
 //done buttons that end the move after one node is selected if clicked
 const doneText = new PIXI.Text({ text: "Done", style: new PIXI.TextStyle({ fontSize: 20, fill: '#000000', align: 'center' }) });
-const doneButton = Board.makeRoundRect(90,110,doneText.width + 20, doneText.height+20,10,'0x00FF00',1,0x000000,50,false)
+const doneButton = Board.makeRoundRect(90, 110, doneText.width + 20, doneText.height + 20, 10, '0x00FF00', 1, 0x000000, 50, false)
 doneButton.alpha = 0.75;
 doneButton.eventMode = 'static';
 //sends the one node to the server if clicked
@@ -539,16 +561,16 @@ doneText.x = 100;
 doneText.y = 120;
 doneText.zIndex = 1000;
 doneText.visible = false;
-app.stage.addChild(doneText,doneButton);
+app.stage.addChild(doneText, doneButton);
 
-function showDone(){
-    doneButton.visible=true;
-    doneText.visible=true;
+function showDone() {
+    doneButton.visible = true;
+    doneText.visible = true;
 }
 
-function hideDone(){
-    doneButton.visible=false;
-    doneText.visible=false;
+function hideDone() {
+    doneButton.visible = false;
+    doneText.visible = false;
 }
 
 function removeHighlight() {
@@ -562,7 +584,7 @@ function removeHighlight() {
 
 //button that cancels move if clicked. opens cp tracker
 const cancelMoveText = new PIXI.Text({ text: "Cancel Move", style: new PIXI.TextStyle({ fontSize: 20, fill: '#FFFFFF', align: 'center' }) });
-const cancelMoveButton = Board.makeRoundRect(90,100,cancelMoveText.width + 20,cancelMoveText.height + 20,10,'0xFF0000',1,0x000000,100,false);
+const cancelMoveButton = Board.makeRoundRect(90, 100, cancelMoveText.width + 20, cancelMoveText.height + 20, 10, '0xFF0000', 1, 0x000000, 100, false);
 cancelMoveButton.alpha = 0.75;
 cancelMoveButton.eventMode = 'static';
 cancelMoveButton.on('pointerdown', () => {
@@ -583,9 +605,9 @@ function cancelMove() {
     cancelMoveText.visible = true;
 }
 
-function hideCancelMove(){
-    cancelMoveButton.visible=false;
-    cancelMoveText.visible=false;
+function hideCancelMove() {
+    cancelMoveButton.visible = false;
+    cancelMoveText.visible = false;
 }
 
 ////End Move
@@ -674,9 +696,9 @@ function playerTurnBanner() {
 /////Display round start
 /////Display round start
 const roundBack = new PIXI.Graphics();
-roundBack.roundRect(850,200,100,80,10);
-roundBack.fill({color:0x000000,alpha:0});
-roundBack.stroke(10,0x000000);
+roundBack.roundRect(850, 200, 100, 80, 10);
+roundBack.fill({ color: 0x000000, alpha: 0 });
+roundBack.stroke(10, 0x000000);
 app.stage.addChild(roundBack);
 
 const roundText = new PIXI.Text({ text: "Round", style: new PIXI.TextStyle({ fontSize: 17, fill: '#000000', align: 'center' }) });
@@ -804,7 +826,7 @@ socket.on('humanitarianAid', (response) => {
     app.stage.addChild(aidText);
 
 
-    let aidDice = Board.drawDice(440,220,950,roll,'black');
+    let aidDice = Board.drawDice(440, 220, 950, roll, 'black');
     app.stage.addChild(aidDice);
 
     aidRoll.on('pointerdown', () => {
@@ -934,92 +956,91 @@ socket.on('surge', (gameState) => {
 //INFLUENCE OPERATION START
 //INFLUENCE OPERATION START
 const influenceButton = new PIXI.Graphics();
-const influenceText = new PIXI.Text({text:"Roll for Influence Operation", style : new PIXI.TextStyle({fontSize:35, fill:'#FFFFFF', align:'center'})});
+const influenceText = new PIXI.Text({ text: "Roll for Influence Operation", style: new PIXI.TextStyle({ fontSize: 35, fill: '#FFFFFF', align: 'center' }) });
 const influenceBackground = new PIXI.Graphics();
 
-influenceButton.roundRect(250,250,influenceText.width+20,influenceText.height+20,10);
+influenceButton.roundRect(250, 250, influenceText.width + 20, influenceText.height + 20, 10);
 influenceButton.fill('0x5b3775');
 influenceButton.stroke(6, 0xffffff);
-influenceButton.visible=false;
-influenceButton.zIndex=900;
+influenceButton.visible = false;
+influenceButton.zIndex = 900;
 influenceButton.eventMode = 'static';
 
 
-influenceBackground.roundRect(230, 230, influenceText.width+60, 160, 10);
+influenceBackground.roundRect(230, 230, influenceText.width + 60, 160, 10);
 influenceBackground.fill(0xd0d0d0);
 influenceBackground.stroke(4, 0x000000);
-influenceBackground.zIndex=800;
-influenceBackground.visible=false;
+influenceBackground.zIndex = 800;
+influenceBackground.visible = false;
 app.stage.addChild(influenceBackground);
 
 app.stage.addChild(influenceButton);
 influenceText.x = 260;
 influenceText.y = 260;
 influenceText.zIndex = 1000;
-influenceText.visible=false;
+influenceText.visible = false;
 app.stage.addChild(influenceText);
 
-influenceButton.on('pointerdown', ()=> {
+influenceButton.on('pointerdown', () => {
     // console.log("Influence!");
     influenceButton.visible = false;
-    influenceText.visible=false;
-    cancelInfluButton.visible=false;
-    cancelInfluText.visible=false;
-    influenceBackground.visible=false;
+    influenceText.visible = false;
+    cancelInfluButton.visible = false;
+    cancelInfluText.visible = false;
+    influenceBackground.visible = false;
     clearMessage();
     // console.log("this is where we select influcence");
     // socket.emit('game', 'action', {type: 'influence-operation'});
-    socket.emit('game', 'action', {type: 'influence-operation'}); // Request to conduct influence operation
+    socket.emit('game', 'action', { type: 'influence-operation' }); // Request to conduct influence operation
 });
 
-function influenceOp(){
+function influenceOp() {
 
     let colors = {
-        'blue' : 'bluePlayer',
-        'red' : 'redPlayer'
+        'blue': 'bluePlayer',
+        'red': 'redPlayer'
     }
 
-    if (gameState[colors[playerColor]].cp < 2)
-    {
+    if (gameState[colors[playerColor]].cp < 2) {
         Board.openCPQuery();
         return;
     }
     influenceButton.visible = true;
-    influenceText.visible=true;
-    influenceBackground.visible=true;
+    influenceText.visible = true;
+    influenceBackground.visible = true;
     cancelIO();
     changeMessage("Confirm Influence Operation\n(Rolls one dice per two civilian casualties)");
 }
 
 const cancelInfluButton = new PIXI.Graphics();
-const cancelInfluText = new PIXI.Text({text:"Cancel IO", style : new PIXI.TextStyle({fontSize:20, fill:'#FFFFFF', align:'center'})});
-cancelInfluButton.roundRect(410,330,cancelInfluText.width+20,cancelInfluText.height+20,10);
+const cancelInfluText = new PIXI.Text({ text: "Cancel IO", style: new PIXI.TextStyle({ fontSize: 20, fill: '#FFFFFF', align: 'center' }) });
+cancelInfluButton.roundRect(410, 330, cancelInfluText.width + 20, cancelInfluText.height + 20, 10);
 cancelInfluButton.fill('0xFF0000');
 cancelInfluButton.stroke(6, 0xffffff);
 cancelInfluButton.zIndex = 900;
-cancelInfluButton.visible=false;
+cancelInfluButton.visible = false;
 cancelInfluButton.eventMode = 'static';
-cancelInfluButton.on('pointerdown', ()=> {
+cancelInfluButton.on('pointerdown', () => {
     // console.log("cancel Influ!");
     clearMessage();
     Board.openCPQuery();
-    cancelInfluButton.visible=false;
-    cancelInfluText.visible=false;
-    influenceButton.visible=false;
-    influenceBackground.visible=false;
-    influenceText.visible=false;
+    cancelInfluButton.visible = false;
+    cancelInfluText.visible = false;
+    influenceButton.visible = false;
+    influenceBackground.visible = false;
+    influenceText.visible = false;
 });
 
 app.stage.addChild(cancelInfluButton);
 cancelInfluText.x = 420;
 cancelInfluText.y = 340;
 cancelInfluText.zIndex = 900;
-cancelInfluText.visible=false;
+cancelInfluText.visible = false;
 app.stage.addChild(cancelInfluText);
 
-function cancelIO(){
+function cancelIO() {
     cancelInfluButton.visible = true;
-    cancelInfluText.visible=true;
+    cancelInfluText.visible = true;
 }
 
 // socket.on('influenceOperation', (gameState) => {
@@ -1029,7 +1050,7 @@ socket.on('influenceOperation', (response) => {
     gameState = parsedResponse.gameState;
     updateBoard(gameState);
 
-    if (playerColor != gameState.turnPlayer){
+    if (playerColor != gameState.turnPlayer) {
         changeMessage("Opponent is rolling for Influence Operations");
     }
 
@@ -1085,21 +1106,20 @@ socket.on('influenceOperation', (response) => {
 //first step, create the highlight locations for the safe havens
 /////locations defined as path in format path: [x1,y1,x2,y2...] counterclockwise
 const havenLoc = {
-    'haven1':{path:[219,280,252,304,296,271,302,208,259,183,214,218]},
-    'haven2':{path:[306,207,301,271,333,283,413,195,397,155,363,153]},
-    'haven3':{path:[337,283,356,320,427,306,470,245,461,214,415,200]},
-    'haven4':{path:[345,368,379,395,445,386,460,357,428,317,357,324]},
-    'haven5':{path:[506,182,591,220,627,192,607,157,537,118,507,129]},
-    'haven6':{path:[474,244,542,284,590,270,589,224,503,187,466,214]},
-    'haven7':{path:[535,334,588,368,647,344,657,304,594,278,544,291]},
-    'haven8':{path:[451,389,477,424,577,421,585,371,533,339,465,357]},
-    'haven9':{path:[629,186,699,224,747,197,757,134,651,109,612,154]},
-    'haven10':{path:[651,348,687,378,787,229,751,201,701,231,660,303]}
+    'haven1': { path: [219, 280, 252, 304, 296, 271, 302, 208, 259, 183, 214, 218] },
+    'haven2': { path: [306, 207, 301, 271, 333, 283, 413, 195, 397, 155, 363, 153] },
+    'haven3': { path: [337, 283, 356, 320, 427, 306, 470, 245, 461, 214, 415, 200] },
+    'haven4': { path: [345, 368, 379, 395, 445, 386, 460, 357, 428, 317, 357, 324] },
+    'haven5': { path: [506, 182, 591, 220, 627, 192, 607, 157, 537, 118, 507, 129] },
+    'haven6': { path: [474, 244, 542, 284, 590, 270, 589, 224, 503, 187, 466, 214] },
+    'haven7': { path: [535, 334, 588, 368, 647, 344, 657, 304, 594, 278, 544, 291] },
+    'haven8': { path: [451, 389, 477, 424, 577, 421, 585, 371, 533, 339, 465, 357] },
+    'haven9': { path: [629, 186, 699, 224, 747, 197, 757, 134, 651, 109, 612, 154] },
+    'haven10': { path: [651, 348, 687, 378, 787, 229, 751, 201, 701, 231, 660, 303] }
 }
 
 const highlightedHavens = {};
 
-let havenNames = ['haven3','haven4','haven6','haven7','haven8'];
 
 function highlightHavens(names, callback, message) {
     removeHighlight();
@@ -1119,7 +1139,6 @@ function highlightHavens(names, callback, message) {
 }
 
 
-
 function removeHavenHighlight() {
     for (var member in highlightedHavens) {
         app.stage.removeChild(highlightedHavens[member]);
@@ -1127,75 +1146,78 @@ function removeHavenHighlight() {
     }
 }
 
-
-
 let selectedHavens = "none"
 
 let selectedNodes = [];
-function chmrClicked(){
-    if (gameState[(('blue' == playerColor) ? 'bluePlayer' : 'redPlayer')].cp < 2)
-    {
+function chmrClicked() {
+    if (gameState[(('blue' == playerColor) ? 'bluePlayer' : 'redPlayer')].cp < 2) {
         Board.openCPQuery();
         return;
     }
 
-    var find = Board.findNodes(playerColor,getCount(gameState.nodes));
+    cancelCHMR();
+
+    var find = Board.findNodes(playerColor, getCount(gameState.nodes), false);
     ////cancel CHMR
     // cancelCHMR();
     highlight(find, chmr1, "Pick the node where CHMR will be conducted from");
 }
 
-function chmr1(name){
-    console.log("inchmr1"+name);
+function chmr1(name) {
+    console.log("inchmr1" + name);
     selectedNodes[selectedNodes.length] = name;
-    
+
     let numbers = getCount(gameState.nodes);
     let maxVal = 0;
-    if (playerColor == 'blue')
-    {
+    if (playerColor == 'blue') {
         maxVal = numbers[name].blueArmies;
     }
-    else 
+    else
         maxVal = numbers[name].redArmies;
 
-    console.log("sending the name to server "+name + " " + maxVal+"armies");
+    console.log("sending the name to server " + name + " " + maxVal + "armies");
+    // socket.emit('game', 'action', { type: 'chmr-select', data: name });
+    
 
-    let counter = selectArmyNumber(400,200,1, maxVal,sendCHMRMessage1, name);
+    let counter = selectArmyNumber(400, 200, 1, maxVal, sendCHMRMessage1, name);
     changeMessage("Select the number of armies to conduct CHMR");
     app.stage.addChild(counter);
 
     // socket.emit('game','action',{type:'chmr-select',data:safeNode});
 
     removeHighlight();
+    cancelCHMRButton.visible = false;
+    cancelCHMRText.visible = false;
     // clearMessage();
 
 }
 
-function sendCHMRMessage1(nodeName, selectedNumber){
+function sendCHMRMessage1(nodeName, selectedNumber) {
     console.log(nodeName + " " + selectedNumber);
+    socket.emit('game', 'action', { type: 'chmr-select', data: {node:nodeName, armies:selectedNumber}});
     clearMessage();
 }
 
-function selectArmyNumber(x,y,minValue, maxValue,onSelect,nodeName){
+function selectArmyNumber(x, y, minValue, maxValue, onSelect, nodeName) {
 
     const container = new PIXI.Container();
-    container.position.set(x,y);
-    container.zIndex=1001;
+    container.position.set(x, y);
+    container.zIndex = 1001;
 
     let selectedNumber = 1;
 
-    const text = new PIXI.Text({text: selectedNumber, style: new PIXI.TextStyle({ fontSize: 24, fill: 'white' })});
+    const text = new PIXI.Text({ text: selectedNumber, style: new PIXI.TextStyle({ fontSize: 24, fill: 'white' }) });
     text.anchor.set(0.5);
     text.zIndex = 10;
     text.position.set(70, 30);
-   
+
     const background = new PIXI.Graphics();
-    background.roundRect(0,0,140,100,10);
+    background.roundRect(0, 0, 140, 100, 10);
     background.fill('0x000000');
     background.zIndex = 0;
-    
 
-    const plusButton = new PIXI.Text({text: '+', style: new PIXI.TextStyle({ fontSize: 24, fill: 'white' })})
+
+    const plusButton = new PIXI.Text({ text: '+', style: new PIXI.TextStyle({ fontSize: 24, fill: 'white' }) })
     plusButton.anchor.set(0.5);
     plusButton.position.set(120, 30);
     plusButton.interactive = true;
@@ -1208,7 +1230,7 @@ function selectArmyNumber(x,y,minValue, maxValue,onSelect,nodeName){
         }
     });
 
-    const minusButton =new PIXI.Text({text: '-', style: new PIXI.TextStyle({ fontSize: 24, fill: 'white' })}) 
+    const minusButton = new PIXI.Text({ text: '-', style: new PIXI.TextStyle({ fontSize: 24, fill: 'white' }) })
     minusButton.anchor.set(0.5);
     minusButton.position.set(20, 30);
     minusButton.zIndex = 10;
@@ -1221,19 +1243,19 @@ function selectArmyNumber(x,y,minValue, maxValue,onSelect,nodeName){
         }
     });
 
-    const confirmButton = new PIXI.Text({text: 'OK', style: new PIXI.TextStyle({ fontSize: 24, fill: 'white' })})
+    const confirmButton = new PIXI.Text({ text: 'OK', style: new PIXI.TextStyle({ fontSize: 24, fill: 'white' }) })
     confirmButton.anchor.set(0.5);
     confirmButton.position.set(70, 70);
     confirmButton.interactive = true;
     confirmButton.buttonMode = true;
-    confirmButton.zIndex=10;
+    confirmButton.zIndex = 10;
     confirmButton.on('pointerdown', () => {
         // onSelect(selectedNumber);
         onSelect(nodeName, selectedNumber);
         container.visible = false; // Hide the selector after selection
     });
 
-    container.addChild(minusButton, text, plusButton, confirmButton,background);
+    container.addChild(minusButton, text, plusButton, confirmButton, background);
     return container;
 }
 
@@ -1247,15 +1269,15 @@ function selectArmyNumber(x,y,minValue, maxValue,onSelect,nodeName){
 //     }
 // });
 
-let havenssss = ['haven1','haven2'];
+let havenssss = ['haven1', 'haven2'];
 
-function chmrReceived(/*havens*/){
+function chmrReceived(/*havens*/) {
 
     highlightHavens(havenssss, chmr2, "Which safe haven would you like to move to?");
 }
 
 
-function chmr2(name){
+function chmr2(name) {
     //lets the user select the nodes that the armies are moving to. 
     selectedHavens = name;
     console.log("Selected haven " + selectedHavens);
@@ -1265,29 +1287,29 @@ function chmr2(name){
 
 }
 
-function chmr2Recived(nodes){
-    highlight(nodes,chmr3,"Select node to move civilians from");
+function chmr2Recived(nodes) {
+    highlight(nodes, chmr3, "Select node to move civilians from");
 }
 
-function chmr3(name){
+function chmr3(name) {
     removeHighlight();
     clearMessage;
     console.log("selected ndoe" + name);
     //////////server message goes here. emiittttt
 }
 
-function chmr3Received(){
+function chmr3Received() {
 
-// socket.on('influenceOperation', (gameState) => {
-// socket.on('influenceOperation', (response) => {
+    // socket.on('influenceOperation', (gameState) => {
+    // socket.on('influenceOperation', (response) => {
     // let parsedResponse = JSON.parse(response); // Parse the JSON string
     // let result = parsedResponse.result;
     // gameState = parsedResponse.gameState;
     // updateBoard(gameState);
 
-    let result = [4,5,6,6];
+    let result = [4, 5, 6, 6];
 
-    if (playerColor != gameState.turnPlayer){
+    if (playerColor != gameState.turnPlayer) {
         changeMessage("Opponent is rolling for CHMR");
     }
 
@@ -1304,7 +1326,7 @@ function chmr3Received(){
     chmrText.x = 350;
     chmrText.y = 160;
     chmrText.zIndex = 1000
-    let moves = result.filter(num => num === 6).length * 2 + result.filter(num => num >=3 && num <= 5).length;
+    let moves = result.filter(num => num === 6).length * 2 + result.filter(num => num >= 3 && num <= 5).length;
     chmrText.text = moves + " civilians moved\n\n\n\n\n\nClick to Continue"
     app.stage.addChild(chmrText);
 
@@ -1331,6 +1353,36 @@ function chmr3Received(){
 
 }//);
 
+const cancelCHMRButton = new PIXI.Graphics();
+const cancelCHMRText = new PIXI.Text({ text: "Cancel CHMR", style: new PIXI.TextStyle({ fontSize: 20, fill: '#FFFFFF', align: 'center' }) });
+cancelCHMRButton.roundRect(90, 100, cancelCHMRText.width + 20, cancelCHMRText.height + 20, 10);
+cancelCHMRButton.fill('0xFF0000');
+cancelCHMRButton.stroke(6, 0xffffff);
+cancelCHMRButton.alpha = 0.75;
+cancelCHMRButton.visible = false;
+cancelCHMRButton.eventMode = 'static';
+cancelCHMRButton.on('pointerdown', () => {
+    // console.log("cancel fire!");
+    cancelCHMRButton.visible = false;
+    removeHighlight();
+    clearMessage();
+    Board.openCPQuery();
+    cancelCHMRText.visible = false;
+});
+
+app.stage.addChild(cancelCHMRButton);
+cancelCHMRText.x = 100;
+cancelCHMRText.y = 110;
+cancelCHMRText.zIndex = 1000;
+cancelCHMRText.visible = false;
+app.stage.addChild(cancelCHMRText);
+
+
+function cancelCHMR() {
+    cancelCHMRButton.visible = true;
+    cancelCHMRText.visible = true;
+}
+
 
 
 //CHMR END
@@ -1340,112 +1392,116 @@ function chmr3Received(){
 ///ARTILLERY FIRES START
 ///ARTILLERY FIRES START
 
-function firesClicked(){
-    if (gameState[(('blue' == playerColor) ? 'bluePlayer' : 'redPlayer')].cp < 1)
-    {
+function firesClicked() {
+    if (gameState[(('blue' == playerColor) ? 'bluePlayer' : 'redPlayer')].cp < 1) {
         Board.openCPQuery();
         return;
     }
-    var find = Board.findNodes(playerColor,getCount(gameState.nodes));
+    var find = Board.findNodes(playerColor, getCount(gameState.nodes), false);
     cancelFires();
     highlight(find, fires1, "Pick the node where your army will fire from");
 }
 
 let fireSelection = "noneSelected";
 
-function fires1(name){
+function fires1(name) {
     // console.log("in fires one");
     fireSelection = name;
-    cancelFireButton.visible=false;
-    cancelFireText.visible=false;
-    console.log("this is where the server message would go");
-    // console.log("Attacking from " +fireSelection);
+    cancelFireButton.visible = false;
+    cancelFireText.visible = false;
+    // console.log("this is where the server message would go");
+
+    console.log("Attacking from " + fireSelection);
+    socket.emit('game', 'action', { type: 'artillery-select', data: name }); // Request to fire from blue base
     removeHighlight();
     clearMessage();
 
     // socket.emit('game','action',{type:'fire-select',data:fireSelection});
 }
 
-let nodes = ['city4','village3']
+// let nodes = ['city4','village3']
 
-function fireReceived(/*nodes*/){
+
+socket.on('fire-list', (list) => {
+    let nodes = JSON.parse(list);
+    console.log(nodes);
+    // function fireReceived(/*nodes*/){
     if (nodes.length > 0)
         highlight(nodes, fires2, "pick the node where you are firing to");
-    else{
-        changeMessage("No adjacent nodes to selected node with armies");
+    else {
+        changeMessage("No adjacent nodes available");
         Board.openCPQuery();
     }
-}
+});
 
 const cancelFireButton = new PIXI.Graphics();
-const cancelFireText = new PIXI.Text({text:"Cancel Fire", style : new PIXI.TextStyle({fontSize:20, fill:'#FFFFFF', align:'center'})});
-cancelFireButton.roundRect(90,100,cancelFireText.width+20,cancelFireText.height+20,10);
+const cancelFireText = new PIXI.Text({ text: "Cancel Fire", style: new PIXI.TextStyle({ fontSize: 20, fill: '#FFFFFF', align: 'center' }) });
+cancelFireButton.roundRect(90, 100, cancelFireText.width + 20, cancelFireText.height + 20, 10);
 cancelFireButton.fill('0xFF0000');
 cancelFireButton.stroke(6, 0xffffff);
 cancelFireButton.alpha = 0.75;
-cancelFireButton.visible=false;
+cancelFireButton.visible = false;
 cancelFireButton.eventMode = 'static';
-cancelFireButton.on('pointerdown', ()=> {
+cancelFireButton.on('pointerdown', () => {
     // console.log("cancel fire!");
     cancelFireButton.visible = false;
     removeHighlight();
     clearMessage();
     Board.openCPQuery();
-    cancelFireText.visible=false;
+    cancelFireText.visible = false;
 });
 
 app.stage.addChild(cancelFireButton);
 cancelFireText.x = 100;
 cancelFireText.y = 110;
 cancelFireText.zIndex = 1000;
-cancelFireText.visible=false;
+cancelFireText.visible = false;
 app.stage.addChild(cancelFireText);
 
 
-function cancelFires(){
+function cancelFires() {
     cancelFireButton.visible = true;
-    cancelFireText.visible=true;
+    cancelFireText.visible = true;
 }
 
-socket.on('fire-list',(list) => {
-    let parsedList = JSON.parse(lists); // Parse the JSON string
-    // console.log(parsedList);
-    if (playerColor == gameState.turnPlayer){
-        moveReceived(parsedList);
-    }
-});
+// socket.on('fire-list',(list) => {
+//     let parsedList = JSON.parse(list); // Parse the JSON string
+//     // console.log(parsedList);
+//     if (playerColor == gameState.turnPlayer){
+//         moveReceived(parsedList);
+//     }
+// });
 
 let fireSelection2 = "noneSelected";
 
-function fires2(name){
+function fires2(name) {
     // console.log("in fire 2");
     fireSelection2 = name;
     console.log("this is where the server message would go " + name)
 
     //socket.emit('game','action',{type:"fires-confirm', data:fireSelection2"});
-
+    socket.emit('game', 'action', { type: 'artillery-confirm', data: name }); // Request to fire on village2
     removeHighlight();
     clearMessage();
     fireSelection = "none";
     fireSelection2 = "none";
 }
 
-// socket.on('artillaryFires', (response) => {
-
-function endFires(){
-    // let parsedResponse = JSON.parse(response); // Parse the JSON string
-    // console.log(parsedResponse.result); // Should be an array of numbers 1-6
-    // console.log(parsedResponse.gameState); // Should print the entire updated gameState
-    // gameState = parsedResponse.gameState;
-    // updateBoard(gameState);
+socket.on('fire', (response) => {
+    // function endFires(){
+    console.log("received fires");
+    let parsedResponse = JSON.parse(response); // Parse the JSON string
+    console.log(parsedResponse.rolls); // Should be an array of numbers 1-6
+    console.log(parsedResponse.gameState); // Should print the entire updated gameState
+    gameState = parsedResponse.gameState;
+    updateBoard(gameState);
 
     if (playerColor != gameState.turnPlayer) {
         changeMessage("Opponent rolled for artillery fires");
     }
 
-
-    let rolls1 = [1,2,3];
-    let rolls2 = [4,5,6];
+    let rolls1 = parsedResponse.rolls.combatRoll;
+    let rolls2 = parsedResponse.rolls.civRoll;
 
     const firesText = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }) });
     firesText.x = 390;
@@ -1464,15 +1520,15 @@ function endFires(){
 
     for (let i = 0; i < rolls1.length; i++) {
 
-        let dice1 = Board.drawDice(345 + i*95, 200, 950,rolls1[i],playerColor);
-        let dice2 = Board.drawDice(345 + i*95, 320, 950,rolls2[i],'black');
+        let dice1 = Board.drawDice(345 + i * 95, 200, 950, rolls1[i], playerColor);
+        let dice2 = Board.drawDice(345 + i * 95, 320, 950, rolls2[i], 'black');
 
         app.stage.addChild(dice1);
         app.stage.addChild(dice2);
-        firesRoll.on('pointerdown',()=>{
+        firesRoll.on('pointerdown', () => {
             app.stage.removeChild(dice1);
             app.stage.removeChild(dice2);
-        }) 
+        })
 
     }
 
@@ -1486,7 +1542,7 @@ function endFires(){
             changeMessage("Opponent completed Artillery Fires\nWaiting on them to spend command points");
         }
     })
-}
+});
 
 //ARTILLERY FIRES END
 //ARTILLERY FIRES END
@@ -1496,20 +1552,20 @@ function endFires(){
 ///////AIR STRIKE START
 ///////AIR STRIKE START
 
-function strikeClicked(){
+function strikeClicked() {
     if (gameState[(('blue' == playerColor) ? 'bluePlayer' : 'redPlayer')].cp < 2) {
-            Board.openCPQuery();
-            return;
-        }
+        Board.openCPQuery();
+        return;
+    }
 
-    var find = Board.findNodes(('blue' == playerColor ? 'red':'blue'),getCount(gameState.nodes));
+    var find = Board.findNodes(('blue' == playerColor ? 'red' : 'blue'), getCount(gameState.nodes), false);
     // console.log(find);
     cancelStrike();
     highlight(find, strike1, "Pick the node you would like to attack");
 }
 
 
-function strike1(name){
+function strike1(name) {
     // console.log("in strike 1");
     cancelStrikeButton.visible = false;
     cancelStrikeText.visible = false;
@@ -1519,25 +1575,25 @@ function strike1(name){
     // socket.emit('game', 'action', { type: 'strike-select', data: selections });
     removeHighlight();
     clearMessage();
-    
+
 }
 
-function strikeReceive(){
+function strikeReceive() {
 
-// let parsedResponse = JSON.parse(response); // Parse the JSON string
+    // let parsedResponse = JSON.parse(response); // Parse the JSON string
     // console.log(parsedResponse.result); // Should be an array of numbers 1-6
     // console.log(parsedResponse.gameState); // Should print the entire updated gameState
     // gameState = parsedResponse.gameState;
     // updateBoard(gameState);
 
-if (playerColor != gameState.turnPlayer) {
+    if (playerColor != gameState.turnPlayer) {
         changeMessage("Opponent rolled for air strike");
     }
-    
-    let rolls1 = [1,2];
-    let rolls2 = [4,5];
 
-const strikeText = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }) });
+    let rolls1 = [1, 2];
+    let rolls2 = [4, 5];
+
+    const strikeText = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }) });
     strikeText.x = 390;
     strikeText.y = 160;
     strikeText.zIndex = 1000
@@ -1554,15 +1610,15 @@ const strikeText = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSiz
 
     for (let i = 0; i < rolls1.length; i++) {
 
-        let dice1 = Board.drawDice(385 + i*95, 200, 950,rolls1[i],playerColor);
-        let dice2 = Board.drawDice(385 + i*95, 320, 950,rolls2[i],'black');
+        let dice1 = Board.drawDice(385 + i * 95, 200, 950, rolls1[i], playerColor);
+        let dice2 = Board.drawDice(385 + i * 95, 320, 950, rolls2[i], 'black');
 
         app.stage.addChild(dice1);
         app.stage.addChild(dice2);
-        strikeRoll.on('pointerdown',()=>{
+        strikeRoll.on('pointerdown', () => {
             app.stage.removeChild(dice1);
             app.stage.removeChild(dice2);
-        }) 
+        })
 
     }
 
@@ -1580,33 +1636,33 @@ const strikeText = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSiz
 }
 
 const cancelStrikeButton = new PIXI.Graphics();
-const cancelStrikeText = new PIXI.Text({text:"Cancel Strike", style : new PIXI.TextStyle({fontSize:20, fill:'#FFFFFF', align:'center'})});
-cancelStrikeButton.roundRect(90,100,cancelStrikeText.width+20,cancelStrikeText.height+20,10);
+const cancelStrikeText = new PIXI.Text({ text: "Cancel Strike", style: new PIXI.TextStyle({ fontSize: 20, fill: '#FFFFFF', align: 'center' }) });
+cancelStrikeButton.roundRect(90, 100, cancelStrikeText.width + 20, cancelStrikeText.height + 20, 10);
 cancelStrikeButton.fill('0xFF0000');
 cancelStrikeButton.stroke(6, 0xffffff);
 cancelStrikeButton.alpha = 0.75;
-cancelStrikeButton.visible=false;
+cancelStrikeButton.visible = false;
 cancelStrikeButton.eventMode = 'static';
-cancelStrikeButton.on('pointerdown', ()=> {
+cancelStrikeButton.on('pointerdown', () => {
     // console.log("cancel strike!");
     cancelStrikeButton.visible = false;
     removeHighlight();
     clearMessage();
     Board.openCPQuery();
-    cancelStrikeText.visible=false;
+    cancelStrikeText.visible = false;
 });
 
 app.stage.addChild(cancelStrikeButton);
 cancelStrikeText.x = 100;
 cancelStrikeText.y = 110;
 cancelStrikeText.zIndex = 1000;
-cancelStrikeText.visible=false;
+cancelStrikeText.visible = false;
 app.stage.addChild(cancelStrikeText);
 
 
-function cancelStrike(){
+function cancelStrike() {
     cancelStrikeButton.visible = true;
-    cancelStrikeText.visible=true;
+    cancelStrikeText.visible = true;
 }
 
 //AIR STRIKE END
@@ -1621,40 +1677,28 @@ function cancelStrike(){
 // function closeCombat(){
 socket.on('close-combat', (data) => {
     let parsedData = JSON.parse(data);
-<<<<<<< HEAD
-    console.log(parsedData.rolls); // Should print all four arrays of rolls
-    console.log(parsedData.gameState); // Should print the entire updated gameState
-    console.log(parsedData.next); // Should print name of a node (or undefined if close combat is over)
-
     let rolls = parsedData.rolls;
     let next = parsedData.next;
 
     if (!rolls && next) {
-        combatSelect(next);
-=======
-    console.log("rolls:", parsedData.rolls); // Should print all four arrays of rolls
-    console.log("gameState:", parsedData.gameState); // Should print the entire updated gameState
-    console.log("next:", parsedData.next); // Should print name of a node (or undefined if close combat is over)
-
-    let rolls = parsedData.rolls;
-    let next = parsedData.next;
-    if (parsedData.gameState) console.log(JSON.stringify(parsedData.gameState));
-    // gameState = parsedData.gameState;
-    // updateBoard(gameState);
-
-    if (!rolls && next){
-       // combatSelect(next);
-       socket.emit('game', 'close-combat', 1);
->>>>>>> d3b0ee92f970c8b1c619f4c590470332821de7c0
+        console.log("No rolls and a next. First move");
+        combatSelect(next,parsedData.minValue);
         // socket.emit('game','action',{type:'chmr-select',data:safeNode}) 
     }
     else if (rolls && next) {
-        displayRolls(rolls, next);
+        console.log("Rolls and a next. Second-second to last move");
+        displayRolls(rolls, next,parsedData.minValue);
         gameState = parsedData.gameState;
         updateBoard(gameState);
     }
     else {
-        socket.emit('game','civ-move');console.log("send civ-move");
+        if (rolls){
+            displayRolls(rolls, next);
+            gameState = parsedData.gameState;
+            updateBoard(gameState);
+        }
+        console.log("Last move or no close combat");
+        socket.emit('game', 'civ-move'); console.log("send civ-move");
     }
 
     // if (parsedData.next) {
@@ -1670,7 +1714,7 @@ let rolls1 =
     redCivRolls: [4, 5, 6]
 }
 
-function displayRolls(rolls, next) {
+function displayRolls(rolls, next, minValue = 0) {
 
     let playerRolls = [];
     let otherPlayerRolls = [];
@@ -1691,6 +1735,8 @@ function displayRolls(rolls, next) {
     }
 
 
+
+
     let height = 3;
     if (rolls.blueCivRolls && rolls.redCivRolls) {
         height = 4;
@@ -1700,6 +1746,7 @@ function displayRolls(rolls, next) {
 
     let length = (rolls.blueRolls.length > rolls.redRolls.length) ? rolls.blueRolls.length : rolls.redRolls.length;
     length = length * 95 + 20;
+    if (length < 211) length = 250;
 
     const rollDisplay = Board.makeRoundRect(290, 160, length, height, 10, 0x808080, 3, 0xffffff, 1000, true);
     for (let i = 0; i < playerRolls.length; i++) {
@@ -1741,56 +1788,50 @@ function displayRolls(rolls, next) {
     }
     app.stage.addChild(text1, text2, text3, cont);
 
-
-
-
-
     rollDisplay.eventMode = 'static';
     rollDisplay.on('pointerdown', () => {
         app.stage.removeChild(rollDisplay);
         app.stage.removeChild(text1, text2, text3, cont);
         if (text4 != "none") app.stage.removeChild(text4);
         if (next) {
-            combatSelect(next);
+            combatSelect(next,minValue);
         }
         else {
-            socket.emit('game','civ-move');
+            socket.emit('game', 'civ-move');
             console.log("send civ-move");
         }
     })
-
-
-
 
     app.stage.addChild(rollDisplay);
 
 }
 
-function combatSelect(next){
-    console.log("In combat select");
-        highlight([next], clicked, "Select Number of Armies for close combat in " + next);
-    
-        let numbers = getCount(gameState.nodes);
-        let maxVal = 0;
-        if (playerColor == 'blue') {
-            maxVal = numbers[next].blueArmies;
-        }
-        else
-            maxVal = numbers[next].redArmies;
+function combatSelect(next) {
+    console.log("In combat select"+next);
+    highlight([next], clicked, "Select Number of Armies for close combat in " + next);
 
-        let counter = selectArmyNumber(highLoc[next].x - 57, highLoc[next].y +100, 0, maxVal, closeCombatMessage, next);
-        
-        app.stage.addChild(counter);
+    let numbers = getCount(gameState.nodes);
+    let maxVal = 0;
+    if (playerColor == 'blue') {
+        maxVal = numbers[next].blueArmies;
+    }
+    else
+        maxVal = numbers[next].redArmies;
+
+    let counter = selectArmyNumber(highLoc[next].x - 57, highLoc[next].y + 100, 0, maxVal, closeCombatMessage, next);
+
+    app.stage.addChild(counter);
 }
 
 //////
-function closeCombatMessage(number, name){
-        removeHighlight();
-        // console.log(number + " " + name);
-        clearMessage();
-        socket.emit('game','action',{type:'chmr-select',data:number});
+function closeCombatMessage(name,number) {
+    removeHighlight();
+    // console.log(number + " " + name);
+    clearMessage();
+    console.log(number);
+    socket.emit('game', 'close-combat',number);
 
-    }
+}
 
 
 //CLOSE COMBAT ANIMATION FUNCTION! 
@@ -1798,79 +1839,79 @@ function closeCombatMessage(number, name){
 
 function closeCombatAnim(ctx, originX, originY, duration) {
     const m4 = new Image();
-  //  m4.src = "/content/m4.png";
-     m4.src = "/content/m4_3.png";
-  
-    const RIFLE_WIDTH = 85*1.25;
-    const RIFLE_HEIGHT = 40*1.25;
+    //  m4.src = "/content/m4.png";
+    m4.src = "/content/m4_3.png";
+
+    const RIFLE_WIDTH = 85 * 1.25;
+    const RIFLE_HEIGHT = 40 * 1.25;
     const HALF_WIDTH = RIFLE_WIDTH / 2;
     const HALF_HEIGHT = RIFLE_HEIGHT / 2;
-  
+
     let angle = 0;
-    let clashed = falsesocket.emit('civ-move');;
+    let clashed = falsesocket.emit('civ-move');
     let leftX = 0, rightX = 0;
     let ringActive = false;
     let ringRadius = 0;
     let ringOpacity = 0;
-  
+
     function drawRifle(x, flip = false, rot = 0) {
-      ctx.save();
-      ctx.translate(originX + x, originY);
-      if (flip) ctx.scale(-1, 1);
-      ctx.rotate(rot);
-      ctx.drawImage(m4, -HALF_WIDTH, -HALF_HEIGHT, RIFLE_WIDTH, RIFLE_HEIGHT);
-      ctx.restore();
+        ctx.save();
+        ctx.translate(originX + x, originY);
+        if (flip) ctx.scale(-1, 1);
+        ctx.rotate(rot);
+        ctx.drawImage(m4, -HALF_WIDTH, -HALF_HEIGHT, RIFLE_WIDTH, RIFLE_HEIGHT);
+        ctx.restore();
     }
-    
+
     function drawRing() {
-      if (!ringActive) return;
-      ctx.beginPath();
-      ctx.arc(originX, originY, ringRadius, 0, 2 * Math.PI); 
-      ctx.strokeStyle = `rgba(255, 60, 0, ${ringOpacity.toFixed(2)*4})`;
-      ctx.lineWidth = 3;
-      ctx.stroke();
-      ringRadius += 1.7;
-      ringOpacity -= 0.03;
-      if (ringOpacity <= 0) {
-        ringActive = false;
-        ringOpacity = 0;
-      }
+        if (!ringActive) return;
+        ctx.beginPath();
+        ctx.arc(originX, originY, ringRadius, 0, 2 * Math.PI);
+        ctx.strokeStyle = `rgba(255, 60, 0, ${ringOpacity.toFixed(2) * 4})`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ringRadius += 1.7;
+        ringOpacity -= 0.03;
+        if (ringOpacity <= 0) {
+            ringActive = false;
+            ringOpacity = 0;
+        }
     }
-  
+
     function animate() {
-      // Clear just the relevant region around the clash
-      ctx.clearRect(originX - 100, originY - 100, 200, 200);
-  
-      if (!clashed) {
-        leftX = -60 + angle * 4;
-        rightX = 60 - angle * 4;
-      }
-  
-      drawRifle(leftX, false, Math.PI / 4);
-      drawRifle(rightX, true, Math.PI / 4);
-      drawRing();
-  
-      if (!clashed && leftX >= rightX - 10) {
-        clashed = true;
-        ringActive = true;
-        ringRadius = 4;
-        ringOpacity = 1;
-      }
-  
-      if (!clashed || ringActive) {
-        if (!clashed) angle += 0.35;
-        requestAnimationFrame(animate);
-      }
-    }
-  
-    m4.onload = () => {
-      animate();
-  
-      setTimeout(() => {
+        // Clear just the relevant region around the clash
         ctx.clearRect(originX - 100, originY - 100, 200, 200);
-      }, duration);
+
+        if (!clashed) {
+            leftX = -60 + angle * 4;
+            rightX = 60 - angle * 4;
+        }
+
+        drawRifle(leftX, false, Math.PI / 4);
+        drawRifle(rightX, true, Math.PI / 4);
+        drawRing();
+
+        if (!clashed && leftX >= rightX - 10) {
+            clashed = true;
+            ringActive = true;
+            ringRadius = 4;
+            ringOpacity = 1;
+        }
+
+        if (!clashed || ringActive) {
+            if (!clashed) angle += 0.35;
+            requestAnimationFrame(animate);
+        }
+    }
+
+    m4.onload = () => {
+        animate();
+
+        setTimeout(() => {
+            ctx.clearRect(originX - 100, originY - 100, 200, 200);
+        }, duration);
     };
-  }
+}
 
 //const ctx = app.canvas.getContext("2d");
 //   /playRifleClash(ctx, 150, 150, 1500);
@@ -1882,70 +1923,80 @@ function closeCombatAnim(ctx, originX, originY, duration) {
 
 //const fxCtx = fxCanvas.getContext("2d");
 //closeCombatAnim(fxCtx, 100, 100, 3500); //x y milliseconds of animation
-  
+
 
 //closeCombatAnim(fxCtx, 100, 100, 3500); //x y milliseconds of animation
 
-function doCC() { 
+function doCC(location) { 
     // 257, y: 299 },
+    var x = locations[location].x
+    var y = locations[location].y
+
     const fxCtx = fxCanvas.getContext("2d");
-    closeCombatAnim(fxCtx, 309, 339, 3500)
+    closeCombatAnim(fxCtx, x, y, 3500); //PLACEHOLDER 
 }
 
 
 function playBobbingArrow(ctx, originX, originY, duration) {
     const arrow = new Image();
-    arrow.src = "/content/arrow.png"; 
-  
-    const WIDTH = 80*1.2;
-    const HEIGHT = 72*1.2;
-  
+    arrow.src = "/content/arrow.png";
+
+    const WIDTH = 80 * 1.2;
+    const HEIGHT = 72 * 1.2;
+
     let opacity = 1;
     let bobOffset = 0;
     let direction = 1;
-  
+
     function draw() {
-      ctx.save();
-      ctx.globalAlpha = opacity;
-      ctx.drawImage(arrow, originX - WIDTH / 2, originY - HEIGHT / 2 + bobOffset, WIDTH, HEIGHT);
-      ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        ctx.drawImage(arrow, originX - WIDTH / 2, originY - HEIGHT / 2 + bobOffset, WIDTH, HEIGHT);
+        ctx.restore();
     }
-  
+
     function animate() {
-      ctx.clearRect(originX - 50, originY - 50, 100, 100);
-  
-      draw();
-  
-      // Bobbing motion
-      bobOffset += direction * 0.3;
-      if (Math.abs(bobOffset) > 5) direction *= -1;
-  
-      // Fade out
-      opacity -= 0.005;
-      if (opacity > 0) {
-        requestAnimationFrame(animate);
-      }
-    }
-  
-    arrow.onload = () => {
-      animate();
-  
-      // Final cleanup (optional)
-      setTimeout(() => {
         ctx.clearRect(originX - 50, originY - 50, 100, 100);
-      }, duration);
+
+        draw();
+
+        // Bobbing motion
+        bobOffset += direction * 0.3;
+        if (Math.abs(bobOffset) > 5) direction *= -1;
+
+        // Fade out
+        opacity -= 0.005;
+        if (opacity > 0) {
+            requestAnimationFrame(animate);
+        }
+    }
+
+    arrow.onload = () => {
+        animate();
+
+        // Final cleanup (optional)
+        setTimeout(() => {
+            ctx.clearRect(originX - 50, originY - 50, 100, 100);
+        }, duration);
     };
-  }
+}
 
 
 
 // arrow pointing at civilians when updated.
 
 
-function doArrow() { 
+//usage doArrow(String locationName);
+function doArrow(location) { 
+   // console.log(locations[location].x);
+    var x = locations[location].x
+    var y = locations[location].y
+
     const fxCtx = fxCanvas.getContext("2d");
-    playBobbingArrow(fxCtx, 100, 100, 10000); // Show arrow at (150, 100) for 2 seconds
+    playBobbingArrow(fxCtx, x+55, y-50, 10000); // Show arrow at (150, 100) for 2 seconds
 }
+
+doArrow('village3')
 
 
 
@@ -1963,18 +2014,17 @@ function createDebugTable() {
     // Define button actions (each button triggers a specific function)
     const actions = [
         { name: "Strike Received", func: strikeReceive },
-        { name: "Fires Received 1", func: fireReceived },
-        { name: "Fired Received 2", func: endFires },
+        // { name: "Fires Received 1", func: fireReceived },
+        // { name: "Fired Received 2", func: endFires },
         { name: "CHMR Received 1" , func: chmrReceived},
         { name: 'CHMR Received 2', func: chmr3Received},
-        { name: "Close Combat animation", func: doCC},
-        { name: "Arrow animation", func: doArrow},
+        { name: "Close Combat animation", func: ()=> {doCC('village3')}},
+        { name: "Arrow animation", func: ()=> {doArrow('village3')}},
         { name: "CP Button", func: Board.openCPQuery},
         { name: "Display Rolls",func: ()=>{displayRolls(rolls1,"redBase")}},
         { name: "send civ-move", func: ()=>{socket.emit('game','civ-move');console.log("send civ-move");}},
         { name: "send civ-return", func: ()=> {socket.emit('game','civ-return');console.log("send civ-return");}}
 
-        
     ];
 
     // Number of columns per row
