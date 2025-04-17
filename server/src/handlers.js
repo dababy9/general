@@ -371,8 +371,10 @@ const handleCivReturn = (choice, game, session, io) => {
     if (!choice) {
 
         // If there was no CHMR performed, simply end the turn
-        // TODO (add if statement) --------------------------------------------
-        endTurn(game, session, io);
+        if (game.meta.chmrList.length === 0) endTurn(game, session, io);
+
+        // If CHMR was performed, send the first haven that civilian return is occuring at
+        // TODO -----------------------------------------------
     
     // Otherwise, send the next haven that CHMR was performed on
     } else {

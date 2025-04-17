@@ -289,6 +289,9 @@ class Game {
         // Increment turn counter
         this.gameState.turnCounter++;
 
+        // Reset meta CHMR variable
+        this.meta.chmrList = [];
+
         // Reset game status
         this.status = 'default';
 
