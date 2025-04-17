@@ -205,14 +205,20 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
         case 'move-confirm':
             if (status === 'move') result = game.moveConfirmAction(data, session.color);
             break;
-            
-        // CHMR action
-        case 'chmr':
-            result = null; // TODO ------------------------------------------
+
+        // CHMR select action
+        case 'chmr-select':
+            if (status === 'default') result = game.chmrSelectAction(data, session.color);
             break;
 
-        case 'chmr-select':
-            if (status === 'default') result = game.chmrSelectAction(data,session.color);
+        // CHMR haven action
+        case 'chmr-haven':
+            if (status === 'chmrSelect') result = game.chmrHavenAction(data, session.color);
+            break;
+
+        // CHMR pull action
+        case 'chmr-pull':
+            if (status === 'chmrHaven') result = game.chmrPullAction(data, session.color);
             break;
 
         // Humanitarian Aid action

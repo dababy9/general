@@ -17,7 +17,7 @@ class Game {
 
         // Status and meta fields used to hold extra state
         this.status = 'default';
-        this.meta = {};
+        this.meta = { chmrList: [] };
 
         // Game message log
         this.messages = [{from: 'server', data: "Game Initialized!"}];
@@ -413,31 +413,97 @@ class Game {
         return { type: 'move', to: 'both', data: this.gameState };
     }
 
-    chmrSelectAction (data,color){
+    // Method to validate and process the client choosing a node and a number of armies to perform CHMR
+    chmrSelectAction (action, color) {
 
-        // Input validation
-        if (typeof data.node !== 'string' || !nodeMap.has(data.node)) return;
+        // Input validation for the node
+        if (typeof action.node !== 'string' || !nodeMap.has(action.node)) return;
 
-        // Retrieve player object
-        const player = this.getPlayer(color);
+        // Input validation for the number of armies
+        if (typeof action.armies !== 'number' || action.armies < 1 || action.armies > this.getPieces(color, action.node).length) return;
 
         // Make sure turn player has enough CP
-        if (player.cp < 2) return;
-        
-        // Make sure node has a player's army on it
-        if (this.getPieces(color, data.node).length === 0) return;
+        if (this.getPlayer(color).cp < 2) return;
 
         // Set game status
-        this.status = 'chmr1';
+        this.status = 'chmrSelect';
 
-        // Save chosen node for artillery confirm
-        this.meta.chmr = data.node;
+        // Save chosen node for CHMR haven selection
+        this.meta.chmr = action;
         
-        console.log('here');
+        // Return list of adjacent havens
+        return { type: 'haven-list', to: 'client', data: fullMap.get(action.node)};
+    }
 
-        // Send list of adjacent havens
-        return { type: 'chmr-list', to: 'client', data: fullMap.get(data.node)};
+    // Method to validate and process the client choosing a haven to move the armies to
+    chmrHavenAction (haven, color) {
 
+        // Input validation
+        if (typeof haven !== 'string' || nodeMap.has(haven) || !fullMap.has(haven)) return;
+
+        // Grab previous selection
+        const { node, armies } = this.meta.chmr;
+
+        // Make sure the selected haven is adjacent to the previously selected node
+        if (!fullMap.get(node).includes(haven)) return;
+
+        // Move the armies to the selected haven
+        const nodes = this.gameState.nodes;
+        for (let i = 0; i < armies; i++) {
+            const index = nodes[node].findIndex(x => x.type === color);
+            const [piece] = nodes[node].splice(index, 1);
+            nodes[haven].push(piece);
+        }
+
+        // Save the haven for both civilian pull and return
+        this.meta.chmrHaven = haven;
+        this.meta.chmrList.push(haven);
+
+        // Set game status
+        this.status = 'chmrHaven';
+
+        // Return list of adjacent nodes and new game state
+        return { type: 'haven-move', to: 'both', data: { nodes: fullMap.get(haven), gameState: this.gameState } };
+    }
+
+    // Method to validate and process the client selecting a node to pull civilians from
+    chmrPullAction (node, color) {
+
+        // Input validation
+        if (typeof node !== 'string' || !nodeMap.has(node)) return;
+
+        // Grab previous selections
+        const { armies } = this.meta.chmr;
+        const haven = this.meta.chmrHaven;
+
+        // Make sure the selected node is adjacent to the previously selected haven
+        if (!fullMap.get(haven).includes(node)) return;
+
+        // Perform dice rolls
+        const rolls = d6Array(armies);
+
+        // Calculate number of civilians to be moved
+        const count = rolls.reduce((sum, x) => sum + (x > 5 ? 2 : (x > 2 ? 1 : 0)), 0);
+
+        // Move civilians to the selected haven
+        const nodes = this.gameState.nodes;
+        let removed = 0;
+        for (let i = 0; i < count; i++) {
+            if (this.getPieces('civ', node).length === 0) break;
+            const index = nodes[node].findIndex(x => x.type === 'civ');
+            const [piece] = nodes[node].splice(index, 1);
+            nodes[haven].push(piece);
+            removed++;
+        }
+
+        // Subtract CP from turn player
+        this.getPlayer(color).cp -= 2;
+
+        // Set game status
+        this.status = 'default';
+
+        // Return result of civilian pull and new game state
+        return { type: 'pull-result', to: 'both', data: { rolls, removed, gameState: this.gameState } };
     }
 
     // Method to validate and process a 'Humanitarian Aid' action
@@ -563,7 +629,7 @@ class Game {
         this.status = 'default';
 
         // Perform and return long range combat
-        return this.longRange('fire', 2, node, color);
+        return this.longRange('fire', node, color);
     }
 
     // Method to validate and process a 'Air Strike' action
@@ -582,15 +648,15 @@ class Game {
         player.cp -= 2;
 
         // Perform and return long range combat
-        return this.longRange('strike', 4, node, color);
+        return this.longRange('strike', node, color);
     }
 
     // Handle rolls and piece removal for long range combat
-    longRange (type, civMin, node, color) {
+    longRange (type, node, color) {
 
         // Perform rolls
-        const combatRoll = d6Array(3);
-        const civRoll = d6Array(3);
+        const combatRoll = d6Array((type === 'fire' ? 3 : 2));
+        const civRoll = d6Array((type === 'fire' ? 3 : 2));
 
         // Retrieve the node
         const n = this.gameState.nodes[node];
@@ -600,7 +666,7 @@ class Game {
             return { reason: 'army', winner: color };
 
         // Calculate civilian casualties and end the game if necessary
-        if (this.removeCivilians(color, civRoll.filter(x => x > civMin && x < 6).length, n))
+        if (this.removeCivilians(color, civRoll.filter(x => x > (type === 'fire' ? 2 : 4) && x < 6).length, n))
             return { reason: 'support', winner: this.otherColor(color) };
 
         // Return rolls and game state
