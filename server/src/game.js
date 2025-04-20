@@ -68,6 +68,11 @@ class Game {
         else return nodes.filter(x => this.gameState.nodes[x].some(y => y.type === color));
     }
 
+    // Method to return haven adjacencies using the full map
+    getAdjacentNodes (havenList) {
+        return Array.from(havenList, (x) => ({ haven: x, adjacent: fullMap.get(x) }));
+    }
+
     // Method to return whether a node is contested or not
     isContested (node) {
         const n = this.gameState.nodes[node];
@@ -247,7 +252,7 @@ class Game {
     }
 
     // Method to add or subtract civilian population(s) after each turn
-    // Returns 
+    // Returns the two nodes and population changes
     civilianPopulation () {
 
         // Helper function to return a random element from an array
@@ -281,6 +286,45 @@ class Game {
 
         // Return results of two civilian population changes
         return [change(), change()];
+    }
+
+    // Method to disperse any civilians from havens and return a list of all nodes they dispersed to
+    disperseCivilians () {
+
+        // Create empty list to hold all nodes
+        const civNodes = [];
+
+        // Retrieve the node list from game state
+        const nodes = this.gameState.nodes;
+
+        // Helper function to disperse civilians from a given haven
+        const disperse = (haven) => {
+
+            // Retrieve adjacent nodes to haven
+            const adjacents = fullMap.get(haven);
+
+            // For each civilian in the haven
+            for (let i = this.getPieces('civ', haven).length; i > 0; i--) {
+
+                // Choose a random node adjacent to the haven
+                const toNode = adjacents[Math.floor(Math.random()*3)];
+
+                // If it isn't already in the list of nodes, add it
+                if (!civNodes.includes(toNode)) civNodes.push(toNode);
+
+                // Move the civilian from the haven to the chosen node
+                const index = nodes[haven].findIndex(x => x.type === 'civ');
+                const [piece] = nodes[haven].splice(index, 1);
+                piece.hasMoved = true;
+                nodes[toNode].push(piece);
+            }
+        }
+        
+        // Loop through all havens involved in CHMR and disperse civilians in each one
+        this.meta.chmrList.forEach(disperse);
+
+        // Return the list of nodes that civilians dispersed to
+        return civNodes;
     }
 
     // Method to switch turn player, returning true or false depending on whether initiative is required

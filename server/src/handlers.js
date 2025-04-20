@@ -373,12 +373,24 @@ const handleCivReturn = (choice, game, session, io) => {
         // If there was no CHMR performed, simply end the turn
         if (game.meta.chmrList.length === 0) endTurn(game, session, io);
 
-        // If CHMR was performed, send the first haven that civilian return is occuring at
-        // TODO -----------------------------------------------
+        // Otherwise, handle the CHMR
+        else {
+
+            // Disperse civilians from all havens and compile list of all nodes they moved to
+            const civNodes = game.disperseCivilians();
+
+            // Send the list of adjacent nodes, the list of civilian nodes, and the updated game state
+            io.to(session.gameID).emit('civ-return', JSON.stringify({ havenList: game.getAdjacentNodes(game.meta.chmrList), civNodes, gameState: game.gameState }));
+        }
     
-    // Otherwise, send the next haven that CHMR was performed on
+    // Otherwise, process the civilian return
     } else {
 
+        // Process the user's choice
+        // TODO -------------------------------------
+
+        // End the turn
+        endTurn(game, session, io);
     }
 };
 
