@@ -387,7 +387,7 @@ const handleCivReturn = (choice, game, session, io) => {
     } else {
 
         // Process the user's choice
-        // TODO -------------------------------------
+        game.returnArmies(choice);
 
         // End the turn
         endTurn(game, session, io);

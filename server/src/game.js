@@ -327,6 +327,51 @@ class Game {
         return civNodes;
     }
 
+    // Method to return armies from given havens to given nodes
+    returnArmies (choice) {
+
+        // Helper function to validate each choice that the user sends
+        const validChoice = (choice) => {
+
+            // Ensure that choice has a 'haven' field and a 'node' field
+            if (!choice.haven || !choice.node) return false;
+
+            // Ensure that both fields are strings
+            if (typeof choice.haven !== 'string' || typeof choice.node !== 'string') return false;
+
+            // Ensure that 'haven' is a haven and 'node' is a node
+            if (nodeMap.has(choice.haven) || !fullMap.has(choice.haven) || !nodeMap.has(choice.node)) return false;
+
+            // Ensure that the haven and node are connected
+            if (!fullMap.get(choice.haven).includes(choice.node)) return false;
+
+            // Return true if the choice passed all conditions
+            return true;
+        }
+
+        // Helper function to return all pieces on a given haven to a given node
+        const moveAll = ({haven, node}) => {
+
+            // Retrieve nodes from game state
+            const nodes = this.gameState.nodes;
+
+            // Remove all pieces from the haven node
+            const pieces = nodes[haven].splice(0);
+
+            // Add the pieces to the node
+            nodes[node].push(...pieces);
+        }
+
+        // Perform input validation on all choices, and return false if any single choice is invalid
+        if (!choice.reduce((flag, x) => flag && validChoice(x), true)) return false;
+
+        // Validate that the choices match which havens had CHMR performed
+        
+
+        // Loop through each choice and return armies accordingly
+        choice.forEach(moveAll);
+    }
+
     // Method to switch turn player, returning true or false depending on whether initiative is required
     switchTurn () {
 
