@@ -10,7 +10,7 @@ export function getRedPhotos(){
     '6': '/content/red_six_die.png'
 }
 return redPhotos;
-}
+2}
 
 export function getBluePhotos(){
     const bluePhotos = {
