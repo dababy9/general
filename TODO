@@ -1,4 +1,1 @@
-- CHMR?
-- end game function (call when disconnection, on influence op, any long-range combat, and in end turn)
 - return casualties from combat actions
-- change documentation to put comma instead of + for printing stuff
