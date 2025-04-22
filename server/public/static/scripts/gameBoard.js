@@ -1,5 +1,4 @@
 
-
 export function getRedPhotos(){
     const redPhotos = {
     '1': '/content/red_one_die.png',
