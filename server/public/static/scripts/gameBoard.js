@@ -1,166 +1,90 @@
+// List of number names used for retrieving all die asset names
+const numbers = ['one', 'two', 'three', 'four', 'five', 'six'];
 
-export function getRedPhotos(){
-    const redPhotos = {
-    '1': '/content/red_one_die.png',
-    '2': '/content/red_two_die.png',
-    '3': '/content/red_three_die.png',
-    '4': '/content/red_four_die.png',
-    '5': '/content/red_five_die.png',
-    '6': '/content/red_six_die.png'
-}
-return redPhotos;
-2}
-
-export function getBluePhotos(){
-    const bluePhotos = {
-    '1': '/content/blue_one_die.png',
-    '2': '/content/blue_two_die.png',
-    '3': '/content/blue_three_die.png',
-    '4': '/content/blue_four_die.png',
-    '5': '/content/blue_five_die.png',
-    '6': '/content/blue_six_die.png'
-}
-return bluePhotos;
+// Function to retrieve all six die asset names of a given color
+function getDies (color) {
+    return Array.from(numbers, (x) => '/content/' + color + '_' + x + '_die.png');
 }
 
-export function getBlackPhotos() {
-    const blackPhotos = {
-    '1': '/content/black_one_die.png',
-    '2': '/content/black_two_die.png',
-    '3': '/content/black_three_die.png',
-    '4': '/content/black_four_die.png',
-    '5': '/content/black_five_die.png',
-    '6': '/content/black_six_die.png'
-}
-return blackPhotos;
+// Variable to hold all die asset names
+const colors = {
+    'blue': getDies('blue'),
+    'red': getDies('red'),
+    'black': getDies('black')
 }
 
-let redPhotos = getRedPhotos();
-let bluePhotos = getBluePhotos();
-let blackPhotos = getBlackPhotos();
-
+// Function to load all necessary assets
 export async function loadAssets(){
-    //all of the photos that are used in the game 
-await PIXI.Assets.load(['/content/backgroundVV.png', //background blue picture
-    '/content/Board_Circles.png', //board picture with the nodes
-    '/content/button.png', //menu button in top left of screen
-    '/content/blueGrave.png',//blue grave
-    '/content/redGrave.png',//red grave
-    '/content/redCPTracker.png', //tracker for the red command points
-    '/content/blueCPTracker.png', //tracker for the blue command points
-    '/content/IFV_Blue.png', //Blue tank
-    '/content/IFV_Red.png',  //red tank
-    '/content/blueSurgeNew.png', //blue surge photo
-    '/content/redSurgeNew.png', //red surge photo
-    '/content/civilians2.png', //civilians photo
-    '/content/VVInstructions.jpg', //powerpoint instructions that appear from menu button.
-    redPhotos['1'],//dice photos being loaded
-    redPhotos['2'],
-    redPhotos['3'],
-    redPhotos['4'],
-    redPhotos['5'],
-    redPhotos['6'],
-    bluePhotos['1'],
-    bluePhotos['2'],
-    bluePhotos['3'],
-    bluePhotos['4'],
-    bluePhotos['5'],
-    bluePhotos['6'],
-    blackPhotos['1'],
-    blackPhotos['2'],
-    blackPhotos['3'],
-    blackPhotos['4'],
-    blackPhotos['5'],
-    blackPhotos['6'],
-    '/content/support_tracker.png']); //support tracker (bottom of screen)
 
+    // List of all asset names in the 'content' directory
+    const assetNames = [
+        'backgroundVV.png', // Background blue picture
+        'Board_Circles.png', // Board picture with the nodes
+        'button.png', // Menu button in top left of screen
+        'blueGrave.png', // Blue grave
+        'redGrave.png', // Red grave
+        'redCPTracker.png', // Tracker for red command points
+        'blueCPTracker.png', // Tracker for blue command points
+        'IFV_Blue.png', // Blue tank
+        'IFV_Red.png', // Red tank
+        'blueSurgeNew.png', // Blue surge photo
+        'redSurgeNew.png', // Red surge photo
+        'civilians2.png', // Civilians photo
+        'VVInstructions.jpg', // Powerpoint instructions that appear from menu button.
+        'support_tracker.png', // Support tracker (bottom of screen)
+    ];
+
+    // Load all assets
+    await PIXI.Assets.load([
+        ...Array.from(assetNames, (x) => '/content/' + x),
+        ...colors['blue'],
+        ...colors['red'],
+        ...colors['black']
+    ]); 
 }
 
+// Function to create and return background sprite
 export function makeBackground() {
-
-    //create the sprite for the background. Set size that doesn't change. 
-    const background = PIXI.Sprite.from('/content/backgroundVV.png');
-    // width and height for the background
-    background.width = 970;
-    background.height = 634;
-    return background;
+    return Object.assign(PIXI.Sprite.from('/content/backgroundVV.png'), { width: 970, height: 634 });
 }
 
+// Function to create and return game board sprite
 export function makeGameBoard() {
-    // add game board to the canvas
-    let board = PIXI.Sprite.from('/content/Board_Circles.png');
+    const board = Object.assign(PIXI.Sprite.from('/content/Board_Circles.png'), { x: 110, y: 40, width: 750, height: 456 });
 
-    const bw = board.width;
-    const bh = board.height;
-
-    //make board proportional to background
-    board.width = 970 - 220;
-    board.height = bh * board.width / bw
-
-    //when uncommented gives the location of the click in console
-    // board.eventMode='static';
-
-    // board.on('pointerdown',(e)=>{
+    // Prints the location of a click in console
+    // board.eventMode = 'static';
+    // board.on('pointerdown', (e) => {
     //     console.log(e.global);
-    // })
+    // });
 
-    board.x = 110;
-    board.y = 40;
     return board;
 }
 
-export function makeBoardPiece(x, y, width, height, name, z = 0) {
-    let piece = PIXI.Sprite.from(name);
-    piece.width = width;
-    piece.height = height;
-    piece.x = x;
-    piece.y = y;
-    piece.zIndex = z;
-    return piece;
+export function makeBoardPiece(x, y, width, height, name, zIndex = 0) {
+    return Object.assign(PIXI.Sprite.from(name), { x, y, width, height, zIndex });
 }
 
-export function makeCircle(x, y, size, fill, stroke, strokefill, alpha) {
-    const circle = new PIXI.Graphics();
-    circle.circle(x, y, size);
-    circle.fill(fill);
-    circle.stroke(stroke, strokefill);
-    circle.alpha = alpha;
-    return circle;
+export function makeCircle(x, y, r, fill, stroke, strokefill, alpha) {
+    return Object.assign(new PIXI.Graphics(), { alpha })
+        .circle(x, y, r)
+        .fill(fill)
+        .stroke(stroke, strokefill);
 }
 
 export function makeBoardText(x, y, text, style) {
-    const texts = new PIXI.Text({ text: text, style: style });
-    texts.x = x;
-    texts.y = y;
-    return texts;
+    return Object.assign(new PIXI.Text({ text, style }), { x, y });
 }
 
-export function makeRoundRect(x, y, width, height, corner, fill, stroke, strokefill, z, vis = true) {
-    const rect = new PIXI.Graphics();
-    rect.roundRect(x, y, width, height, corner);
-    rect.fill(fill);
-    rect.stroke({ width: stroke, color: strokefill });
-    rect.zIndex = z;
-    rect.visible = vis;
-    return rect;
+export function makeRoundRect(x, y, w, h, corner, fill, width, color, zIndex, visible = true) {
+    return Object.assign(new PIXI.Graphics(), { zIndex, visible })
+        .roundRect(x, y, w, h, corner)
+        .fill(fill)
+        .stroke({ width, color });
 }
 
-export function drawDice(dx, dy, dz, number, color) {
-
-    let colors = {
-        'red': redPhotos,
-        'blue': bluePhotos,
-        'black': blackPhotos
-    }
-
-    let diceString = colors[color][number];
-    const dice = PIXI.Sprite.from(diceString);
-    dice.x = dx;
-    dice.y = dy;
-    dice.zIndex = dz;
-    dice.height = 75;
-    dice.width = 75;
-    return dice;
+export function drawDice(x, y, zIndex, n, color) {
+    return Object.assign(PIXI.Sprite.from(colors[color][n-1]), { x, y, zIndex, width: 75, height: 75 });
 }
 
 const cpButtonText = new PIXI.Text({ text: "Open CP Menu", style: new PIXI.TextStyle({ fontSize: 20, fill: '#ffffff', align: 'center' }) });
@@ -303,14 +227,12 @@ export function makeCPContainer(actionFunctions,app) {
 
 export function closeCPQuery() {
     cpQuery.visible = false;
-    cpButtonText.text="Open CP Menu";
+    cpButtonText.text = "Open CP Menu";
 }
 
 export function openCPQuery() {
     console.log("open cp query");
-    cpQuery.visible = true;
-    cpButton.visible = true;
-    cpButtonText.visible=true;
+    cpQuery.visible = cpButton.visible = cpButtonText.visible = true;
     cpButtonText.text = "Close CP Menu";
 }
 
