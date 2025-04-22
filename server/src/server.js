@@ -8,7 +8,7 @@ const { Server } = require('socket.io');
 const path = require('path');
 const { randomBytes } = require('crypto');
 const handler = require('./handlers');
-const { sessionStore, gameStore, quickPlayQueue, privateGameTable, createInitialSession } = require('./objects.js');
+const { sessionStore, gameStore, quickPlayHold, privateGameTable, createInitialSession } = require('./objects.js');
 
 // Used for generating random sessionIDs
 const randomID = () => randomBytes(16).toString('hex');
@@ -128,16 +128,16 @@ io.on('connection', (socket) => {
     });
 
     // General request for client to exit matchmaking
-    socket.on('leave', (type) => {
+    socket.on('leave', () => {
 
         // Client attempts to leave the quick-play queue
-        if (type === 'quick' && session.stat === 'quick-play') {
-            quickPlayQueue.delete(sessionID);
+        if (session.stat === 'quick-play') {
+            quickPlayHold.sessionID = false;
             session.stat = 'base';
         }
 
         // Client attempts to leave private game (before another client joins it)
-        if (type === 'private' && session.stat === 'private-play') {
+        if (session.stat === 'private-play') {
             privateGameTable.delete(session.gameID);
             session.stat = 'base';
         }

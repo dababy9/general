@@ -1,7 +1,7 @@
 // Import modules
 const { randomBytes } = require('crypto');
 const sanitizeHtml = require('sanitize-html');
-const { SESSION_TIMEOUT, MAX_MESSAGE_LENGTH, sessionStore, gameStore, quickPlayQueue, privateGameTable } = require('./objects.js');
+const { SESSION_TIMEOUT, MAX_MESSAGE_LENGTH, sessionStore, gameStore, quickPlayHold, privateGameTable } = require('./objects.js');
 const { Game } = require('./game');
 
 // Used for generating random gameIDs
@@ -48,21 +48,24 @@ const endGame = (gameID, reason, winner, io) => {
 // Quick-Play handler
 const handleQuickPlay = (sessionID, session, io) => {
 
-    // If the quick-play queue is empty
-    if (quickPlayQueue.length === 0) {
+    // If the quick-play hold is empty
+    if (!quickPlayHold.sessionID) {
 
-        // Add the client to the queue
-        quickPlayQueue.push(sessionID);
+        // Add the client to the hold
+        quickPlayHold.sessionID = sessionID;
 
         // Set client status to 'quick-play'
         session.stat = 'quick-play';
 
-    // If the quick-play queue is not empty
+    // If the quick-play hold is not empty
     } else {
 
         // Retrieve opponent's sessionID and session
-        const opponentSessionID = quickPlayQueue.shift();
+        const opponentSessionID = quickPlayHold.sessionID;
         const opponentSession = sessionStore.get(opponentSessionID);
+
+        // Set hold back to falsy value
+        quickPlayHold.sessionID = false;
 
         // If opponent session doesn't exist, just re-call this handler function
         if (!opponentSession) return handleQuickPlay(sessionID, session, io);

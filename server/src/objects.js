@@ -5,7 +5,7 @@ const MAX_MESSAGE_LENGTH = 500; // Maximum character length a message may be
 // Initialize in-memory 'storages'
 const sessionStore = new Map();
 const gameStore = new Map();
-const quickPlayQueue = new Array();
+const quickPlayHold = new Object();
 const privateGameTable = new Map();
 
 // Initial session
@@ -108,7 +108,7 @@ module.exports = {
     MAX_MESSAGE_LENGTH,
     sessionStore,
     gameStore,
-    quickPlayQueue,
+    quickPlayHold,
     privateGameTable,
     createInitialSession,
     createInitialState,

@@ -1,160 +1,172 @@
-import {createAboutButton} from './homebuttons/aboutButton.js';
-import { createHowButton } from './homebuttons/howToPlay.js';
-import { createJoinButton } from './homebuttons/joinButton.js';
-import{createStartButton} from './homebuttons/startButton.js';
-
+// Create PIXI canvas and add to page
 const app = new PIXI.Application();
-await app.init({ height:650, width:1000, background: '#DFE8F3' });
+await app.init({ width: 1000, height: 650, background: '#DFE8F3' });
 document.body.appendChild(app.canvas);
 
-// load the PNG asynchronously
-await PIXI.Assets.load(['content/backgroundVV.png', 
-                        'content/StartGameVV.png',
-                        'content/joingame.png',
-                        'content/howtoplay.png',
-                        'content/about.png']);
+// Position the canvas correctly
+Object.assign(app.canvas.style, { position: 'absolute', left: '0', top: '0' });
 
+// Load image
+await PIXI.Assets.load('content/backgroundVV.png');
 
-//create the background
-const background = PIXI.Sprite.from('content/backgroundVV.png');
+// Create background image
+const background = Object.assign(PIXI.Sprite.from('content/backgroundVV.png'), { x: 0, y: 0, width: 1000, height: 650 });
 
-// make the width of the game the size of the screen and 
-// then make the height proportional. 
-const w = 970;
-const h = w * (495 / 899);
-
-background.width = w;
-background.height = h;
-
-// add background to the canvas
+// Add background to canvas
 app.stage.addChild(background);
 
-// Create a text style (you can customize it)
-const textStyle = new PIXI.TextStyle({
-    fontFamily: 'Lexend',
-    fontSize: 30,
-    fill: '#000000', //black text color
-    align: 'center'
+// Retrieve necessary HTML elements
+const mainBanner = document.getElementById('main-banner');
+const joinField = document.getElementById('join-field');
+const waitingBanner = document.getElementById('waiting-banner');
+const instructions = document.getElementById('instructions');
+const closeInstructions = document.getElementById('close-instructions');
+const about = document.getElementById('about');
+const closeAbout = document.getElementById('close-about');
+
+// Event listener for join game input field
+joinField.addEventListener('keypress', function (event) {
+    if (event.key === 'Enter') {
+        socket.emit('play', 'join', joinField.value);
+        joinField.style.display = 'none';
+    }
 });
 
-
-createStartButton(app, 365, 150);
-
-const createText = new PIXI.Text({text: "Create Game", style: textStyle})
-createText.x= 405;
-createText.y=163;
-app.stage.addChild(createText);
-
-createJoinButton(app, 365, 220);
-
-const joinText = new PIXI.Text({text: "Join Game", style: textStyle})
-joinText.x= 420;
-joinText.y=235;
-app.stage.addChild(joinText);
-
-const quickbutton = new PIXI.Graphics();
-quickbutton.roundRect(365,290,240, 60);
-quickbutton.fill(0xd9f2d0);
-quickbutton.stroke({width:1,color:0x000000});
-quickbutton.eventMode = 'static';
-quickbutton.cursor = 'pointer';
-    //adding the create Private Session Listener
-quickbutton.on('pointerdown', startClick);
-app.stage.addChild(quickbutton);
-
-const quickText = new PIXI.Text({text: "Quick Play", style: textStyle})
-quickText.x= 420;
-quickText.y=305;
-app.stage.addChild(quickText);
-
-createHowButton(app, 365, 360);
-
-const howText = new PIXI.Text({text: "How To Play", style: textStyle})
-howText.x= 406;
-howText.y=375;
-app.stage.addChild(howText);
-
-
-createAboutButton(app, 365,430);
-
-const aboutText = new PIXI.Text({text: "About", style: textStyle})
-aboutText.x= 445;
-aboutText.y=445;
-app.stage.addChild(aboutText);
-
-// Create a text style (you can customize it)
-const VVStyle = new PIXI.TextStyle({
-    fontFamily: 'Lexend',
-    fontSize: 60,
-    fill: '#000000', //black text color
-    align: 'center'
+// Event listener for close instructions button
+closeInstructions.addEventListener('click', () => {
+    instructions.style.display = 'none';
 });
 
+// Event listener for close about button
+closeAbout.addEventListener('click', () => {
+    about.style.display = 'none';
+});
 
-const VVText = new PIXI.Text({text: "Violent Victory", style: VVStyle})
-VVText.x= 310;
-VVText.y=45;
-VVText.zIndex=105;
-app.stage.addChild(VVText);
-
-
-const VVCredit = new PIXI.Text({text: "by Rachel McVicker and Sebastian J. Bae", style: new PIXI.TextStyle({fontFamily:'Legend',fontSize : 30, fill: 0x000000, align: 'center'})})
-VVCredit.x= 255;
-VVCredit.y=112;
-VVCredit.zIndex=105;
-app.stage.addChild(VVCredit);
-
-
-const VVCredit2 = new PIXI.Text({text: "Digitized By:\nJoshua Clark\nLauren Leckelt\nCaleb Walker", style: new PIXI.TextStyle({fontFamily:'Legend',fontSize : 20, fill: 0x000000, align: 'left'})})
-VVCredit2.x = 10;
-VVCredit2.y = 430;
-VVCredit2.xIndex = 105;
-app.stage.addChild(VVCredit2);
-
-const startInst = new PIXI.Text({text: "", style: new PIXI.TextStyle({fontFamily:'Legend', fontSize:25,fill:0x000000, align: 'left'})});
-startInst.x = 635;
-startInst.y = 180;
-startInst.text = 'To start a game, click Create Game.\nGive the code that appears to your \nopponent. Your opponent then\ntypes the code into the text box and\npresses enter and the game starts.';
-app.stage.addChild(startInst);
-
-
-
-//quickplay. currently not on any of the buttons but it is useful. 
-function startClick(){
-    this.isdown=true;
-    this.alpha=1;
-    socket.emit('play','quick');
-    background.zIndex=100;
+// Function to return a common Pixi Text Style of a given font size
+function pixiText (fontSize) {
+    return new PIXI.TextStyle({
+        fontFamily: 'Lexend',
+        fontSize,
+        fill: '#000000',
+        align: 'center'
+    });
 }
 
+// Define function to create and return button with text that calls given function when clicked
+let buttonY = 110;
+function makeButton (callback, buttonText, textOffset) {
+    const y = buttonY += 70;
+    const reset = (x, color) => { x.clear().roundRect(380, y, 240, 60).fill(0xd9f2d0).stroke({ width: 2, color }) };
 
+    const button = Object.assign(new PIXI.Graphics(), { eventMode: 'static', cursor: 'pointer' })
+        .roundRect(380, y, 240, 60)
+        .fill(0xd9f2d0)
+        .stroke({ width: 2, color: 0x000000 })
+        .on('pointerdown', function () { reset(button, 0x000000); callback(); })
+        .on('pointerover', () => reset(button, 0xf1e3a4))
+        .on('pointerout', () => reset(button, 0x000000));
 
-// Create a div to display the gameID (Initially invisible)
-    let gameIDDiv = document.createElement('div');
-    gameIDDiv.id = 'gameIDBox';
-    gameIDDiv.style.position = 'absolute';
-    gameIDDiv.style.top = `165px`;
-    gameIDDiv.style.left = '175px';
-    gameIDDiv.style.padding = '10px';
-    gameIDDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    gameIDDiv.style.color = '#fff';
-    gameIDDiv.style.fontSize = '24px';
-    gameIDDiv.style.textAlign = 'center';
-    gameIDDiv.style.userSelect = 'text'; // Make the text selectable
-    gameIDDiv.style.display = 'none'; // Initially hidden
-    document.body.appendChild(gameIDDiv);
+    const text = Object.assign(new PIXI.Text({ text: buttonText, style: pixiText(30), x: 500 - textOffset, y: buttonY + 15 }));
+    return [button, text];
+}
 
+// Array to hold main menu items
+const mainMenu = []
+
+// Create Button
+mainMenu.push(...makeButton(() => {
+    socket.emit('play', 'create');
+    startWaitAnimation();
+}, "Create Game", 79));
+
+// Join Button
+mainMenu.push(...makeButton(() => {
+    joinField.style.display = 'inline';
+    setTimeout(() => joinField.focus(), 0);
+    mainBanner.textContent = 'Have a code? Type it in and hit enter to join!';
+    mainBanner.style.display = 'block';
+    app.stage.removeChild(...mainMenu);
+    app.stage.addChild(cancelButton, cancelText);
+}, "Join Game", 65));
+
+// Quick Play Button
+mainMenu.push(...makeButton(() => {
+    socket.emit('play', 'quick');
+    startWaitAnimation();
+}, "Quick Play", 68));
+
+// How To Button
+mainMenu.push(...makeButton(() => {
+    instructions.style.display = 'flex';
+}, "How To Play", 80));
+
+// About Button
+mainMenu.push(...makeButton(() => {
+    about.style.display = 'flex';
+}, "About", 38));
+
+// Add all main menu items to canvas initially
+app.stage.addChild(...mainMenu);
+
+// Create title
+const titleText = Object.assign(new PIXI.Text({ text: "Violent Victory", style: pixiText(60) }), { x: 314, y: 40 });
+
+// Create main credit
+const mainCreditText = Object.assign(new PIXI.Text({ text: "by Rachel McVicker and Sebastian J. Bae", style: pixiText(30) }), { x: 249, y: 120 });
+
+// Create secondary credit
+const secondaryCreditText = Object.assign(new PIXI.Text({ text: "Digitized By: Joshua Clark, Lauren Leckelt, Caleb Walker", style: pixiText(20) }), { x: 265, y: 580 });
+
+// Add all texts to the canvas
+app.stage.addChild(titleText, mainCreditText, secondaryCreditText);
+
+// Create cancel button
+const cancelButton = Object.assign(new PIXI.Graphics(), { eventMode: 'static', cursor: 'pointer' })
+    .roundRect(440, 400, 120, 40)
+    .fill(0xe36e66)
+    .stroke({ width: 2, color: 0x000000 })
+    .on('pointerdown', () => {
+        socket.emit('leave');
+        app.stage.addChild(...mainMenu);
+        app.stage.removeChild(cancelButton, cancelText, waitingDots);
+        waitingBanner.style.display = mainBanner.style.display = joinField.style.display = 'none';
+    });
+
+// Create cancel text
+const cancelText = Object.assign(new PIXI.Text({ text: 'Cancel', style: pixiText(20), x: 472, y: 410 }));
+
+// Create waiting dots
+const waitingDots = Object.assign(new PIXI.Container(), { x: 500, y: 310 });
+for (let i = 0; i < 8; i++) {
+    const currentAngle = Math.PI / 4 * i;
+    const dot = new PIXI.Graphics()
+        .circle(40 * Math.cos(currentAngle), 40 * Math.sin(currentAngle), 8)
+        .fill([0, 0, 0, 1 - 0.15*i]);
+    waitingDots.addChild(dot);
+}
+
+// Function to switch to the 'waiting' animation
+function startWaitAnimation () {
+    app.stage.removeChild(...mainMenu);
+    app.stage.addChild(cancelButton, cancelText, waitingDots);
+    waitingDots.rotation = 0;
+    waitingBanner.style.display = 'block';
+}
+
+// Circular animation for waiting dots
+app.ticker.add((time) => {
+    waitingDots.rotation -= 0.1 * time.deltaTime;
+    if (waitingDots.rotation < -4) waitingDots.rotation += Math.PI * 2;
+});
+
+// Socket event handler to display game ID in a small box for the user
 socket.on('game-id', (gameID) => {
-    console.log(gameID);
-    //added from chatgpt should help with updating the variables of the game state.
-    // displayID(gameID); 
-    gameIDDiv.textContent = `Game ID: ${gameID}`;  // Update the div with the game ID
-    gameIDDiv.style.display = 'block'; // Make the div visible once the gameID is received
+    mainBanner.textContent = 'Game ID: ' + gameID + '. Share this code to start!';
+    mainBanner.style.display = 'block';
 });
 
-
-function dev(){
-    socket.emit('play','dev');
-}
-
-
+// const startInst = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontFamily: 'Legend', fontSize: 25, fill: 0x000000, align: 'left' }) });
+// startInst.x = 635;
+// startInst.y = 180;
+// startInst.text = 'To start a game, click Create Game.\nGive the code that appears to your \nopponent. Your opponent then\ntypes the code into the text box and\npresses enter and the game starts.';
+// app.stage.addChild(startInst);
