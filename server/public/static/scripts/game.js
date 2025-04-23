@@ -66,6 +66,7 @@ socket.on('new-turn', (player) => {
     socket.emit('game', 'fetch-game-state');
     gameState.turnPlayer = player;
     if (playerColor == player) {
+        clearMessage();
         Board.openCPQuery();
     }
     playerTurnBanner();
@@ -75,7 +76,9 @@ socket.on('new-turn', (player) => {
 socket.on('initiative-ready', () => {
     //asks for the game state after the values in update board have been created
     socket.emit('game', 'fetch-game-state');
-    startInitiative();
+    if (gameState.turnCounter < 11)
+        startInitiative();
+    console.log("calling in initiative ready");
 });
 
 //start the pixi application to make canvas to add sprites to
@@ -188,9 +191,11 @@ async function updateBoard(gameState) {
     roundNum.text = Math.floor(gameState.turnCounter/2)+1;
 
     //starts initiative if no turn player is assigned
-    if (!gameState.turnPlayer) {
+    if (!gameState.turnPlayer && gameState.turnCounter < 11) {
         startInitiative();
     }
+
+    console.log(gameState);
 
     //update the surge and casualites
     redSurge.text = gameState['redPlayer'].surgeArmies;
@@ -214,6 +219,15 @@ async function updateBoard(gameState) {
     let numberedGameState = getCount(gameState.nodes);
     //updating all of the node player values
     for (const data in numberedGameState) {
+
+
+        if (playerColor != gameState.turnPlayer && nodeSprites[data].redSprite.text != numberedGameState[data].redArmies){
+            doArrow(data);
+        }
+        if (playerColor != gameState.turnPlayer && nodeSprites[data].blueSprite.text != numberedGameState[data].blueArmies){
+            doArrow(data);
+        }
+
 
         nodeSprites[data].redSprite.text = numberedGameState[data].redArmies;
         nodeSprites[data].blueSprite.text = numberedGameState[data].blueArmies;
@@ -388,7 +402,13 @@ socket.emit('game', 'fetch-game-state');
 
 //array of the functions that the buttons would call
 const actionFunctions = [moveClicked, chmrClicked, humanAid, surge, influenceOp, firesClicked, strikeClicked]
-const cpQuery = Board.makeCPMenu(actionFunctions, app);
+// // QUERY user for using combat points (combat and non combat both use.)
+// // chat 4o used for this 
+// const cpQuery = new PIXI.Container();
+// const cpQuery = 
+Board.makeCPMenu(actionFunctions, app);
+// cpQuery.visible = false;
+// cpQuery.zIndex = 200;
 
 
 function clicked() {
@@ -396,7 +416,7 @@ function clicked() {
 }
 
 //here is where the messages will be put for all of the moves
-const cpMessage = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 20, fill: '#000000', align: 'center' }) });
+const cpMessage = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 23, fill: '#ffffff', align: 'center' }) });
 cpMessage.x = 120;
 cpMessage.y = 30;
 cpMessage.zIndex = 1000;;
@@ -411,7 +431,7 @@ function changeMessage(message) {
     messageBackground.clear();
     messageBackground.roundRect(115, 25, cpMessage.width + 10, cpMessage.height + 10, 10);
     messageBackground.alpha = 0.75;
-    messageBackground.fill(0xC06C84);
+    messageBackground.fill(0x3d52a0);
 }
 
 function clearMessage() {
@@ -873,16 +893,6 @@ function selectArmyNumber(x, y, minValue, maxValue, onSelect, nodeName) {
     return container;
 }
 
-
-
-// socket.on('chmr-list',(lists) => {
-//     let listOfHavens = JSON.parse(lists);
-//     console.log(listOfHavens);
-//     if (playerColor == gameState.turnPlayer){
-//         chmrReceived(listOfHavens);
-//     }
-// });
-
 socket.on('haven-list', (havens) => {
     let parsedHavens = JSON.parse(havens); // Parse the JSON string
     console.log(parsedHavens[0]); // Should print the first adjacent haven to the selected node ('haven1' for blueBase)
@@ -890,7 +900,6 @@ socket.on('haven-list', (havens) => {
 });
 
 function chmrReceived(havens) {
-
     highlightHavens(havens, chmr2, "Which safe haven would you like to move to?");
 }
 
@@ -922,20 +931,12 @@ function chmr2Recived(nodes) {
 
 function chmr3(name) {
     removeHighlight();
-    clearMessage;
+    clearMessage();
     console.log("selected ndoe" + name);
     //////////server message goes here. emiittttt
     socket.emit('game', 'action', {type: 'chmr-pull', data: name}); // Request to pull civilians from name
 
 }
-
-socket.on('pull-result', (response) => {
-    let parsedResponse = JSON.parse(response); // Parse the JSON string
-    console.log(parsedResponse.rolls); // Should print rolls
-    console.log(parsedResponse.removed); // Should print the number of civilians removed from the node
-    console.log(parsedResponse.gameState); // Should print the entire updated gameState
-});
-
 
 // function chmr3Received() {
 
@@ -981,8 +982,20 @@ socket.on('pull-result', (response) => {
 
     }
 
+
+    const chmrEx = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center',wordWrap: true, wordWrapWidth: 200 }) });
+    chmrEx.x = 90;
+    chmrEx.y = 160;
+    chmrEx.zIndex = 1001;
+    // strikeText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
+    chmrEx.text = "Move 2 CIV on rolls of 6, 1 CIV on rolls of 3-5, and 0 CIV on rolls of 1-2."
+    app.stage.addChild(chmrEx);
+
+    const chmrRollEx = Board.makeRoundRect(80, 150, chmrEx.width+20, chmrEx.height + 20, 10,0x808080,2,0x000000,1000);
+    app.stage.addChild(chmrRollEx);
+
     chmrRoll.on('pointerdown', () => {
-        app.stage.removeChild(chmrRoll);
+        app.stage.removeChild(chmrRoll,chmrRollEx,chmrEx);
         app.stage.removeChild(chmrText);
         if (playerColor == gameState.turnPlayer) {
             Board.openCPQuery();
@@ -1377,7 +1390,6 @@ function firesClicked() {
     highlight(find, fires1, "Pick the node where your army will fire from");
 }
 
-let fireSelection = "noneSelected";
 
 function fires1(name) {
     hideCancelFires();
@@ -1448,7 +1460,8 @@ socket.on('fire', (response) => {
     firesText.x = 390;
     firesText.y = 160;
     firesText.zIndex = 1000
-    firesText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
+    // firesText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
+    firesText.text = "Army Rolls" + "\n\n\n\n\nCivilian Rolls\n\n\n\n\nClick to Continue"
     app.stage.addChild(firesText);
 
     const firesRoll = Board.makeRoundRect(300, 150, 350, firesText.height + 30, 10,0x808080,2,0x000000,900);
@@ -1457,7 +1470,7 @@ socket.on('fire', (response) => {
 
     for (let i = 0; i < rolls1.length; i++) {
 
-        let dice1 = Board.drawDice(345 + i * 95, 200, 950, rolls1[i], playerColor);
+        let dice1 = Board.drawDice(345 + i * 95, 200, 950, rolls1[i], gameState.turnPlayer);
         let dice2 = Board.drawDice(345 + i * 95, 320, 950, rolls2[i], 'black');
 
         app.stage.addChild(dice1);
@@ -1469,8 +1482,19 @@ socket.on('fire', (response) => {
 
     }
 
+    const firesEx = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center',wordWrap: true, wordWrapWidth: 200 }) });
+    firesEx.x = 690;
+    firesEx.y = 160;
+    firesEx.zIndex = 1001;
+    // strikeText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
+    firesEx.text = "Combat Casualties occur on rolls of 4-6.\nCiv Casualties occur on rolls of 3-6."
+    app.stage.addChild(firesEx);
+
+    const fireRollEx = Board.makeRoundRect(680, 150, firesEx.width+20, firesEx.height + 20, 10,0x808080,2,0x000000,1000);
+    app.stage.addChild(fireRollEx);
+
     firesRoll.on('pointerdown', () => {
-        app.stage.removeChild(firesRoll);
+        app.stage.removeChild(firesRoll,firesEx,fireRollEx);
         app.stage.removeChild(firesText);
         if (playerColor == gameState.turnPlayer) {
             Board.openCPQuery();
@@ -1527,7 +1551,8 @@ socket.on('strike', (response) => {
     strikeText.x = 390;
     strikeText.y = 160;
     strikeText.zIndex = 1000
-    strikeText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
+    // strikeText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
+    strikeText.text = "Army Rolls" + "\n\n\n\n\nCivilian Rolls\n\n\n\n\nClick to Continue"
     app.stage.addChild(strikeText);
 
     const strikeRoll = Board.makeRoundRect(300, 150, 350, strikeText.height + 30, 10,0x808080,2,0x000000,900);
@@ -1548,8 +1573,19 @@ socket.on('strike', (response) => {
 
     }
 
+    const strikeEx = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center',wordWrap: true, wordWrapWidth: 200 }) });
+    strikeEx.x = 690;
+    strikeEx.y = 160;
+    strikeEx.zIndex = 1001;
+    // strikeText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
+    strikeEx.text = "Combat Casualties occur on rolls of 4-6.\nCiv Casualties occur on rolls of 5-6."
+    app.stage.addChild(strikeEx);
+
+    const strikeRollEx = Board.makeRoundRect(680, 150, strikeEx.width+20, strikeEx.height + 20, 10,0x808080,2,0x000000,1000);
+    app.stage.addChild(strikeRollEx);
+
     strikeRoll.on('pointerdown', () => {
-        app.stage.removeChild(strikeRoll);
+        app.stage.removeChild(strikeRoll,strikeRollEx,strikeEx);
         app.stage.removeChild(strikeText);
         if (playerColor == gameState.turnPlayer) {
             Board.openCPQuery();
@@ -1621,8 +1657,10 @@ socket.on('close-combat', (data) => {
             gameState = parsedData.gameState;
             updateBoard(gameState);
         }
-        console.log("Last move or no close combat");
-        socket.emit('game', 'civ-move'); console.log("send civ-move");
+        if (!rolls){
+            console.log("Last move or no close combat");
+            socket.emit('game', 'civ-move'); console.log("send civ-move");
+        }
     }
 
     // if (parsedData.next) {
@@ -1630,13 +1668,6 @@ socket.on('close-combat', (data) => {
     // }
 });
 
-let rolls1 =
-{
-    blueRolls: [1, 2, 3, 4, 5],
-    redRolls: [2, 3, 4],
-    blueCivRolls: [3, 4, 5, 4, 5],
-    redCivRolls: [4, 5, 6]
-}
 
 function displayRolls(rolls, next, minValue = 0) {
 
@@ -1709,9 +1740,20 @@ function displayRolls(rolls, next, minValue = 0) {
     }
     app.stage.addChild(text1, text2, text3, cont);
 
+    const combatEx = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center',wordWrap: true, wordWrapWidth: 200 }) });
+    combatEx.x = 90;
+    combatEx.y = 170;
+    combatEx.zIndex = 1001;
+    // strikeText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
+    combatEx.text = "Army casulaties occur on rolls of 5-6.\nCIV casualites occur on rolls of 6."
+    app.stage.addChild(combatEx);
+
+    const combatRollEx = Board.makeRoundRect(80, 160, combatEx.width+20, combatEx.height + 20, 10,0x808080,2,0xffffff,1000);
+    app.stage.addChild(combatRollEx);
+
     rollDisplay.eventMode = 'static';
     rollDisplay.on('pointerdown', () => {
-        app.stage.removeChild(rollDisplay);
+        app.stage.removeChild(rollDisplay,combatEx, combatRollEx);
         app.stage.removeChild(text1, text2, text3, cont);
         if (text4 != "none") app.stage.removeChild(text4);
         if (next) {
@@ -1914,9 +1956,9 @@ function doArrow(location) {
 ////CHMR RESET START
 
 function startCHMRReset(){
-    const chmrResetText = Board.makeBoardText(260,510,"Civilan Movement Complete,\nClick to begin Civilian Return from Haven",new PIXI.TextStyle({ fontSize: 30, fill: '#ffffff', align: 'center' }));
+    const chmrResetText = Board.makeBoardText(260,510,"Civilian Movement Complete,\nClick to Continue",new PIXI.TextStyle({ fontSize: 30, fill: '#ffffff', align: 'center' }));
     chmrResetText.zIndex=1101;
-    const chreset = Board.makeRoundRect(250,500,chmrResetText.width+20,chmrResetText.height+20,10,0x808080,2,0x000000,1100,true);
+    const chreset = Board.makeRoundRect(250,500,chmrResetText.width+20,chmrResetText.height+20,10,0x3d52a0,2,0x000000,1100,true);
 
     app.stage.addChild(chmrResetText,chreset);
 
@@ -1924,9 +1966,16 @@ function startCHMRReset(){
     chreset.on('pointerdown',()=>{
         app.stage.removeChild(chmrResetText,chreset);
         socket.emit('game','civ-return');
+        changeMessage("Waiting on Opponent to Spend Command Points.");
     });
 
 }
+
+socket.on('civ-return',(result)=>{
+    let parsedResult = JSON.parse(result);
+    console.log(parsedResult);
+    selectCHMRNodes(parsedResult.civNodes, parsedResult.havenList, parsedResult.gameState);
+})
 
 let selectedReturns = [];
 let location = 0;
@@ -1941,12 +1990,14 @@ function selectCHMRNodes(updatedCivilians, armiesToMove, gameStateNew){
     updateCiv = updatedCivilians;
 
 
+
     if (armiesToMove.length > selectedReturns.length && playerColor == gameState.turnPlayer){
         console.log("start");
-        currentHavenName = armiesToMove[0].name;
-        highlight(armiesToMove[0].nodes,resetResponse, "Select where the army from " + armiesToMove[0].name + " should go");
+        console.log(armiesToMove[0].adjacent);
+        highlight(armiesToMove[0].adjacent,resetResponse, "Select where the army from " + armiesToMove[0].haven + " should go");
     }
-    else{
+    else if (playerColor == gameState.turnPlayer){
+        console.log("in the else statement");
         const chmrResetText = Board.makeBoardText(260,510,"No CHMR Conducted,\nClick to Continue",new PIXI.TextStyle({ fontSize: 30, fill: '#ffffff', align: 'center' }));
         chmrResetText.zIndex=1101;
         const chreset = Board.makeRoundRect(250,500,chmrResetText.width+20,chmrResetText.height+20,10,0x808080,2,0x000000,1100,true);
@@ -1964,21 +2015,23 @@ function selectCHMRNodes(updatedCivilians, armiesToMove, gameStateNew){
 function resetResponse(name){
     removeHighlight();
     selectedReturns[location] = {
-        haven:toMove[location].name,
+        haven:toMove[location].haven,
         node:name
     }
     if(toMove.length > selectedReturns.length){
         location+=1;
-        highlight(toMove[location].nodes,resetResponse, "Select where the army from " + toMove[location].name + " should go");
+        highlight(toMove[location].adjacent,resetResponse, "Select where the army from " + toMove[location].haven + " should go");
     }
     else{
         for(let nodes of updateCiv){
             doArrow(nodes);
         }
 
-        const chmrResetText = Board.makeBoardText(260,510,"Civilan Return from Haven Complete,\nClick to Continue",new PIXI.TextStyle({ fontSize: 30, fill: '#ffffff', align: 'center' }));
+        socket.emit('game','civ-return',selectedReturns);
+
+        const chmrResetText = Board.makeBoardText(260,510,"Civilian Return from Haven Complete,\nClick to Continue",new PIXI.TextStyle({ fontSize: 30, fill: '#ffffff', align: 'center' }));
         chmrResetText.zIndex=1101;
-        const chreset = Board.makeRoundRect(250,500,chmrResetText.width+20,chmrResetText.height+20,10,0x808080,2,0x000000,1100,true);
+        const chreset = Board.makeRoundRect(250,500,chmrResetText.width+20,chmrResetText.height+20,10,0x3d52a0,2,0x000000,1100,true);
 
         app.stage.addChild(chmrResetText,chreset);
 
@@ -2012,6 +2065,73 @@ let moveee = [{
 ////CHMR RESET STOP
 ////CHMR RESET STOP
 
+
+/////GAME OVER START
+/////GAME OVER START
+/////GAME OVER START
+
+socket.on('game-over',(result)=>{
+    console.log(result.winner);
+    gameOver(result.winner);
+    // gameOver(result.winner, result.gameState, result.vp);
+});
+
+function gameOver(winner/* reason, gameState*/){
+
+    const endBackground = Board.makeRoundRect(150,50,700,500,10,0x81B2d9,2,0x000000,2000,true);
+
+    let color = {
+        'red':"Red Player Wins!",
+        'blue':"Blue Player Wins!",
+        'tie':"     Tied Game"
+    }
+
+
+    let winnerText = Board.makeBoardText(320,80,color[winner], new PIXI.TextStyle({fontSize:45,fill:0xffffff,align:'center'}));
+    winnerText.zIndex=2001;
+
+    let blueArmies = 24 - gameState['bluePlayer'].totalArmies;
+    let redArmies = 24 - gameState['bluePlayer'].totalArmies;
+
+    let blueStatsText = "Blue Player Stats:\nVP: X\nCIV Casualties: "+gameState['bluePlayer'].casualties+"\nArmies Lost: "+blueArmies+"\nArmies Defeated: "+redArmies;
+    let blueStats = Board.makeBoardText(200,180,blueStatsText, new PIXI.TextStyle({fontSize:30,fill:0xf0f8ff,align:'left'}));
+    blueStats.zIndex=2001;
+
+    let redStatsText = "Red Player Stats:\nVP: X\nCIV Casualties: "+gameState['redPlayer'].casualties+"\nArmies Lost: "+redArmies+"\nArmies Defeated: "+blueArmies;
+    let redStats = Board.makeBoardText(535,180,redStatsText, new PIXI.TextStyle({fontSize:30,fill:0xffd6d6,align:'left'}));
+    redStats.zIndex=2001;
+
+    let winnerClick = Board.makeBoardText(165,400,"Hover over this button to reveal the game board.\nHover and click to redirect to the home screen and start again!", new PIXI.TextStyle({fontSize:30,fill:0xffffff,align:'center',wordWrap:true,wordWrapWidth:680}));
+    winnerClick.zIndex=2001;
+
+    app.stage.addChild(endBackground,winnerText,blueStats,redStats,winnerClick);
+
+    const winnerButton = Board.makeRoundRect(157,390,winnerClick.width+13, winnerClick.height+20,10,0x3d52a0,0,0xffffff,2000,true);
+
+    app.stage.addChild(winnerButton);
+
+    winnerButton.eventMode='static';
+    winnerButton.on('mouseover',()=>{
+        endBackground.alpha=0.1;
+        winnerButton.alpha=0.1;
+        winnerText.visible = blueStats.visible = redStats.visible = winnerClick.visible = false;
+    });
+    winnerButton.on('mouseout',()=>{
+        endBackground.alpha=1;
+        winnerButton.alpha=1;
+        winnerText.visible = blueStats.visible = redStats.visible = winnerClick.visible = true;
+    });
+    winnerButton.on('pointerdown',()=>{
+        console.log("this would take you back to home screen");
+        window.location.replace('/');
+    });
+
+}
+
+////GAME OVER STOP
+////GAME OVER STOP
+////GAME OVER STOP
+
 //testing buttons
 
 function createDebugTable() {
@@ -2030,6 +2150,7 @@ function createDebugTable() {
         { name: "Arrow animation", func: ()=> {doArrow('village3')}},
         { name: "CP Button", func: Board.openCPQuery},
         {name:"CHMR Reset", func:startCHMRReset},
+        {name: "Game End", func: ()=>{gameOver("tie")}},
         {name:"CHMR Reset 2", func: ()=>{selectCHMRNodes(civs,moveee,gameState)}}
     ];
 
