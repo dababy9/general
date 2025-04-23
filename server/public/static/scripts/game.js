@@ -388,7 +388,7 @@ socket.emit('game', 'fetch-game-state');
 
 //array of the functions that the buttons would call
 const actionFunctions = [moveClicked, chmrClicked, humanAid, surge, influenceOp, firesClicked, strikeClicked]
-const cpQuery = Board.makeCPContainer(actionFunctions, app);
+const cpQuery = Board.makeCPMenu(actionFunctions, app);
 
 
 function clicked() {

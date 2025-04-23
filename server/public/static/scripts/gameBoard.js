@@ -1,5 +1,3 @@
-import { makeTextStyle } from './moreFunctions.js';
-
 // List of number names used for retrieving all dice asset names
 const numbers = ['one', 'two', 'three', 'four', 'five', 'six'];
 
@@ -94,19 +92,24 @@ export function drawDice (x, y, zIndex, n, color) {
     return Object.assign(PIXI.Sprite.from(colors[color][n-1]), { x, y, zIndex, width: 75, height: 75 });
 }
 
+// Function to create specific white, centered text of a given font size
+function gameTextStyle(fontSize){
+    return new PIXI.TextStyle({ fontFamily: 'normal', fontSize, fill: '#ffffff', align: 'center' });
+}
+
 // Create CP menu
 const cpMenu = Object.assign(new PIXI.Container(), { zIndex: 200, visible: false });
 
 // Add background to CP menu
 cpMenu.addChild(
     new PIXI.Graphics()
-        .roundRect(300, 100, 400, 300, 10)
+        .roundRect(300, 100, 400, 275, 10)
         .fill({ color: 0, alpha: 0.85 })
         .stroke(2, 0xffffff)
 );
 
 // Create CP button
-const cpButton = Object.assign(new PIXI.Graphics(), { zIndex: 90, alpha: 0.7, evenMode: 'static', visible: false })
+const cpButton = Object.assign(new PIXI.Graphics(), { zIndex: 90, alpha: 0.7, eventMode: 'static', visible: false })
     .roundRect(780, 40, 145, 33, 10)
     .fill(0x000000)
     .stroke(10, 0x101010)
@@ -116,105 +119,90 @@ const cpButton = Object.assign(new PIXI.Graphics(), { zIndex: 90, alpha: 0.7, ev
     });
 
 // Create CP button text
-const cpButtonText = Object.assign(new PIXI.Text({ text: "Open CP Menu", style: makeTextStyle('normal', 20, '#ffffff', 'center') }), { x: 790, y: 45, zIndex: 100, visible: false });
+const cpButtonText = Object.assign(new PIXI.Text({ text: "Open CP Menu", style: gameTextStyle(20) }), { x: 790, y: 45, zIndex: 100, visible: false });
+
+openCPQuery();
 
 // Function to populate and return CP menu
 export function makeCPMenu (actionFunctions, app) {
 
-    const actionText = makeTextStyle('normal', 18, '#ffffff', 'center');
+    // Create text styles for the action buttons and descriptions
+    const actionTextStyle = gameTextStyle(18);
+    const descriptionTextStyle = new PIXI.TextStyle({ fontFamily: 'normal', fontSize: 15, fill: '#000000', wordWrap: true, wordWrapWidth: 410 });
 
-    const descriptionStyle = new PIXI.TextStyle({
-        fontSize: 14,
-        fill: 0x000000,
-        wordWrap: true,
-        wordWrapWidth: 200
-    });
+    // Create main text for CP menu
+    cpMenu.addChild(Object.assign(new PIXI.Text({ text: "Spend CP?", style: gameTextStyle(30) }), { x: 434, y: 115 }));
 
-    app.stage.addChild(cpButtonText,cpButton);
-    
-    const cpQueryText = new PIXI.Text({ text: "Spend CP?", style: new PIXI.TextStyle({ fontSize: 30, fill: '#FFFFFF', align: 'center' }) });
-    cpQueryText.x = 420;
-    cpQueryText.y = 130;
-    cpMenu.addChild(cpQueryText);
-
-    // Action buttons
+    // Action labels and texts
     const actions = [
-        "Move [1]", "CHMR[2]", "Humanitarian Aid [2]", "Surge [3]", "Influence Operation [3]", "Artillery Fires [1]", "Air Strike [2]"
+        { offset: 56, label: "Move [1]", text: "Move up to two Armies to an adjacent node. The two Armies do not have to travel to the same node. Armies cannot move through a space occupied by the opponent. Each Army can only move once per turn." },
+        { offset: 51, label: "CHMR [2]", text: "Target one node for CHMR. Select the number of armies to move to the selected temporary haven adjacent to the targeted node. Roll 1 d6 for each Army. Based on the roll, the CIV value will be decreased from the node and added to the temporary haven.\nRoll 6: 2 CIV\nRoll 5-3: 1 CIV\nRoll 1-2: 0 CIV" },
+        { offset: 12, label: "Humanitarian Aid [2]", text: "Roll 1 d6. On a roll of 6, increase your Influence by 1 on the Support Tracker. If your Support Marker is already on 6, nothing happens." },
+        { offset: 57, label: "Surge [3]", text: "Add an additional 4 Armies to your team's base from your \"Available to Surge\" box. This action can only be used twice during the game." },
+        { offset: 5, label: "Influence Operation [3]", text: "Roll 1 d6 for every 2 Civilians your opponent has in their Civilian casualties space. For each 6 rolled, reduce the opponent's influence on Support Tracker by one" },
+        { offset: 26, label: "Artillery Fires [1]", text: "Select an Army to fire, roll 3 d6 to target an adjacent node.\nFirst Roll - Casualties occur on rolls of 4-6.\nSecond Roll - Civ Casualties occur on rolls of 3-6." },
+        { offset: 42, label: "Air Strike [2]", text: "Roll 2 d6 to air strike any node on the map.\nFirst Roll - Combat casualties occur on rolls of 4-6.\nSecond Roll - Civ Casualties occur on rolls of 5-6." }
     ];
 
-    const actionDescription = [
-        "Move up to two Armies to an adjacent node. The two Armies do not have to travel to the same node. Armies cannot move through a space occupied by the opponent. Each Army can only move once per turn.",
-        "Target one node for CHMR. Select the number of armies to move to the selected temporary haven adjacent to the targeted node. Roll 1 d6 for each Army. Based on the roll, the CIV value will be decreased from the node and added to the temporary haven.\nRoll 6: 2 CIV\nRoll 5-3: 1 CIV\nRoll 1-2: 0 CIV",
-        "Roll 1 d6. On a roll of 6, increase your Influence by 1 on the Support Tracker. If your Support Marker is already on 6, nothing happens",
-        "Add an additional 4 Armies to your team's base from your \"Available to Surge\" box. This action can only be used twice during the game.",
-        "Roll 1 d6 for every 2 Civilians your opponent has in their Civilian casualties space. For each 6 rolled, reduce the opponent's influence on Support Tracker by one",
-        "Select an Army to fire, roll 3 d6 to target an adjacent node.\nFirst Roll - Casualties occur on rolls of 4-6.\nSecond Roll - Civ Casualties occur on rolls of 3-6.",
-        "Roll 2 d6 to air strike any node on the map.\nFirst Roll - Combat casualties occur on rolls of 4-6.\nSecond Roll - Civ Casualties occur on rolls of 5-6."
-    ];
-
-
-
-    const buttons = [];
+    // Loop through all actions
     for (let i = 0; i < actions.length; i++) {
-        let actionButton = new PIXI.Graphics();
-        actionButton.roundRect(0, 0, 180, 40, 5);
-        actionButton.fill(0x333333);
 
-        actionButton.x = (i % 2 === 0) ? 310 : 510; // Left and right column
-        actionButton.y = 170 + Math.floor(i / 2) * 50;
+        // Define x and y position based on loop
+        const x = (i % 2) ? 510 : 310;
+        const y = 170 + Math.floor(i / 2) * 50;
 
-        let buttonText = new PIXI.Text({ text: actions[i], style: actionText });
-        buttonText.x = actionButton.x + (180 - buttonText.width) / 2;
-        buttonText.y = actionButton.y + 10;
+        // Create button
+        const button = Object.assign(new PIXI.Graphics(), { x, y, eventMode: 'static' })
+            .roundRect(0, 0, 180, 40, 5)
+            .fill(0x333333);
 
-        let descriptionText = new PIXI.Text({text:actionDescription[i], style:descriptionStyle});
-        descriptionText.x = 80;
-        descriptionText.y = 200;
-        descriptionText.visible=false;
-        descriptionText.zIndex=101;
+        // Create button text
+        const buttonText = Object.assign(
+            new PIXI.Text({ text: actions[i].label, style: actionTextStyle }),
+            {x: x + actions[i].offset, y: y + 10 }
+        );
+        
+        // Create description box
+        const descriptionBox = Object.assign(new PIXI.Graphics(), { zIndex: 100, visible: false })
+            .roundRect(300, 390, 400, 150, 10)
+            .fill('0xE4EFE7')
+            .stroke(2,0x000000);
 
-        let descBack = new PIXI.Graphics();
-        descBack.roundRect(70,190,descriptionText.width + 20, descriptionText.height+20,10);
-        descBack.fill('0xE4EFE7');
-        descBack.stroke(2,0x000000);
-        descBack.visible=false;
-        descBack.zIndex = 100;
+        // Create description text
+        const descriptionText = Object.assign(
+            new PIXI.Text({ text: actions[i].text, style: descriptionTextStyle }),
+            { x: 310, y: 400, zIndex: 101, visible: false }
+        );
 
-        actionButton.eventMode = 'static';
-        actionButton.on("pointerdown", () => {
+        // Define event listeners for the button
+        button.on('mouseover', () => { descriptionBox.visible = descriptionText.visible = true });
+        button.on('mouseout', () => { descriptionBox.visible = descriptionText.visible = false });
+        button.on('pointerdown', () => {
             actionFunctions[i]();
             closeCPQuery();
         });
-        actionButton.on("mouseover",()=>{
-            descriptionText.visible=true;
-            descBack.visible=true;
-        });
-        actionButton.on("mouseout",()=>{
-            descriptionText.visible=false;
-            descBack.visible=false;
-        });
 
-        buttons.push(actionButton);
-        cpMenu.addChild(actionButton);
-        cpMenu.addChild(buttonText,descBack,descriptionText);
+        // Add all necessary elements to canvas
+        cpMenu.addChild(button, buttonText, descriptionBox, descriptionText);
     }
 
-    const endTurnButton = makeRoundRect(510,320,180,40,10,0x823939,0,0x000000,1001,true);
-    endTurnButton.eventMode='static';
-    endTurnButton.on('pointerdown', () => {
-        closeCPQuery();
-        console.log("end turn");
-        socket.emit('game', 'end-turn'); // End current turn
-        cpButton.visible=false;
-        cpButtonText.visible=false;
-    });
-    cpMenu.addChild(endTurnButton);
+    // Add end turn button to CP menu
+    cpMenu.addChild(
+        Object.assign(makeRoundRect(510, 320, 180, 40, 10, 0x823939, 0, 0x000000, 1001, true), { eventMode: 'static' })
+            .on('pointerdown', () => {
+                closeCPQuery();
+                socket.emit('game', 'end-turn');
+                cpButton.visible = cpButtonText.visible = false;
+            })
+    );
     
-    const endTurnText = new makeBoardText(550,330,"End Turn [0]", new PIXI.TextStyle({ fontSize: 18, fill: '#000000', align: 'center' }));
-    endTurnText.zIndex = 1002;
-    // endTurnText.visible = false;
-    cpMenu.addChild(endTurnText);
-    app.stage.addChild(cpMenu);
+    // Add end turn text to CP menu
+    cpMenu.addChild(
+        Object.assign(new makeBoardText(556, 330, "[ End Turn ]", gameTextStyle(18)), { zIndex: 1002 })
+    );
+    
+    // Add necessary items to canvas
+    app.stage.addChild(cpMenu, cpButton, cpButtonText);
 }
 
 // Function to close the CP menu
