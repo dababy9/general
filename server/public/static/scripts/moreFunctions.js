@@ -1,11 +1,4 @@
-
-export function makeTextStyle(font, size, fill, align){
-    const style = new PIXI.TextStyle({
-        fontFamily: font,
-        fontSize: size,
-        fill: fill,
-        align: align
-    });
-    return style;
+// Function to take in four key style components and return a PIXI TextStyle
+export function makeTextStyle(fontFamily, fontSize, fill, align){
+    return new PIXI.TextStyle({ fontFamily, fontSize, fill, align });
 }
-

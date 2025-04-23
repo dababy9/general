@@ -388,13 +388,7 @@ socket.emit('game', 'fetch-game-state');
 
 //array of the functions that the buttons would call
 const actionFunctions = [moveClicked, chmrClicked, humanAid, surge, influenceOp, firesClicked, strikeClicked]
-// // QUERY user for using combat points (combat and non combat both use.)
-// // chat 4o used for this 
-// const cpQuery = new PIXI.Container();
 const cpQuery = Board.makeCPContainer(actionFunctions, app);
-// cpQuery.visible = false;
-// cpQuery.zIndex = 200;
-app.stage.addChild(cpQuery);
 
 
 function clicked() {

@@ -1,20 +1,22 @@
-// List of number names used for retrieving all die asset names
+import { makeTextStyle } from './moreFunctions.js';
+
+// List of number names used for retrieving all dice asset names
 const numbers = ['one', 'two', 'three', 'four', 'five', 'six'];
 
-// Function to retrieve all six die asset names of a given color
-function getDies (color) {
+// Function to retrieve all six dice asset names of a given color
+function getDice (color) {
     return Array.from(numbers, (x) => '/content/' + color + '_' + x + '_die.png');
 }
 
-// Variable to hold all die asset names
+// Variable to hold all dice asset names
 const colors = {
-    'blue': getDies('blue'),
-    'red': getDies('red'),
-    'black': getDies('black')
+    'blue': getDice('blue'),
+    'red': getDice('red'),
+    'black': getDice('black')
 }
 
 // Function to load all necessary assets
-export async function loadAssets(){
+export async function loadAssets () {
 
     // List of all asset names in the 'content' directory
     const assetNames = [
@@ -61,75 +63,65 @@ export function makeGameBoard() {
     return board;
 }
 
-export function makeBoardPiece(x, y, width, height, name, zIndex = 0) {
+// Function to create and return a given piece
+export function makeBoardPiece (x, y, width, height, name, zIndex = 0) {
     return Object.assign(PIXI.Sprite.from(name), { x, y, width, height, zIndex });
 }
 
-export function makeCircle(x, y, r, fill, stroke, strokefill, alpha) {
+// Function to create and return a circle
+export function makeCircle (x, y, r, fill, stroke, strokefill, alpha) {
     return Object.assign(new PIXI.Graphics(), { alpha })
         .circle(x, y, r)
         .fill(fill)
         .stroke(stroke, strokefill);
 }
 
-export function makeBoardText(x, y, text, style) {
+// Function to create and return a given text sprite
+export function makeBoardText (x, y, text, style) {
     return Object.assign(new PIXI.Text({ text, style }), { x, y });
 }
 
-export function makeRoundRect(x, y, w, h, corner, fill, width, color, zIndex, visible = true) {
+// Function to create and return a round rectangle
+export function makeRoundRect (x, y, w, h, corner, fill, width, color, zIndex, visible = true) {
     return Object.assign(new PIXI.Graphics(), { zIndex, visible })
         .roundRect(x, y, w, h, corner)
         .fill(fill)
         .stroke({ width, color });
 }
 
-export function drawDice(x, y, zIndex, n, color) {
+// Function to create and return a dice 
+export function drawDice (x, y, zIndex, n, color) {
     return Object.assign(PIXI.Sprite.from(colors[color][n-1]), { x, y, zIndex, width: 75, height: 75 });
 }
 
-const cpButtonText = new PIXI.Text({ text: "Open CP Menu", style: new PIXI.TextStyle({ fontSize: 20, fill: '#ffffff', align: 'center' }) });
-cpButtonText.x = 790;
-cpButtonText.y = 45;
-cpButtonText.visible = false;
-cpButtonText.zIndex = 100;
+// Create CP menu
+const cpMenu = Object.assign(new PIXI.Container(), { zIndex: 200, visible: false });
 
-//buttons that are used to test functions
-const cpButton = new PIXI.Graphics();
-cpButton.roundRect(780,40, cpButtonText.width+20,cpButtonText.height+10,10);
-cpButton.alpha = 0.7
-cpButton.zIndex = 90;
-cpButton.fill(0x000000);
-cpButton.stroke(10,0x101010)
-cpButton.eventMode = 'static';
-cpButton.visible=false;
-cpButton.on('pointerdown', () => {
-    if (cpQuery.visible == false) 
-        openCPQuery();
-    else
-        closeCPQuery();
-});
+// Add background to CP menu
+cpMenu.addChild(
+    new PIXI.Graphics()
+        .roundRect(300, 100, 400, 300, 10)
+        .fill({ color: 0, alpha: 0.85 })
+        .stroke(2, 0xffffff)
+);
 
-const cpQuery = new PIXI.Container();
-
-export function makeCPContainer(actionFunctions,app) {
-
-    // QUERY user for using combat points (combat and non combat both use.)
-    // chat 4o used for this 
-    cpQuery.visible = false;
-    cpQuery.zIndex = 200;
-
-    const cpQueryBackground = new PIXI.Graphics();
-    cpQueryBackground.roundRect(300, 100, 400, 300, 10);
-    cpQueryBackground.fill({ color: 0, alpha: 0.85 });
-    cpQueryBackground.stroke(2, 0xffffff);
-    cpQuery.addChild(cpQueryBackground);
-
-    const actionText = new PIXI.TextStyle({
-        // fontFamily: 'Arial',
-        fontSize: 18,
-        fill: '#FFFFFF', // white text color
-        align: 'center'
+// Create CP button
+const cpButton = Object.assign(new PIXI.Graphics(), { zIndex: 90, alpha: 0.7, evenMode: 'static', visible: false })
+    .roundRect(780, 40, 145, 33, 10)
+    .fill(0x000000)
+    .stroke(10, 0x101010)
+    .on('pointerdown', () => {
+        if (cpMenu.visible) closeCPQuery();
+        else openCPQuery();            
     });
+
+// Create CP button text
+const cpButtonText = Object.assign(new PIXI.Text({ text: "Open CP Menu", style: makeTextStyle('normal', 20, '#ffffff', 'center') }), { x: 790, y: 45, zIndex: 100, visible: false });
+
+// Function to populate and return CP menu
+export function makeCPMenu (actionFunctions, app) {
+
+    const actionText = makeTextStyle('normal', 18, '#ffffff', 'center');
 
     const descriptionStyle = new PIXI.TextStyle({
         fontSize: 14,
@@ -143,7 +135,7 @@ export function makeCPContainer(actionFunctions,app) {
     const cpQueryText = new PIXI.Text({ text: "Spend CP?", style: new PIXI.TextStyle({ fontSize: 30, fill: '#FFFFFF', align: 'center' }) });
     cpQueryText.x = 420;
     cpQueryText.y = 130;
-    cpQuery.addChild(cpQueryText);
+    cpMenu.addChild(cpQueryText);
 
     // Action buttons
     const actions = [
@@ -203,8 +195,8 @@ export function makeCPContainer(actionFunctions,app) {
         });
 
         buttons.push(actionButton);
-        cpQuery.addChild(actionButton);
-        cpQuery.addChild(buttonText,descBack,descriptionText);
+        cpMenu.addChild(actionButton);
+        cpMenu.addChild(buttonText,descBack,descriptionText);
     }
 
     const endTurnButton = makeRoundRect(510,320,180,40,10,0x823939,0,0x000000,1001,true);
@@ -216,33 +208,44 @@ export function makeCPContainer(actionFunctions,app) {
         cpButton.visible=false;
         cpButtonText.visible=false;
     });
-    cpQuery.addChild(endTurnButton);
+    cpMenu.addChild(endTurnButton);
     
     const endTurnText = new makeBoardText(550,330,"End Turn [0]", new PIXI.TextStyle({ fontSize: 18, fill: '#000000', align: 'center' }));
     endTurnText.zIndex = 1002;
     // endTurnText.visible = false;
-    cpQuery.addChild(endTurnText);
-    return cpQuery;
+    cpMenu.addChild(endTurnText);
+    app.stage.addChild(cpMenu);
 }
 
+// Function to close the CP menu
 export function closeCPQuery() {
-    cpQuery.visible = false;
+    cpMenu.visible = false;
     cpButtonText.text = "Open CP Menu";
 }
 
+// Function to open the CP menu
 export function openCPQuery() {
-    console.log("open cp query");
-    cpQuery.visible = cpButton.visible = cpButtonText.visible = true;
+    cpMenu.visible = cpButton.visible = cpButtonText.visible = true;
     cpButtonText.text = "Close CP Menu";
 }
 
- //finds all of the nodes that have armies of the given color
-export function findNodes(color,num, move = true) {
-    if (color == 'blue') {
-        return Object.keys(num).filter(key => (move ? (num[key].blueArmies > num[key].blueMoved): num[key].blueArmies > 0));
+// List of all node names
+const nodeNames = ['blueBase', 'redBase', 'city4', 'city6', 'city9', 'city10', 'village2', 'village3', 'village7', 'village8'];
+
+// Function to return all nodes that have armies of a given color
+export function findNodes(color, num, move = true) {
+
+    let result;
+
+    if (color === 'blue') {
+        result =  Object.keys(num).filter(key => (move ? (num[key].blueArmies > num[key].blueMoved): num[key].blueArmies > 0));
     }
     else {
-        return Object.keys(num).filter(key => (move ? (num[key].redArmies > num[key].redMoved): num[key].redArmies > 0));
+        result =  Object.keys(num).filter(key => (move ? (num[key].redArmies > num[key].redMoved): num[key].redArmies > 0));
 
     }
+
+
+
+    return result.filter(x => nodeNames.includes(x));
 }

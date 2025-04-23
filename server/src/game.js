@@ -365,8 +365,11 @@ class Game {
         // Perform input validation on all choices, and return false if any single choice is invalid
         if (!choice.reduce((flag, x) => flag && validChoice(x), true)) return false;
 
+        // Compile list of just the havens
+        const havenList = Array.from(choice, x => x.haven);
+
         // Validate that the choices match which havens had CHMR performed
-        
+        if (this.meta.chmrList.length !== choice.length || !this.meta.chmrList.every(x => havenList.includes(x))) return false;
 
         // Loop through each choice and return armies accordingly
         choice.forEach(moveAll);
