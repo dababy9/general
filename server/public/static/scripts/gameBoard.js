@@ -121,8 +121,6 @@ const cpButton = Object.assign(new PIXI.Graphics(), { zIndex: 90, alpha: 0.7, ev
 // Create CP button text
 const cpButtonText = Object.assign(new PIXI.Text({ text: "Open CP Menu", style: gameTextStyle(20) }), { x: 790, y: 45, zIndex: 100, visible: false });
 
-openCPQuery();
-
 // Function to populate and return CP menu
 export function makeCPMenu (actionFunctions, app) {
 
@@ -139,7 +137,7 @@ export function makeCPMenu (actionFunctions, app) {
         { offset: 51, label: "CHMR [2]", text: "Target one node for CHMR. Select the number of armies to move to the selected temporary haven adjacent to the targeted node. Roll 1 d6 for each Army. Based on the roll, the CIV value will be decreased from the node and added to the temporary haven.\nRoll 6: 2 CIV\nRoll 5-3: 1 CIV\nRoll 1-2: 0 CIV" },
         { offset: 12, label: "Humanitarian Aid [2]", text: "Roll 1 d6. On a roll of 6, increase your Influence by 1 on the Support Tracker. If your Support Marker is already on 6, nothing happens." },
         { offset: 57, label: "Surge [3]", text: "Add an additional 4 Armies to your team's base from your \"Available to Surge\" box. This action can only be used twice during the game." },
-        { offset: 5, label: "Influence Operation [3]", text: "Roll 1 d6 for every 2 Civilians your opponent has in their Civilian casualties space. For each 6 rolled, reduce the opponent's influence on Support Tracker by one" },
+        { offset: 5, label: "Influence Operation [3]", text: "Roll 1 d6 for every 2 Civilians your opponent has in their Civilian casualties space. For each 6 rolled, reduce the opponent's influence on Support Tracker by one." },
         { offset: 26, label: "Artillery Fires [1]", text: "Select an Army to fire, roll 3 d6 to target an adjacent node.\nFirst Roll - Casualties occur on rolls of 4-6.\nSecond Roll - Civ Casualties occur on rolls of 3-6." },
         { offset: 42, label: "Air Strike [2]", text: "Roll 2 d6 to air strike any node on the map.\nFirst Roll - Combat casualties occur on rolls of 4-6.\nSecond Roll - Civ Casualties occur on rolls of 5-6." }
     ];
@@ -222,18 +220,10 @@ const nodeNames = ['blueBase', 'redBase', 'city4', 'city6', 'city9', 'city10', '
 
 // Function to return all nodes that have armies of a given color
 export function findNodes(color, num, move = true) {
-
     let result;
-
-    if (color === 'blue') {
+    if (color === 'blue')
         result =  Object.keys(num).filter(key => (move ? (num[key].blueArmies > num[key].blueMoved): num[key].blueArmies > 0));
-    }
-    else {
+    else
         result =  Object.keys(num).filter(key => (move ? (num[key].redArmies > num[key].redMoved): num[key].redArmies > 0));
-
-    }
-
-
-
     return result.filter(x => nodeNames.includes(x));
 }

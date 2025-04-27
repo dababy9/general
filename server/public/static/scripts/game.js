@@ -1,37 +1,357 @@
 import * as Board from './gameBoard.js';
 import { makeTextStyle } from './moreFunctions.js';
 
-//Client responses
+// Global variables
+let playerColor;
+let gameState;
 
-//message from the server
-socket.on('message-log', (messages) => {
-    console.log(messages);
+// Socket handlers
+
+// If Socket.IO server can't be reached, print connection error
+socket.on('connect_error', (error) => {
+    console.log('CONNECTION ERROR: ', error);
 });
 
-//displays when the client has connected to the server 
-socket.on('connect', async () => {
-    console.log('Connected to server');
+// Assign global game state accordingly, and update board
+socket.on('game-state', (game) => {
+    gameState = JSON.parse(game);
+    updateBoard(gameState);
 });
 
-//requests the color of the player from the server
-socket.emit('game', 'fetch-color');
-
-//saves the color of the player to playerColor so it can be used throughout the game
-var playerColor;
+// Assign global player color accordingly
 socket.on('color', (color) => {
     playerColor = color;
 });
 
+// Handle initiative result message
+socket.on('initiative-result', (data) => {
 
-// Catch connection errors
-socket.on('connect_error', (error) => {
-    console.log('Connection error:', error);
+    // Parse data
+    const result = JSON.parse(data);
+
+    // Update game state
+    gameState.turnPlayer = result.winner;
+
+    // Draw dice
+    const dice = [Board.drawDice(280, 370, 950, result.blueRoll, 'blue'), Board.drawDice(375, 370, 950, result.redRoll, 'red')];
+    app.stage.addChild(...dice);
+
+    // Update initiative banner
+    initiativeText.text = result.winner + " wins! Click again to continue";
+    initiative.width = 480;
+
+    // Give initiative banner a new callback
+    initiative.removeAllListeners();
+    initiative.on('pointerdown', () => {
+
+        // Remove dice from screen
+        app.stage.removeChild(...dice);
+
+        // Hide the initiative banner
+        initiativeText.visible = initiative.visible = false;
+        
+        // Either open the CP menu or change action banner, depending on player's color
+        if (gameState.turnPlayer === playerColor) Board.openCPQuery();
+        else changeMessage("Waiting on " + gameState.turnPlayer + " to spend Command points");
+
+        // Update the turn banner
+        playerTurnBanner();
+    });
+
+    // Update turn banner
+    playerTurnBanner();
 });
 
-socket.on('chmr-list', (result)=>{
+// Handle move list message
+socket.on('move-lists', (data) => {
 
-    console.log(result);
+    // Call corresponding function with parsed data
+    moveReceived(JSON.parse(data));
 });
+
+// Handle move message (completed move)
+socket.on('move', (data) => {
+
+    // Parse data and update game state
+    gameState = JSON.parse(data);
+
+    // Update board
+    updateBoard();
+
+    // Either open the CP menu or change action banner, depending on player's color
+    if (gameState.turnPlayer === playerColor) Board.openCPQuery();
+    else changeMessage("Opponent finished a move!\nWaiting on them to spend command points...");
+});
+
+// Handle haven list message
+socket.on('haven-list', (data) => {
+
+    // Call corresponding function with parsed data
+    chmrReceived(JSON.parse(data));
+});
+
+// Handle haven move message
+socket.on('haven-move', (data) => {
+
+    // Parse data
+    const result = JSON.parse(data);
+
+    // Update game state and board
+    gameState = result.gameState;
+    updateBoard();
+   
+    // If it's the player's turn, call corresponding function with parsed nodes
+    if (gameState.turnPlayer === playerColor) chmr2Recived(result.nodes);
+});
+
+// Handle pull result message
+socket.on('pull-result', (data) => {
+
+    // Parse data
+    const result = JSON.parse(data);
+
+    // Update game state and board
+    gameState = result.gameState;
+    updateBoard();
+    
+    // Change action banner if it isn't the player's turn
+    if (gameState.turnPlayer !== playerColor) changeMessage("Opponent is rolling for CHMR...");
+
+    // Create result box
+    const chmrBox = Board.makeRoundRect(300, 150, Math.max(result.rolls.length * 85 + 20, 275), 200, 10, 0x808080, 4, 0xffffff);
+    chmrBox.eventMode = 'static';
+
+    // Create result text
+    const chmrText = Object.assign(
+        new PIXI.Text({
+            text: result.removed + " civilians moved\n\n\n\n\n\nClick to Continue",
+            style: makeTextStyle(22, '#FFFFFF', 'center')
+        }),
+        { x: 350, y: 160, zIndex: 1000 }
+    );
+
+    // Create dice
+    const dice = Array.from(result.rolls, (x, i) => Board.drawDice(310 + i * 85, 220, 1000, x, 'black'));
+
+    // Create example box
+    const exampleBox = Board.makeRoundRect(80, 150, 200, 200, 10, 0x808080, 2, 0x000000, 1000);
+
+    // Create example text
+    const exampleText = Object.assign(
+        new PIXI.Text({
+            text: "Roll 6: Move 2 CIV\nRoll 3-5: Move 1 CIV\nRoll 1-2: Move 0 CIV",
+            style: makeTextStyle(18, '#FFFFFF', 'left')
+        }),
+        { x: 90, y: 160, zIndex: 2000 }
+    );
+
+    // Add CHMR elements to canvas
+    app.stage.addChild(chmrBox, chmrText, exampleBox, exampleText, ...dice);
+
+    // Add callback to CHMR box click
+    chmrBox.on('pointerdown', () => {
+
+        // Remove all CHMR elements
+        app.stage.removeChild(chmrBox, chmrText, exampleBox, exampleText, ...dice);
+
+        // Either open the CP menu or change action banner, depending on player's color
+        if (gameState.turnPlayer === playerColor) Board.openCPQuery();
+        else changeMessage("Opponent completed CHMR!\nWaiting on them to spend command points...");
+    });
+});
+
+// Handle humanitarian aid message
+socket.on('humanitarianAid', (data) => {
+
+    // Parse data
+    const result = JSON.parse(data);
+    
+    // Update game state and board
+    gameState = result.gameState;
+    updateBoard();
+
+    // Change action banner if it isn't the player's turn
+    if (gameState.turnPlayer !== playerColor) changeMessage("Opponent is rolling for Humanitarian Aid...");
+
+    // Create result box
+    const aidBox = Board.makeRoundRect(300, 150, 350, 200, 10, 0x808080, 4, 0xffffff, 900);
+    aidBox.eventMode = 'static';
+
+    // Create result text
+    const aidText = Object.assign(
+        new PIXI.Text({
+            text: ((gameState.turnPlayer === playerColor) ? 'You' : 'Opponent') + " rolled a " + result.result + ".\n+" + ((result.result > 4 ? '1' : '0')) + " Support Tracker Points\n\n\n\n\nClick to Continue",
+            style: makeTextStyle(22, '#FFFFFF', 'center' )
+        }),
+        { x: 350, y: 160, zIndex: 1000 }
+    );
+
+    // Create die
+    const die = Board.drawDice(440, 220, 950, result.result, 'black');
+
+    // Add humanitarian aid elements to canvas
+    app.stage.addChild(aidBox, aidText, die);
+
+    // Add callback to humanitarian aid box click
+    aidBox.on('pointerdown', () => {
+
+        // Remove all humanitarian aid elements
+        app.stage.removeChild(aidBox, aidText, die);
+
+        // Either open the CP menu or change action banner, depending on player's color
+        if (gameState.turnPlayer === playerColor) Board.openCPQuery();
+        else changeMessage("Opponent completed Humanitarian Aid!\nWaiting on them to spend command points...");
+    })
+
+});
+
+// Handle surge message
+socket.on('surge', (data) => {
+
+    // Parse data and update game state
+    gameState = JSON.parse(data);
+
+    // Update board
+    updateBoard();
+
+    // Either open the CP menu or change action banner, depending on player's color
+    if (gameState.turnPlayer === playerColor) Board.openCPQuery();
+    else changeMessage("Opponent completed a surge!\n Waiting on them to spend command points...");
+});
+
+// Handle influence operation message
+socket.on('influenceOperation', (data) => {
+
+    // Parse data
+    const result = JSON.parse(data);
+
+    // Update game state and board
+    gameState = result.gameState;
+    updateBoard(gameState);
+
+    // Change action banner if it isn't the player's turn
+    if (gameState.turnPlayer !== playerColor) changeMessage("Opponent is rolling for Influence Operations...");
+
+    // Retrieve rolls from result
+    const rolls = result.result;
+
+    // Create result box
+    const ioBox = Board.makeRoundRect(300, 150, Math.max(rolls.length * 85 + 20, 350), 200, 10, 0x808080, 2, 0x000000, 920);
+    ioBox.eventMode = 'static';
+
+    // Create result text
+    const ioText = Object.assign(
+        new PIXI.Text({
+            text: "-" + rolls.filter(x => x === 6).length + " opponent support points\n\n\n\n\n\nClick to Continue",
+            style: makeTextStyle(22, '#FFFFFF', 'center' )
+        }),
+        { x: 350, y: 160, zIndex: 1000 }
+    );
+
+    // Create dice
+    const dice = Array.from(rolls, (x, i) => Board.drawDice(310 + i * 85, 220, 1000, x, 'black'));
+
+    // Add influence operations elements to canvas
+    app.stage.addChild(ioBox, ioText, ...dice);
+
+    // Add callback to influence operation box click
+    ioBox.on('pointerdown', () => {
+
+        // Remove all influence operation elements
+        app.stage.removeChild(ioBox, ioText, ...dice);
+
+        // Either open the CP menu or change action banner, depending on player's color
+        if (gameState.turnPlayer === playerColor) Board.openCPQuery();
+        else changeMessage("Opponent completed Influence Operation!\nWaiting on them to spend command points...");
+    });
+});
+
+// Handle fire list message
+socket.on('fire-list', (data) => {
+
+    // Call corresponding function with parsed data
+    highlight(JSON.parse(data), fires2, "Pick the node where you are firing to:");
+});
+
+// Handle fire message
+socket.on('fire', (data) => {
+
+    // Parse data
+    const result = JSON.parse(data);
+    
+    gameState = parsedResponse.gameState;
+    updateBoard(gameState);
+
+    if (playerColor != gameState.turnPlayer) {
+        changeMessage("Opponent rolled for artillery fires");
+    }
+
+    let rolls1 = parsedResponse.rolls.combatRoll;
+    let rolls2 = parsedResponse.rolls.civRoll;
+
+    const firesText = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }) });
+    firesText.x = 390;
+    firesText.y = 160;
+    firesText.zIndex = 1000
+    // firesText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
+    firesText.text = "Army Rolls" + "\n\n\n\n\nCivilian Rolls\n\n\n\n\nClick to Continue"
+    app.stage.addChild(firesText);
+
+    const firesRoll = Board.makeRoundRect(300, 150, 350, firesText.height + 30, 10,0x808080,2,0x000000,900);
+    firesRoll.eventMode = 'static';
+    app.stage.addChild(firesRoll);
+
+    for (let i = 0; i < rolls1.length; i++) {
+
+        let dice1 = Board.drawDice(345 + i * 95, 200, 950, rolls1[i], gameState.turnPlayer);
+        let dice2 = Board.drawDice(345 + i * 95, 320, 950, rolls2[i], 'black');
+
+        app.stage.addChild(dice1);
+        app.stage.addChild(dice2);
+        firesRoll.on('pointerdown', () => {
+            app.stage.removeChild(dice1);
+            app.stage.removeChild(dice2);
+        })
+
+    }
+
+    const firesEx = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center',wordWrap: true, wordWrapWidth: 200 }) });
+    firesEx.x = 690;
+    firesEx.y = 160;
+    firesEx.zIndex = 1001;
+    // strikeText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
+    firesEx.text = "Combat Casualties occur on rolls of 4-6.\nCiv Casualties occur on rolls of 3-6."
+    app.stage.addChild(firesEx);
+
+    const fireRollEx = Board.makeRoundRect(680, 150, firesEx.width+20, firesEx.height + 20, 10,0x808080,2,0x000000,1000);
+    app.stage.addChild(fireRollEx);
+
+    firesRoll.on('pointerdown', () => {
+        app.stage.removeChild(firesRoll,firesEx,fireRollEx);
+        app.stage.removeChild(firesText);
+        if (playerColor == gameState.turnPlayer) {
+            Board.openCPQuery();
+        }
+        else {
+            changeMessage("Opponent completed Artillery Fires\nWaiting on them to spend command points");
+        }
+    })
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+//requests the color of the player from the server
+socket.emit('game', 'fetch-color');
 
 socket.on('civ-move', (data) => {
     let newdata = JSON.parse(data);
@@ -46,20 +366,6 @@ socket.on('civ-move', (data) => {
         startCHMRReset();
 });
 
-
-//where the gamestate is saved that allows for the board to be updated
-//updates the board upon first gamestate receipt
-var gameState;
-socket.on('game-state', (game) => {
-    gameState = JSON.parse(game);
-    updateBoard(gameState);
-});
-
-//logs where there is a message and what the data is. 
-socket.on('new-message', (message) => {
-    console.log(message.from);
-    console.log(message.data);
-});
 
 socket.on('new-turn', (player) => {
     //asks for the game state after the values in update board have been created
@@ -154,16 +460,16 @@ const supportLoc = {
 }
 
 // Create a text style 
-const redArmy = makeTextStyle('Arial', 30, '#FFFFFF', 'center');
+const redArmy = makeTextStyle(30, '#FFFFFF', 'center');
 redArmy.fontWeight = 'bold';
 
-const blueArmy = makeTextStyle('Arial', 30, '#FFFFFF', 'center');
+const blueArmy = makeTextStyle(30, '#FFFFFF', 'center');
 blueArmy.fontWeight = 'bold';
 
-const civStyle = makeTextStyle('Arial', 35, '#FFFFFF', 'center');
+const civStyle = makeTextStyle(35, '#FFFFFF', 'center');
 civStyle.fontWeight = 'bold';
 
-const boardPieceText = makeTextStyle('Arial', 30, '#520e05', 'center');
+const boardPieceText = makeTextStyle(30, '#520e05', 'center');
 
 ////circles for representing the amount of support points 
 const redSupport = Board.makeCircle(0, 0, 20, 0xFF0000, 2, 0xFF0FF0, 0.75);
@@ -182,10 +488,9 @@ const blueCP = Board.makeBoardText(113, 385, '0', boardPieceText);
 
 app.stage.addChild(redCas, blueCas, redSurge, blueSurge, redCP, blueCP);
 
-// function that takes the gamestate and updates the board given it. 
-async function updateBoard(gameState) {
+// Function to redraw the board using global game state 
+async function updateBoard() {
 
-    // console.log(gameState);
     //update the player turn banner
     playerTurnBanner();
     roundNum.text = Math.floor(gameState.turnCounter/2)+1;
@@ -358,43 +663,7 @@ function startInitiative() {
         socket.emit('game', 'initiative');
     });
     initiativeText.text = 'Click to roll for Initiative';
-    initiative.visible = true;
-}
-
-//sets the player based on who won the initiative. Additionally creates the dice and displays them.
-var initiativeWinner;
-socket.on('initiative-result', (result) => {
-    result = JSON.parse(result);
-    // console.log(result);
-    initiativeWinner = result.winner;
-    gameState.turnPlayer = result.winner;
-    initiativeText.text = result.winner + " wins! Click again to continue";
-    initiative.width = 480
-    initiative.removeAllListeners();
-    let blueDice = Board.drawDice(280, 370, 950, result.blueRoll, 'blue');
-    let redDice = Board.drawDice(375, 370, 950, result.redRoll, 'red');
-    app.stage.addChild(blueDice, redDice);
-
-    initiative.on('pointerdown', () => {
-        endInit()
-        app.stage.removeChild(blueDice);
-        app.stage.removeChild(redDice);
-    });
-    playerTurnBanner();
-});
-
-//removes the init function and opens CP spender
-function endInit() {
-    playerTurnBanner()
-    initiativeText.text = ''
-    initiative.visible = false;
-    if (gameState.turnPlayer == playerColor) {
-        Board.openCPQuery();
-    }
-    else {
-        changeMessage("Waiting on " + gameState.turnPlayer + " to spend Command points");
-    }
-
+    initiative.visible = initiativeText.visible = true;
 }
 
 //asks for the game state after the values in update board have been created
@@ -535,7 +804,7 @@ function playerTurnBanner() {
     // console.log(playerColor);
 
 
-    if ((gameState.turnPlayer == "" && playerColor == initiativeWinner) || gameState.turnPlayer == playerColor) {
+    if ( gameState.turnPlayer == playerColor) {
         playerBanner.zIndex = 900;
         playerText.text = "You are " + playerColor + " player,\nit is your turn!";
         playerBanner.clear();
@@ -627,20 +896,10 @@ function move1(name) {
     }
 }
 
-//receives the moves that the armies can move to. 
-socket.on('move-lists', (lists) => {
-    let parsedLists = JSON.parse(lists); // Parse the JSON string
-    let list1 = parsedLists[0]; // Grab the first list
-    let list2 = parsedLists[1]; // Grab the second list
-    if (playerColor == gameState.turnPlayer) {
-        moveReceived(list1, list2);
-    }
-});
-
 let nodeList2 = [];
 
 let selections2 = [];
-function moveReceived(nodes1, nodes2) {
+function moveReceived([nodes1, nodes2]) {
 
     highlight(nodes1, move2, "Pick the node where army from " + selections[0] + " should go");
     nodeList2 = nodes2;
@@ -664,19 +923,6 @@ function move2(name) {
         highlight(nodeList2, move2, "You picked " + name + ". Choose where the army from " + selections[1] + " should go.");
     }
 }
-
-//this is the end of the move. Updates the board and sends the user back to CP query.
-socket.on('move', (game) => {
-    gameState = JSON.parse(game); // Parse the JSON string
-    updateBoard(gameState);
-
-    if (playerColor == gameState.turnPlayer) {
-        Board.openCPQuery();
-    }
-    else {
-        changeMessage("Opponent finished a move!\nWaiting on them to spend command points");
-    }
-});
 
 
 //done buttons that end the move after one node is selected if clicked
@@ -893,11 +1139,7 @@ function selectArmyNumber(x, y, minValue, maxValue, onSelect, nodeName) {
     return container;
 }
 
-socket.on('haven-list', (havens) => {
-    let parsedHavens = JSON.parse(havens); // Parse the JSON string
-    console.log(parsedHavens[0]); // Should print the first adjacent haven to the selected node ('haven1' for blueBase)
-    chmrReceived(parsedHavens);
-});
+
 
 function chmrReceived(havens) {
     highlightHavens(havens, chmr2, "Which safe haven would you like to move to?");
@@ -914,15 +1156,7 @@ function chmr2(name) {
 
 }
 
-socket.on('haven-move', (nodes) => {
-    let parsedNodes = JSON.parse(nodes); // Parse the JSON string
-    console.log(parsedNodes); // Should print the first adjacent node to the selected haven ('blueBase' for haven1)
-   
-    if (playerColor == gameState.turnPlayer)
-        chmr2Recived(parsedNodes.nodes);
-    gameState = parsedNodes.gameState;
-    updateBoard(gameState);
-});
+
 
 
 function chmr2Recived(nodes) {
@@ -938,74 +1172,7 @@ function chmr3(name) {
 
 }
 
-// function chmr3Received() {
 
-socket.on('pull-result', (response) => {
-    let parsedResponse = JSON.parse(response); // Parse the JSON string
-    console.log(parsedResponse.rolls); // Should print rolls
-    console.log(parsedResponse.removed); // Should print the number of civilians removed from the node
-    console.log(parsedResponse.gameState); // Should print the entire updated gameState
-    
-    let result = parsedResponse.rolls;
-
-    if (playerColor != gameState.turnPlayer) {
-        changeMessage("Opponent is rolling for CHMR");
-    }
-
-    gameState = parsedResponse.gameState
-    updateBoard(gameState);
-
-    const chmrRoll = new PIXI.Graphics();
-    let x2 = result.length * 85 + 20
-    chmrRoll.roundRect(300, 150, (275 > x2 ? 275 : x2), 200, 10);
-    chmrRoll.fill('0x808080');
-    chmrRoll.stroke(4, '0xffffff');
-    chmrRoll.zIndex = 920;
-    chmrRoll.eventMode = 'static';
-    app.stage.addChild(chmrRoll);
-
-    const chmrText = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }) });
-    chmrText.x = 350;
-    chmrText.y = 160;
-    chmrText.zIndex = 1000
-    let moves = result.filter(num => num === 6).length * 2 + result.filter(num => num >= 3 && num <= 5).length;
-    chmrText.text = parsedResponse.removed + " civilians moved\n\n\n\n\n\nClick to Continue"
-    app.stage.addChild(chmrText);
-
-    for (let i = 0; i < result.length; i++) {
-
-        let chmrDice = Board.drawDice(310 + i * 85, 220, 950, result[i], 'black');
-        app.stage.addChild(chmrDice);
-        chmrRoll.on('pointerdown', () => {
-            app.stage.removeChild(chmrDice);
-        })
-
-    }
-
-
-    const chmrEx = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center',wordWrap: true, wordWrapWidth: 200 }) });
-    chmrEx.x = 90;
-    chmrEx.y = 160;
-    chmrEx.zIndex = 1001;
-    // strikeText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
-    chmrEx.text = "Move 2 CIV on rolls of 6, 1 CIV on rolls of 3-5, and 0 CIV on rolls of 1-2."
-    app.stage.addChild(chmrEx);
-
-    const chmrRollEx = Board.makeRoundRect(80, 150, chmrEx.width+20, chmrEx.height + 20, 10,0x808080,2,0x000000,1000);
-    app.stage.addChild(chmrRollEx);
-
-    chmrRoll.on('pointerdown', () => {
-        app.stage.removeChild(chmrRoll,chmrRollEx,chmrEx);
-        app.stage.removeChild(chmrText);
-        if (playerColor == gameState.turnPlayer) {
-            Board.openCPQuery();
-        }
-        else {
-            changeMessage("Opponent completed CHMR\nWaiting on them to spend command points");
-        }
-    })
-
-});
 
 const cancelCHMRText = new PIXI.Text({ text: "Cancel CHMR", style: new PIXI.TextStyle({ fontSize: 20, fill: '#FFFFFF', align: 'center' }) });
 const cancelCHMRButton = Board.makeRoundRect(90,100,cancelCHMRText.width + 20,cancelCHMRText.height + 20,10,'0xFF0000',2,0x000000,500,false);
@@ -1117,52 +1284,7 @@ function cancelAid() {
     cancelAidText.visible = true;
 }
 
-socket.on('humanitarianAid', (response) => {
-    let parsedResponse = JSON.parse(response); // Parse the JSON string
-    // console.log(parsedResponse.result); // Should print a number 1-6
-    // console.log(parsedResponse.gameState); // Should print the entire updated gameState
-    gameState = parsedResponse.gameState;
-    updateBoard(gameState);
 
-    if (playerColor != gameState.turnPlayer) {
-        changeMessage("Opponent is rolling for Humanitarian Aid");
-    }
-
-
-    const aidRoll = new PIXI.Graphics();
-    aidRoll.roundRect(300, 150, 350, 200, 10);
-    aidRoll.fill('0x808080');
-    aidRoll.stroke(4, '0xffffff');
-    aidRoll.zIndex = 900;
-    aidRoll.eventMode = 'static';
-    app.stage.addChild(aidRoll);
-
-    let roll = parsedResponse.result;
-
-    const aidText = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }) });
-    aidText.x = 350;
-    aidText.y = 160;
-    aidText.zIndex = 1000
-    aidText.text = ((playerColor == gameState.turnPlayer) ? 'You' : "Opponent") + " rolled a " + roll + ".\n+" + ((roll > 4 ? '1' : '0')) + " Support Tracker Points\n\n\n\n\nClick to Continue"
-    app.stage.addChild(aidText);
-
-
-    let aidDice = Board.drawDice(440, 220, 950, roll, 'black');
-    app.stage.addChild(aidDice);
-
-    aidRoll.on('pointerdown', () => {
-        app.stage.removeChild(aidRoll);
-        app.stage.removeChild(aidText);
-        app.stage.removeChild(aidDice);
-        if (playerColor == gameState.turnPlayer) {
-            Board.openCPQuery();
-        }
-        else {
-            changeMessage("Opponent completed Humanitarian Aid\nWaiting on them to spend command points");
-        }
-    })
-
-});
 
 //HUMANITARIAN AID END
 
@@ -1234,19 +1356,7 @@ function hideCancelSurge(){
 }
 
 
-socket.on('surge', (gameState) => {
-    gameState = JSON.parse(gameState); // Parse the JSON string
-    updateBoard(gameState);
-    if (playerColor != gameState.turnPlayer) {
-        changeMessage("Opponent completed a surge,\n waiting on them to spend command points");
-    }
-    else {
-        Board.openCPQuery();
-        clearMessage();
-    }
-}
 
-);
 //SURGE END
 //SURGE END
 //SURGE END
@@ -1326,51 +1436,7 @@ function hideCancelIO(){
     cancelInfluText.visible = false;
 }
 
-socket.on('influenceOperation', (response) => {
-    let parsedResponse = JSON.parse(response); // Parse the JSON string
-    let result = parsedResponse.result;
-    gameState = parsedResponse.gameState;
-    updateBoard(gameState);
 
-    if (playerColor != gameState.turnPlayer) {
-        changeMessage("Opponent is rolling for Influence Operations");
-    }
-
-    let x2 = result.length * 85 + 20
-    const iORoll = Board.makeRoundRect(300, 150, (350 > x2 ? 350 : x2), 200, 10,0x808080,2,0x000000,920);
-    iORoll.eventMode = 'static';
-    app.stage.addChild(iORoll);
-
-    const iOText = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }) });
-    iOText.x = 350;
-    iOText.y = 160;
-    iOText.zIndex = 1000
-    let sixs = result.filter(num => num === 6).length
-    iOText.text = "-" + sixs + " opponent support points\n\n\n\n\n\nClick to Continue"
-    app.stage.addChild(iOText);
-
-    for (let i = 0; i < result.length; i++) {
-
-        let iODice = Board.drawDice(310 + i * 85, 220, 950, result[i], 'black');
-        app.stage.addChild(iODice);
-        iORoll.on('pointerdown', () => {
-            app.stage.removeChild(iODice);
-        })
-
-    }
-
-    iORoll.on('pointerdown', () => {
-        app.stage.removeChild(iORoll);
-        app.stage.removeChild(iOText);
-        if (playerColor == gameState.turnPlayer) {
-            Board.openCPQuery();
-        }
-        else {
-            changeMessage("Opponent completed Influence Operation\nWaiting on them to spend command points");
-        }
-    })
-
-});
 
 ////END INFLUENCE OPERATIONS
 ////END INFLUENCE OPERATIONS
@@ -1398,16 +1464,7 @@ function fires1(name) {
     socket.emit('game', 'action', { type: 'artillery-select', data: name }); // Request to fire from blue base
 }
 
-socket.on('fire-list', (list) => {
-    let nodes = JSON.parse(list);
-    console.log(nodes);
-    if (nodes.length > 0)
-        highlight(nodes, fires2, "pick the node where you are firing to");
-    else {
-        changeMessage("No adjacent nodes available");
-        Board.openCPQuery();
-    }
-});
+
 
 const cancelFireText = new PIXI.Text({ text: "Cancel Fire", style: new PIXI.TextStyle({ fontSize: 20, fill: '#FFFFFF', align: 'center' }) });
 const cancelFireButton = Board.makeRoundRect(90, 100, cancelFireText.width + 20, cancelFireText.height + 20, 10,0xff0000,2,0x000000,100,false);
@@ -1443,67 +1500,7 @@ function fires2(name) {
     clearMessage();
 }
 
-socket.on('fire', (response) => {
-    let parsedResponse = JSON.parse(response); // Parse the JSON string
-    
-    gameState = parsedResponse.gameState;
-    updateBoard(gameState);
 
-    if (playerColor != gameState.turnPlayer) {
-        changeMessage("Opponent rolled for artillery fires");
-    }
-
-    let rolls1 = parsedResponse.rolls.combatRoll;
-    let rolls2 = parsedResponse.rolls.civRoll;
-
-    const firesText = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center' }) });
-    firesText.x = 390;
-    firesText.y = 160;
-    firesText.zIndex = 1000
-    // firesText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
-    firesText.text = "Army Rolls" + "\n\n\n\n\nCivilian Rolls\n\n\n\n\nClick to Continue"
-    app.stage.addChild(firesText);
-
-    const firesRoll = Board.makeRoundRect(300, 150, 350, firesText.height + 30, 10,0x808080,2,0x000000,900);
-    firesRoll.eventMode = 'static';
-    app.stage.addChild(firesRoll);
-
-    for (let i = 0; i < rolls1.length; i++) {
-
-        let dice1 = Board.drawDice(345 + i * 95, 200, 950, rolls1[i], gameState.turnPlayer);
-        let dice2 = Board.drawDice(345 + i * 95, 320, 950, rolls2[i], 'black');
-
-        app.stage.addChild(dice1);
-        app.stage.addChild(dice2);
-        firesRoll.on('pointerdown', () => {
-            app.stage.removeChild(dice1);
-            app.stage.removeChild(dice2);
-        })
-
-    }
-
-    const firesEx = new PIXI.Text({ text: "", style: new PIXI.TextStyle({ fontSize: 22, fill: '#FFFFFF', align: 'center',wordWrap: true, wordWrapWidth: 200 }) });
-    firesEx.x = 690;
-    firesEx.y = 160;
-    firesEx.zIndex = 1001;
-    // strikeText.text = "X Armies Killed" + "\n\n\n\n\nY Civilians Killed\n\n\n\n\nClick to Continue"
-    firesEx.text = "Combat Casualties occur on rolls of 4-6.\nCiv Casualties occur on rolls of 3-6."
-    app.stage.addChild(firesEx);
-
-    const fireRollEx = Board.makeRoundRect(680, 150, firesEx.width+20, firesEx.height + 20, 10,0x808080,2,0x000000,1000);
-    app.stage.addChild(fireRollEx);
-
-    firesRoll.on('pointerdown', () => {
-        app.stage.removeChild(firesRoll,firesEx,fireRollEx);
-        app.stage.removeChild(firesText);
-        if (playerColor == gameState.turnPlayer) {
-            Board.openCPQuery();
-        }
-        else {
-            changeMessage("Opponent completed Artillery Fires\nWaiting on them to spend command points");
-        }
-    })
-});
 
 //ARTILLERY FIRES END
 //ARTILLERY FIRES END
