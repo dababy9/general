@@ -31,10 +31,10 @@ const startGame = (gameID, session, sessionID, opponentSession, opponentSessionI
 };
 
 // Function that ends a game
-const endGame = (gameID, reason, winner, io) => {
+const endGame = (gameID, {reason, winner, vp}, io) => {
 
     // Send game over message to both clients
-    io.to(gameID).emit('game-over', { reason, winner });
+    io.to(gameID).emit('game-over', JSON.stringify({ reason, winner, vp }));
 
     // Erase gameID from both sessions
     const game = gameStore.get(gameID);
@@ -262,7 +262,7 @@ const handleAction = ({ type, data }, game, sessionID, session, io) => {
     if (result.type === 'error') return io.to(sessionID).emit('error', result.error);
 
     // If the result type is empty, end game
-    if (!result.type) return endGame(session.gameID, result.reason, result.winner, io);
+    if (!result.type) return endGame(session.gameID, result, io);
 
     // Otherwise, send the result to one or both clients (depending on the 'to' field)
     if (result.to === 'client') io.to(sessionID).emit(result.type, JSON.stringify(result.data));
@@ -292,7 +292,7 @@ const handleEndTurn = (game, session, io) => {
 };
 
 // Close Combat handler
-const handleCloseCombat = (numDice, game, session, io) => {
+const handleCloseCombat = (numDice, game, sessionID, session, io) => {
 
     // Make sure the game is in close combat (or final combat) status
     if (game.status !== 'closeCombat' && game.status !== 'finalCombat') return;
@@ -307,7 +307,7 @@ const handleCloseCombat = (numDice, game, session, io) => {
     if (!Number.isInteger(numDice) || numDice < minValue || numDice > game.getPieces(session.color, node).length) {
 
         // If not, send back another close combat response
-        io.to(session.gameID).emit('close-combat', JSON.stringify({ minValue, next: node }));
+        io.to(sessionID).emit('close-combat', JSON.stringify({ minValue, next: node }));
         return;
     }
 
@@ -324,15 +324,13 @@ const handleCloseCombat = (numDice, game, session, io) => {
     if (game.blueFlag && game.redFlag) {
 
         // Conduct close combat fully, and get dice roll results
-        let result = game.performCloseCombat(minValue);
+        const result = game.performCloseCombat(minValue);
 
         // If a player ran out of armies, end the game
-        if (result.winner)
-            endGame(session.gameID, result.reason, result.winner, io);
+        if (result.winner) endGame(session.gameID, result, io);
 
         // Otherwise, send clients the next close combat response
-        else
-            io.to(session.gameID).emit('close-combat', JSON.stringify({ rolls: result, gameState: game.gameState, minValue, next: game.meta.combat[0] }));
+        else io.to(session.gameID).emit('close-combat', JSON.stringify({ rolls: result, minValue, next: game.meta.combat[0], gameState: game.gameState }));
     }
 };
 
@@ -346,7 +344,7 @@ const handleCivMove = (game, session, io) => {
     if (game.status === 'finalCombat' && !game.meta.combat[0])
 
         // End game appropriately
-        return endGame(session.gameID, 'vp', game.winnerByVP(), io); 
+        return endGame(session.gameID, game.winnerByVP(), io); 
     
     // Make sure close combat has just ended
     if (game.status !== 'closeCombat' || game.meta.combat[0]) return;
@@ -406,8 +404,8 @@ const endTurn = (game, session, io) => {
         // Initiate final close combat and check if it's required
         if(!game.initiateCloseCombat())
 
-            // End game appropriately
-            return endGame(session.gameID, 'vp', game.winnerByVP(), io);
+            // If it isn't required, end game appropriately
+            return endGame(session.gameID, game.winnerByVP(), io);
 
         // If close combat is required
         else {
@@ -418,12 +416,15 @@ const endTurn = (game, session, io) => {
             // Send clients first final close combat message
             io.to(session.gameID).emit('close-combat', JSON.stringify({ minValue: 1, next: game.meta.combat[0] }));
         }
-    }
 
-    // Update game state with new turn, and use result to determine initiative
-    // True means initiative required, false means new turn player is determined automatically
-    if (game.switchTurn()) io.to(session.gameID).emit('initiative-ready');
-    else io.to(session.gameID).emit('new-turn', game.gameState.turnPlayer);
+    // If 6 rounds haven't been completed, just end the turn normally
+    } else {
+
+        // Update game state with new turn, and use result to determine initiative
+        // True means initiative required, false means new turn player is determined automatically
+        if (game.switchTurn()) io.to(session.gameID).emit('initiative-ready');
+        else io.to(session.gameID).emit('new-turn', game.gameState.turnPlayer);
+    }
 };
 
 // Disconnect handler
@@ -452,7 +453,7 @@ const handleDisconnect = (sessionID, session, io) => {
                     sessionStore.get(game.redSessionID).stat = 'base';
 
                     // End game
-                    endGame(session.gameID, 'disconnection', (session.color === 'blue' ? 'red' : 'blue'), io);
+                    endGame(session.gameID, { reason: 'disconnection', winner: (session.color === 'blue' ? 'red' : 'blue'), vp: { blue: 0, red: 0 } }, io);
                 }
             }
 

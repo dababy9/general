@@ -57,7 +57,6 @@ let buttonY = 110;
 function makeButton (callback, buttonText, textOffset) {
     const y = buttonY += 70;
     const reset = (x, color) => { x.clear().roundRect(380, y, 240, 60).fill(0xd9f2d0).stroke({ width: 2, color }) };
-
     const button = Object.assign(new PIXI.Graphics(), { eventMode: 'static', cursor: 'pointer' })
         .roundRect(380, y, 240, 60)
         .fill(0xd9f2d0)
@@ -91,7 +90,7 @@ mainMenu.push(...makeButton(() => {
 
 // Quick Play Button
 mainMenu.push(...makeButton(() => {
-    socket.emit('play', 'quick');
+    socket.emit('play', 'dev');
     startWaitAnimation();
 }, "Quick Play", 68));
 

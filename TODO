@@ -1,1 +1,2 @@
-- return casualties from combat actions
+- return VP when ending game
+- check how to get game state without explicit request

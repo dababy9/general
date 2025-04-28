@@ -195,7 +195,7 @@ io.on('connection', (socket) => {
 
             // Client requests a close combat choice
             case 'close-combat':
-                handler.handleCloseCombat(arg, game, session, io);
+                handler.handleCloseCombat(arg, game, sessionID, session, io);
                 break;
 
             // Client requests to conduct civilian movement

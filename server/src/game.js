@@ -65,7 +65,7 @@ class Game {
     getValidNodes (color, node) {
         const nodes = nodeMap.get(node);
         if (!this.isContested(node)) return nodes;
-        else return nodes.filter(x => this.gameState.nodes[x].some(y => y.type === color));
+        else return nodes.filter(x => this.gameState.nodes[x].every(y => y.type !== this.otherColor(color)));
     }
 
     // Method to return haven adjacencies using the full map
@@ -111,14 +111,11 @@ class Game {
         const result = { blueRolls, redRolls };
         
         // Remove armies based on rolls
-        const blueWin = this.removeArmies('red', armyCasualties(blueRolls), node);
-        const redWin = this.removeArmies('blue', armyCasualties(redRolls), node);
+        const blueWin = this.removeArmies('red', armyCasualties(blueRolls), node).isLoss;
+        const redWin = this.removeArmies('blue', armyCasualties(redRolls), node).isLoss;
         
-        // End the game if necessary
-        if (blueWin || redWin) {
-            if (blueWin && redWin) return { winner: 'tie', reason: 'army' };
-            else return { winner: (blueWin ? 'blue' : 'red'), reason: 'army' };
-        }
+        // End the game if a player is out of armies
+        if (blueWin || redWin) return this.winnerByVP();
 
         // If it's the blue player's turn, they do casualties first
         if (this.gameState.turnPlayer === 'blue') {
@@ -127,13 +124,13 @@ class Game {
             result.blueCivRolls = blueCivRolls;
 
             // Remove civilians and end game if necessary
-            if (this.removeCivilians('blue', blueCivRolls.filter(x => x === 6).length, node)) return { winner: 'red', reason: 'support' };
+            if (this.removeCivilians('blue', blueCivRolls.filter(x => x === 6).length, node).isLoss) return { winner: 'red', reason: 'support' };
 
             // If there are civilians remaining, have red player conduct civilian casualties
             if (this.getPieces('civ', this.meta.combat[0]).length) {
 
                 // Remove civilians and end game if necessary
-                if (this.removeCivilians('red', redCivRolls.filter(x => x === 6).length, node)) return { winner: 'blue', reason: 'support' };
+                if (this.removeCivilians('red', redCivRolls.filter(x => x === 6).length, node).isLoss) return { winner: 'blue', reason: 'support' };
 
                 // Assign red roll to result
                 result.redCivRolls = redCivRolls;
@@ -146,13 +143,13 @@ class Game {
             result.redCivRolls = redCivRolls;
 
             // Remove civilians and end game if necessary
-            if (this.removeCivilians('red', redCivRolls.filter(x => x === 6).length, node)) return { winner: 'blue', reason: 'support' };
+            if (this.removeCivilians('red', redCivRolls.filter(x => x === 6).length, node).isLoss) return { winner: 'blue', reason: 'support' };
 
             // If there are civilians remaining, have blue player conduct civilian casualties
             if (this.getPieces('civ', this.meta.combat[0]).length) {
 
                 // Remove civilians and end game if necessary
-                if (this.removeCivilians('blue', blueCivRolls.filter(x => x === 6).length, node)) return { winner: 'red', reason: 'support' };
+                if (this.removeCivilians('blue', blueCivRolls.filter(x => x === 6).length, node).isLoss) return { winner: 'red', reason: 'support' };
 
                 // Assign blue roll to result
                 result.blueCivRolls = blueCivRolls;
@@ -177,8 +174,8 @@ class Game {
         // Remove the armies and get the number removed
         const removed = this.removePieces(color, num, node);
 
-        // Just return if no armies were removed
-        if (!removed) return;
+        // Just return immediately if no armies were removed
+        if (!removed) return { removed, isLoss: false };
 
         // Retrieve target player object
         const player = this.getPlayer(color);
@@ -186,8 +183,8 @@ class Game {
         // Remove armies from game state
         player.totalArmies -= removed;
 
-        // If the target player is out of armies, indicate game over
-        return player.totalArmies <= 0;
+        // Return the amount of armies removed, and if the removal constitutes a loss
+        return { removed, isLoss: player.totalArmies <= 0 };
     }
 
     // Method to handle civilian removal
@@ -196,8 +193,8 @@ class Game {
         // Remove the civilians and get the number removed
         const removed = this.removePieces('civ', num, node);
 
-        // Just return if no civilians were removed or if civilians were removed naturally
-        if (!removed || !color) return;
+        // Just return immediately if no civilians were removed or if civilians were removed naturally
+        if (!removed || !color) return { removed, isLoss: false };
 
         // Retrieve acting player object
         const player = this.getPlayer(color);
@@ -209,13 +206,14 @@ class Game {
         // Add civilian casualties to acting player
         player.casualties += removed;
 
-        // If support is at or below zero, set it to zero and indicate game over
-        if (player.support <= 0) {
-            player.support = 0;
-            return true;
+        // Boolean to indicate whether the player support is at or below zero
+        const lowSupport = player.support <= 0;
 
-        // Otherwise, just return false
-        } else return false;
+        // Just change the support to zero to avoid negative issues
+        if (lowSupport) player.support = 0;
+
+        // Return the amount of civilians removed, and if the removal constitutes a loss
+        return { removed, isLoss: lowSupport };
     }
 
     // Method to remove pieces and return the actual number removed
@@ -433,9 +431,8 @@ class Game {
         // Calculate VP from nodes
         Object.keys(this.gameState.nodes).forEach(nodeVP);
 
-        // Return winner
-        if (blueVP === redVP) return 'tie';
-        return (blueVP > redVP ? 'blue' : 'red');
+        // Return result
+        return { reason: 'vp', vp: { blue: blueVP, red: redVP }, winner: (blueVP === redVP ? 'tie' : (blueVP > redVP ? 'blue' : 'red')) };
     }
 
     // Method to validate and process the client selecting node(s) to move from
@@ -667,7 +664,7 @@ class Game {
         // End the game if opponent support is at or below zero
         if (opponent.support <= 0) {
             opponent.support = 0;
-            return { reason: 'support', winner: color };
+            return { winner: color, reason: 'support' };
         }
 
         // Return dice roll results and new game state
@@ -756,16 +753,16 @@ class Game {
         // Retrieve the node
         const n = this.gameState.nodes[node];
 
-        // Calculate combat casualties and end the game if necessary
-        if (this.removeArmies(this.otherColor(color), combatRoll.filter(x => x > 3 && x < 7).length, n))
-            return { reason: 'army', winner: color };
+        // Calculate combat and civilian casualties
+        const combatResult = this.removeArmies(this.otherColor(color), combatRoll.filter(x => x > 3 && x < 7).length, n);
+        const civResult = this.removeCivilians(color, civRoll.filter(x => x > (type === 'fire' ? 2 : 4) && x < 6).length, n);
 
-        // Calculate civilian casualties and end the game if necessary
-        if (this.removeCivilians(color, civRoll.filter(x => x > (type === 'fire' ? 2 : 4) && x < 6).length, n))
-            return { reason: 'support', winner: this.otherColor(color) };
+        // End game if casualties necessitate
+        if (combatResult.isLoss) return this.winnerByVP();
+        if (civResult.isLoss) return { reason: 'support', winner: this.otherColor(color) };
 
-        // Return rolls and game state
-        return { type, to: 'both', data: { rolls: { combatRoll, civRoll }, gameState: this.gameState } };
+        // Return rolls, casualties and game state
+        return { type, to: 'both', data: { rolls: { combatRoll, civRoll }, casualties: { combatCasualties: combatResult.removed, civCasualties: civResult.removed }, gameState: this.gameState } };
     }
 }
 

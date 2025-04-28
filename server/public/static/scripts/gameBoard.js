@@ -43,57 +43,39 @@ export async function loadAssets () {
     ]); 
 }
 
-// Function to create and return background sprite
-export function makeBackground() {
-    return Object.assign(PIXI.Sprite.from('/content/backgroundVV.png'), { width: 970, height: 634 });
-}
-
-// Function to create and return game board sprite
-export function makeGameBoard() {
-    const board = Object.assign(PIXI.Sprite.from('/content/Board_Circles.png'), { x: 110, y: 40, width: 750, height: 456 });
-
-    // Prints the location of a click in console
-    // board.eventMode = 'static';
-    // board.on('pointerdown', (e) => {
-    //     console.log(e.global);
-    // });
-
-    return board;
-}
-
 // Function to create and return a given piece
-export function makeBoardPiece (x, y, width, height, name, zIndex = 0) {
+export function makeBoardPiece (x, y, width, height, zIndex, name) {
     return Object.assign(PIXI.Sprite.from(name), { x, y, width, height, zIndex });
 }
 
 // Function to create and return a circle
-export function makeCircle (x, y, r, fill, stroke, strokefill, alpha) {
-    return Object.assign(new PIXI.Graphics(), { alpha })
-        .circle(x, y, r)
+export function makeCircle (x, y, r, zIndex, fill, width, color, alpha) {
+    return Object.assign(new PIXI.Graphics(), { x, y, zIndex, alpha, visible: true })
+        .circle(0, 0, r)
         .fill(fill)
-        .stroke(stroke, strokefill);
+        .stroke({ width, color });
 }
 
 // Function to create and return a given text sprite
-export function makeBoardText (x, y, text, style) {
-    return Object.assign(new PIXI.Text({ text, style }), { x, y });
+export function makeBoardText (x, y, zIndex, text, style, visible = true) {
+    return Object.assign(new PIXI.Text({ text, style }), { x, y, zIndex, visible });
 }
 
 // Function to create and return a round rectangle
-export function makeRoundRect (x, y, w, h, corner, fill, width, color, zIndex, visible = true) {
-    return Object.assign(new PIXI.Graphics(), { zIndex, visible })
-        .roundRect(x, y, w, h, corner)
+export function makeRoundRect (x, y, w, h, zIndex, corner, fill, width, color, visible = true) { //swapped zIndex from kinda last to 5th
+    return Object.assign(new PIXI.Graphics(), { x, y, zIndex, visible })
+        .roundRect(0, 0, w, h, corner)
         .fill(fill)
         .stroke({ width, color });
 }
 
 // Function to create and return a dice 
-export function drawDice (x, y, zIndex, n, color) {
-    return Object.assign(PIXI.Sprite.from(colors[color][n-1]), { x, y, zIndex, width: 75, height: 75 });
+export function drawDice (x, y, n, color) {
+    return Object.assign(PIXI.Sprite.from(colors[color][n-1]), { x, y, zIndex: 80, width: 75, height: 75 });
 }
 
 // Function to create specific white, centered text of a given font size
-function gameTextStyle(fontSize){
+function gameTextStyle (fontSize) {
     return new PIXI.TextStyle({ fontFamily: 'normal', fontSize, fill: '#ffffff', align: 'center' });
 }
 
@@ -109,7 +91,7 @@ cpMenu.addChild(
 );
 
 // Create CP button
-const cpButton = Object.assign(new PIXI.Graphics(), { zIndex: 90, alpha: 0.7, eventMode: 'static', visible: false })
+const cpButton = Object.assign(new PIXI.Graphics(), { zIndex: 10, alpha: 0.7, eventMode: 'static', visible: false })
     .roundRect(780, 40, 145, 33, 10)
     .fill(0x000000)
     .stroke(10, 0x101010)
@@ -204,13 +186,13 @@ export function makeCPMenu (actionFunctions, app) {
 }
 
 // Function to close the CP menu
-export function closeCPQuery() {
+export function closeCPQuery () {
     cpMenu.visible = false;
     cpButtonText.text = "Open CP Menu";
 }
 
 // Function to open the CP menu
-export function openCPQuery() {
+export function openCPQuery () {
     cpMenu.visible = cpButton.visible = cpButtonText.visible = true;
     cpButtonText.text = "Close CP Menu";
 }
@@ -219,7 +201,7 @@ export function openCPQuery() {
 const nodeNames = ['blueBase', 'redBase', 'city4', 'city6', 'city9', 'city10', 'village2', 'village3', 'village7', 'village8'];
 
 // Function to return all nodes that have armies of a given color
-export function findNodes(color, num, move = true) {
+export function findNodes (color, num, move = true) {
     let result;
     if (color === 'blue')
         result =  Object.keys(num).filter(key => (move ? (num[key].blueArmies > num[key].blueMoved): num[key].blueArmies > 0));
