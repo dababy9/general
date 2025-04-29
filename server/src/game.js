@@ -69,8 +69,8 @@ class Game {
     }
 
     // Method to return haven adjacencies using the full map
-    getAdjacentNodes (havenList) {
-        return Array.from(havenList, (x) => ({ haven: x, adjacent: fullMap.get(x) }));
+    getAdjacentNodes (havenList, color) {
+        return Array.from(havenList, (x) => ({ haven: x, adjacent: fullMap.get(x).filter(x => this.gameState.nodes[x].every(y => y.type !== this.otherColor(color))) }));
     }
 
     // Method to return whether a node is contested or not
@@ -406,8 +406,8 @@ class Game {
         // Method to calculate VP from support
         const supportVP = (support) => {
             switch (support) {
-                case 1: case 2: return -2;
-                case 3: case 4: return 2;
+                case 1: case 2: return 2;
+                case 3: case 4: return 4;
                 default: return 6;
             }
         }
@@ -554,7 +554,7 @@ class Game {
         // Set game status
         this.status = 'chmrHaven';
 
-        // Return list of adjacent nodes and new game state
+        // Return list of valid adjacent nodes and new game state
         return { type: 'haven-move', to: 'both', data: { nodes: fullMap.get(haven), gameState: this.gameState } };
     }
 
@@ -755,7 +755,7 @@ class Game {
 
         // Calculate combat and civilian casualties
         const combatResult = this.removeArmies(this.otherColor(color), combatRoll.filter(x => x > 3 && x < 7).length, n);
-        const civResult = this.removeCivilians(color, civRoll.filter(x => x > (type === 'fire' ? 2 : 4) && x < 6).length, n);
+        const civResult = this.removeCivilians(color, civRoll.filter(x => x > (type === 'fire' ? 2 : 4) && x < 7).length, n);
 
         // End game if casualties necessitate
         if (combatResult.isLoss) return this.winnerByVP();

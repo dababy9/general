@@ -384,7 +384,7 @@ const handleCivReturn = (choice, game, session, io) => {
             const civNodes = game.disperseCivilians();
 
             // Send the list of adjacent nodes, the list of civilian nodes, and the updated game state
-            io.to(session.gameID).emit('civ-return', JSON.stringify({ havenList: game.getAdjacentNodes(game.meta.chmrList), civNodes, gameState: game.gameState }));
+            io.to(session.gameID).emit('civ-return', JSON.stringify({ havenList: game.getAdjacentNodes(game.meta.chmrList, session.color), civNodes, gameState: game.gameState }));
         }
     
     // Otherwise, process the civilian return
