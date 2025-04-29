@@ -1,35 +1,17 @@
 import * as Board from './gameBoard.js';
 import * as Objects from './objects.js';
 
-// Function to take in four key style components and return a PIXI TextStyle
-function makeTextStyle(fontSize, fill, align){
-    return new PIXI.TextStyle({ fontSize, fill, align });
-}
-
-//app.stage.addChild(Board.makeRoundRect(340, 150, 320, 30, 105, 0, 0x555555, 0, 0x000000));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Global variables
 let playerColor;
 let gameState;
+let highlightedNodes;
 
+// ---------- Helper functions ----------
 
+// Function to take in four key style components and return a PIXI TextStyle
+function makeTextStyle (fontSize, fill, align) {
+    return new PIXI.TextStyle({ fontSize, fill, align });
+}
 
 // ---------- Initialization ----------
 
@@ -39,6 +21,9 @@ await app.init({ width: 1000, height: 650, background: '#DFE8F3' });
 
 // Load all images to be used in sprite creation
 await Board.loadAssets();
+
+// Requests player color
+socket.emit('game', 'fetch-color');
 
 // Add static sprites to canvas
 app.stage.addChild(
@@ -209,7 +194,7 @@ socket.on('move', (data) => {
 
     // Either open the CP menu or change action banner, depending on player's color
     if (gameState.turnPlayer === playerColor) Board.openCPQuery();
-    else updateActionBanner("Opponent finished a move!\nWaiting on them to spend command points...");
+    else updateActionBanner("Opponent completed a Move!\nWaiting on them to spend command points...");
 });
 
 // Handle haven list message
@@ -258,7 +243,7 @@ socket.on('surge', (data) => {
 
     // Either open the CP menu or change action banner, depending on player's color
     if (gameState.turnPlayer === playerColor) Board.openCPQuery();
-    else updateActionBanner("Opponent completed a surge!\n Waiting on them to spend command points...");
+    else updateActionBanner("Opponent completed a Surge!\n Waiting on them to spend command points...");
 });
 
 // Handle influence operation message
@@ -311,23 +296,34 @@ socket.on('civ-return', (data) => {
 });
 
 // Handle initiative ready message
-socket.on('initiative-ready', () => {
-    socket.emit('game', 'fetch-game-state');
+socket.on('initiative-ready', (data) => {
+
+    // Parse data and update game state
+    gameState = JSON.parse(data);
+
+    // Update board
+    updateBoard();
 
     // Show initiative button
     initiativeButton.visible = initiativeText.visible = true;
 });
 
 // Handle new turn message
-socket.on('new-turn', (player) => {
-    socket.emit('game', 'fetch-game-state');
+socket.on('new-turn', (data) => {
 
-    // Update local game state object with new turn player
-    gameState.turnPlayer = player;
-    if (playerColor == player) {
-        updateActionBanner();
+    // Parse data and update game state
+    gameState = JSON.parse(data);
+
+    // Update board
+    updateBoard();
+
+    // If this is the new turn player, open CP menu and clear action banner
+    if (gameState.turnPlayer === playerColor){
         Board.openCPQuery();
+        updateActionBanner();
     }
+
+    // Update turn banner
     updateTurnBanner();
 });
 
@@ -757,6 +753,40 @@ function updateTurnBanner () {
         .fill(Objects.colors[playerColor]);
 }
 
+// Function to highlight nodes and attach callback to highlight sprites
+function highlight (nodes, callback, message) {
+
+    // Remove any previous highlights
+    removeHighlight();
+
+    // Create array of highlights from array of nodes
+    highlightedNodes = Array.from(nodes, x =>
+        Object.assign(new PIXI.Graphics(), { zIndex: 50, alpha: 0.5, eventMode: 'static', cursor: 'pointer' })
+            .circle(Objects.locations[x].x + 46, Objects.locations[x].y + 32, 57)
+            .fill(0xFFDE21)
+            .stroke({ width: 3, color: 0xF4BC1C })
+            .on('pointerdown', () => callback(x))
+    );
+    
+    // Add highlights to canvas
+    app.stage.addChild(...highlightedNodes);
+
+    // Update action banner with given message
+    updateActionBanner(message);
+}
+
+// Function to remove highlights
+function removeHighlight () {
+
+    // If there are no highlighted nodes, just return
+    if (!highlightedNodes) return;
+
+    // Otherwise, loop through each highlight and remove it
+    highlightedNodes.forEach(x => { app.stage.removeChild(x); });
+    
+    // Empty the array of highlighted nodes
+    highlightedNodes = [];
+}
 
 
 
@@ -770,8 +800,8 @@ function updateTurnBanner () {
 
 
 
-//requests the color of the player from the server
-socket.emit('game', 'fetch-color');
+
+
 
 // Add PixiJS canvas to DOM
 document.getElementById("pixi-container").appendChild(app.canvas);
@@ -806,24 +836,7 @@ const highLoc = {
     'village8': { x: 645, y: 245 }
 }
 
-const highlightedNodes = {};
 
-function highlight(names, callback, message) {
-    removeHighlight();
-    for (const name of names) {
-        const select = new PIXI.Graphics();
-        select.circle(Objects.locations[name].x + 46, Objects.locations[name].y+32, 57);
-        select.fill(0xFFDE21)
-        select.alpha = 0.5;
-        select.stroke({ width: 3, color: 0xF4BC1C })
-        select.eventMode = 'static';
-        select.zIndex = 75;
-        select.on('pointerdown', () => callback(name))
-        app.stage.addChild(select)
-        highlightedNodes[name] = select;
-    }
-    updateActionBanner(message);
-}
 
 //returns the gamestate in a numbered format instead of the one with objects
 function getCount(initialNodes) {
@@ -978,12 +991,7 @@ function hideDone() {
     doneText.visible = false;
 }
 
-function removeHighlight() {
-    for (var member in highlightedNodes) {
-        app.stage.removeChild(highlightedNodes[member]);
-        delete highlightedNodes[member];
-    }
-}
+
 
 //button that cancels move if clicked. opens cp tracker
 const cancelMoveText = Board.makeBoardText(100, 110, 1000, "Cancel", makeTextStyle(20, '#FFFFFF', 'center'), false);

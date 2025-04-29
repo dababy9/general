@@ -90,7 +90,7 @@ mainMenu.push(...makeButton(() => {
 
 // Quick Play Button
 mainMenu.push(...makeButton(() => {
-    socket.emit('play', 'dev');
+    socket.emit('play', 'quick');
     startWaitAnimation();
 }, "Quick Play", 68));
 

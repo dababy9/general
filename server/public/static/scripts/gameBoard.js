@@ -80,11 +80,11 @@ function gameTextStyle (fontSize) {
 }
 
 // Create CP menu
-const cpMenu = Object.assign(new PIXI.Container(), { zIndex: 200, visible: false });
+const cpMenu = Object.assign(new PIXI.Container(), { zIndex: 85, visible: false });
 
 // Add background to CP menu
 cpMenu.addChild(
-    new PIXI.Graphics()
+    Object.assign(new PIXI.Graphics(), { zIndex: 85 })
         .roundRect(300, 100, 400, 275, 10)
         .fill({ color: 0, alpha: 0.85 })
         .stroke(2, 0xffffff)
@@ -101,7 +101,7 @@ const cpButton = Object.assign(new PIXI.Graphics(), { zIndex: 10, alpha: 0.7, ev
     });
 
 // Create CP button text
-const cpButtonText = Object.assign(new PIXI.Text({ text: "Open CP Menu", style: gameTextStyle(20) }), { x: 790, y: 45, zIndex: 100, visible: false });
+const cpButtonText = Object.assign(new PIXI.Text({ text: "Open CP Menu", style: gameTextStyle(20) }), { x: 790, y: 45, zIndex: 20, visible: false });
 
 // Function to populate and return CP menu
 export function makeCPMenu (actionFunctions, app) {
@@ -111,7 +111,7 @@ export function makeCPMenu (actionFunctions, app) {
     const descriptionTextStyle = new PIXI.TextStyle({ fontFamily: 'normal', fontSize: 15, fill: '#000000', wordWrap: true, wordWrapWidth: 410 });
 
     // Create main text for CP menu
-    cpMenu.addChild(Object.assign(new PIXI.Text({ text: "Spend CP?", style: gameTextStyle(30) }), { x: 434, y: 115 }));
+    cpMenu.addChild(Object.assign(new PIXI.Text({ text: "Spend CP?", style: gameTextStyle(30) }), { x: 434, y: 115, zIndex: 86 }));
 
     // Action labels and texts
     const actions = [
@@ -132,18 +132,18 @@ export function makeCPMenu (actionFunctions, app) {
         const y = 170 + Math.floor(i / 2) * 50;
 
         // Create button
-        const button = Object.assign(new PIXI.Graphics(), { x, y, eventMode: 'static' })
+        const button = Object.assign(new PIXI.Graphics(), { x, y, zIndex: 86, eventMode: 'static' })
             .roundRect(0, 0, 180, 40, 5)
             .fill(0x333333);
 
         // Create button text
         const buttonText = Object.assign(
             new PIXI.Text({ text: actions[i].label, style: actionTextStyle }),
-            {x: x + actions[i].offset, y: y + 10 }
+            {x: x + actions[i].offset, y: y + 10, zIndex: 87 }
         );
         
         // Create description box
-        const descriptionBox = Object.assign(new PIXI.Graphics(), { zIndex: 100, visible: false })
+        const descriptionBox = Object.assign(new PIXI.Graphics(), { zIndex: 85, visible: false })
             .roundRect(300, 390, 400, 150, 10)
             .fill('0xE4EFE7')
             .stroke(2,0x000000);
@@ -151,7 +151,7 @@ export function makeCPMenu (actionFunctions, app) {
         // Create description text
         const descriptionText = Object.assign(
             new PIXI.Text({ text: actions[i].text, style: descriptionTextStyle }),
-            { x: 310, y: 400, zIndex: 101, visible: false }
+            { x: 310, y: 400, zIndex: 86, visible: false }
         );
 
         // Define event listeners for the button
@@ -168,7 +168,7 @@ export function makeCPMenu (actionFunctions, app) {
 
     // Add end turn button to CP menu
     cpMenu.addChild(
-        Object.assign(makeRoundRect(510, 320, 180, 40, 10, 0x823939, 0, 0x000000, 1001, true), { eventMode: 'static' })
+        Object.assign(makeRoundRect(510, 320, 180, 40, 86, 10, 0x823939, 0, 0x000000), { eventMode: 'static' })
             .on('pointerdown', () => {
                 closeCPQuery();
                 socket.emit('game', 'end-turn');
@@ -177,9 +177,7 @@ export function makeCPMenu (actionFunctions, app) {
     );
     
     // Add end turn text to CP menu
-    cpMenu.addChild(
-        Object.assign(new makeBoardText(556, 330, "[ End Turn ]", gameTextStyle(18)), { zIndex: 1002 })
-    );
+    cpMenu.addChild(makeBoardText(556, 330, 87, "[ End Turn ]", gameTextStyle(18)));
     
     // Add necessary items to canvas
     app.stage.addChild(cpMenu, cpButton, cpButtonText);
@@ -204,8 +202,8 @@ const nodeNames = ['blueBase', 'redBase', 'city4', 'city6', 'city9', 'city10', '
 export function findNodes (color, num, move = true) {
     let result;
     if (color === 'blue')
-        result =  Object.keys(num).filter(key => (move ? (num[key].blueArmies > num[key].blueMoved): num[key].blueArmies > 0));
+        result = Object.keys(num).filter(key => (move ? (num[key].blueArmies > num[key].blueMoved): num[key].blueArmies > 0));
     else
-        result =  Object.keys(num).filter(key => (move ? (num[key].redArmies > num[key].redMoved): num[key].redArmies > 0));
+        result = Object.keys(num).filter(key => (move ? (num[key].redArmies > num[key].redMoved): num[key].redArmies > 0));
     return result.filter(x => nodeNames.includes(x));
 }
