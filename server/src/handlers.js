@@ -33,10 +33,13 @@ const startGame = (gameID, session, sessionID, opponentSession, opponentSessionI
 // Function that ends a game
 const endGame = (gameID, result, io) => {
 
-    // Erase gameID from both sessions
+    // Retrieve game object
     const game = gameStore.get(gameID);
-    sessionStore.get(game.blueSessionID).gameID = '';
-    sessionStore.get(game.redSessionID).gameID = '';
+
+    // Set both session to base status (with no gameID)
+    const baseSession = { gameID: '', stat: 'base' };
+    Object.assign(sessionStore.get(game.blueSessionID), baseSession);
+    Object.assign(sessionStore.get(game.redSessionID), baseSession);
 
     // Send game over message to both clients
     io.to(gameID).emit('game-over', JSON.stringify(Object.assign(result, { gameState: game.gameState })));

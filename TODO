@@ -1,2 +1,3 @@
-- return VP when ending game
-- check how to get game state without explicit request
+- hide elements when popups occur
+- change move to be more intuitive
+- just reorganize screen?

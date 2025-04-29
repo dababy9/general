@@ -1703,7 +1703,7 @@ function displayRolls(rolls, next, minValue = 0) {
 
 function combatSelect(next) {
     console.log("In combat select"+next);
-    highlight([next], clicked, "Select Number of Armies for close combat in " + next);
+    highlight([next], () => {}, "Select Number of Armies for close combat in " + next);
 
     let numbers = getCount(gameState.nodes);
     let maxVal = 0;
