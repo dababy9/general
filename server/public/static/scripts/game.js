@@ -170,6 +170,7 @@ socket.on('connect_error', (error) => {
 socket.on('game-state', (data) => {
     gameState = JSON.parse(data);
     updateBoard();
+    //gameOverReceived({vp: {blue: 10, red: 2}, reason: 'vp', winner: 'blue', gameState})
     // closeCombatReceived();
     // civMoveReceived();
 });
@@ -630,7 +631,11 @@ function civMoveReceived (result) {
 }
 
 // Function to create display for game over message
-function gameOverReceived({ vp, winner, reason, gameState }){
+function gameOverReceived ({ vp, winner, reason, gameState }) {
+
+    // Remove all (potential) pop ups, highlights, menu buttons, etc.
+    app.stage.removeChild(...interactiveElements);
+    removeHighlight();
 
     // Create background
     const endBackground = Board.makeRoundRect(150, 50, 700, 500, 100, 10, Objects.backgroundColors[winner], 4, 0x000000);
@@ -669,19 +674,31 @@ function gameOverReceived({ vp, winner, reason, gameState }){
     const viewText = Board.makeBoardText(221, 462, 120, "VIEW BOARD", pieceTextStyle);
     const homeText = Board.makeBoardText(628, 462, 120, "HOME", pieceTextStyle);
 
-    // Add all game over elements to canvas
-    app.stage.addChild(endBackground, winnerText, reasonText, blueStats, redStats, viewButton, homeButton, viewText, homeText);
+    // Compile all display elements into array
+    const gameOverDisplay = [endBackground, winnerText, reasonText, blueStats, redStats, viewButton, homeButton, viewText, homeText];
 
-    // Add callback to view button to hide game over display and re-position home button
+    // Create button to open the game over display
+    const backButton = Object.assign(Board.makeRoundRect(20, 20, 136, 80, 110, 30, 0x73DCA1, 2, 0x000000, false), { eventMode: 'static', cursor: 'pointer'});
+    const backText = Board.makeBoardText(40, 42, 120, "BACK", pieceTextStyle, false);
+
+    // Add all game over elements to canvas
+    app.stage.addChild(...gameOverDisplay, backButton, backText);
+
+    // Add callback to view button to hide game over display and show back button
     viewButton.on('pointerdown', () => {
-        app.stage.removeChild(endBackground, winnerText, reasonText, blueStats, redStats, viewButton, viewText, menuButton, menuInstructions);
-        Object.assign(homeButton, { x: 10, y: 10 });
-        Object.assign(homeText, { x: 108, y: 32 });
+        gameOverDisplay.forEach(x => x.visible = false);
+        backButton.visible = backText.visible = true;
     });
 
     // Add callback to home button to redirect user home
     homeButton.on('pointerdown', () => {
         window.location.replace('/');
+    });
+
+    // Add callback to back button to show game over display and hide back button
+    backButton.on('pointerdown', () => {
+        gameOverDisplay.forEach(x => x.visible = true);
+        backButton.visible = backText.visible = false;
     });
 }
 
@@ -785,8 +802,8 @@ const {elements: surgeMenu, openMenu: openSurge } = createMenu("Confirm Surge", 
 // Create influence operation menu
 const {elements: influenceOpMenu, openMenu: openInfluenceOp } = createMenu("Roll for Influence Operation", "Cancel IO", "Confirm Influence Operation\n(Rolls one dice per two civilian casualties)", 'influence-operation', 3);
 
-// Add all button/banner elements to canvas
-app.stage.addChild(
+// Compile all buttons and banners into array
+const interactiveElements = [
     menuButton,
     menuInstructions,
     initiativeButton,
@@ -800,7 +817,10 @@ app.stage.addChild(
     ...humAidMenu,
     ...surgeMenu,
     ...influenceOpMenu
-);
+];
+
+// Add elements to canvas
+app.stage.addChild(...interactiveElements);
 
 // Create CP menu (pass array of callbacks to link to button event handlers)
 Board.makeCPMenu([moveClicked, chmrClicked, openHumAid, openSurge, openInfluenceOp, firesClicked, strikeClicked], app);
@@ -813,11 +833,12 @@ Board.makeCPMenu([moveClicked, chmrClicked, openHumAid, openSurge, openInfluence
 function updateActionBanner (text) {
     
     // If no text is provided, hide the banner
-    if (!text) actionBanner.visible = actionBackground.visible = false
+    if (!text) actionBanner.visible = actionBackground.visible = false;
 
     // Otherwise, update banner text and redraw banner background
     else {
         actionBanner.text = text;
+        actionBanner.visible = actionBackground.visible = true;
         actionBackground
         .clear()
         .roundRect(90, 10, actionBanner.width + 20, actionBanner.height + 20, 10)
@@ -920,8 +941,6 @@ const highLoc = {
     'village7': { x: 487, y: 303 },
     'village8': { x: 645, y: 245 }
 }
-
-
 
 //returns the gamestate in a numbered format instead of the one with objects
 function getCount(initialNodes) {
@@ -1332,7 +1351,8 @@ function firesClicked() {
         return;
     }
     var find = Board.findNodes(playerColor, getCount(gameState.nodes), false);
-    cancelFires();
+    cancelFireButton.visible = true;
+    cancelFireText.visible = true;
     highlight(find, fires1, "Pick the node where your army will fire from");
 }
 
@@ -1362,11 +1382,6 @@ cancelFireText.zIndex = 70;
 cancelFireText.visible = false;
 app.stage.addChild(cancelFireText,cancelFireButton);
 
-
-function cancelFires() {
-    cancelFireButton.visible = true;
-    cancelFireText.visible = true;
-}
 
 function hideCancelFires(){
     cancelFireButton.visible = false;
@@ -1509,14 +1524,15 @@ function displayRolls(rolls, next, minValue = 0) {
             rollDisplay.on('pointerdown', () => { app.stage.removeChild(dice) });
         }
     }
-    let text1 = Board.makeBoardText(310, 170, 10000, gameState.turnPlayer + " rolled for armies:", text(22));
-    let text2 = Board.makeBoardText(310, 280, 10000, (gameState.turnPlayer == 'blue' ? 'red' : 'blue') + " rolled for armies:", text(22));
-    let text3 = Board.makeBoardText(310, 390, 10000, gameState.turnPlayer + " rolled for civilians:", text(22));
-    let cont = Board.makeBoardText(310, 610, 10000, "Click to continue", text(22));
+    let text1 = Board.makeBoardText(310, 170, 70, gameState.turnPlayer + " rolled for armies:", text(22));
+    let text2 = Board.makeBoardText(310, 280, 70, (gameState.turnPlayer == 'blue' ? 'red' : 'blue') + " rolled for armies:", text(22));
+    let text3 = Board.makeBoardText(310, 390, 70, gameState.turnPlayer + " rolled for civilians:", text(22));
+    let cont = Board.makeBoardText(310, 500, 70, "Click to continue", text(22));
     let text4 = "none";
-    if (otherPlayerCivRolls) { text4 = Board.makeBoardText(310, 500, 10000, (gameState.turnPlayer == 'blue' ? 'red' : 'blue') + " rolled for civilians:", text(22)); }
+    if (otherPlayerCivRolls) { text4 = Board.makeBoardText(310, 500, 70, (gameState.turnPlayer == 'blue' ? 'red' : 'blue') + " rolled for civilians:", text(22)); }
     if (text4 != "none") {
         app.stage.addChild(text4);
+        cont.y = 610;
     }
     app.stage.addChild(text1, text2, text3, cont);
 
@@ -1550,7 +1566,7 @@ function displayRolls(rolls, next, minValue = 0) {
 
 }
 
-function combatSelect(next) {
+function combatSelect(next, minValue) {
     console.log("In combat select"+next);
     highlight([next], () => {}, "Select Number of Armies for close combat in " + next);
 
@@ -1562,7 +1578,7 @@ function combatSelect(next) {
     else
         maxVal = numbers[next].redArmies;
 
-    let counter = selectArmyNumber(highLoc[next].x - 57, highLoc[next].y + 100, 0, maxVal, closeCombatMessage, next);
+    let counter = selectArmyNumber(highLoc[next].x - 57, highLoc[next].y + 100, minValue, maxVal, closeCombatMessage, next);
 
     app.stage.addChild(counter);
 }
@@ -1766,10 +1782,10 @@ function selectCHMRNodes({civNodes, havenList, gameState}){
 
 
 
-    if (armiesToMove.length > selectedReturns.length && playerColor == gameState.turnPlayer){
+    if (havenList.length > selectedReturns.length && playerColor == gameState.turnPlayer){
         console.log("start");
-        console.log(armiesToMove[0].adjacent);
-        highlight(armiesToMove[0].adjacent,resetResponse, "Select where the army from " + armiesToMove[0].haven + " should go");
+        console.log(havenList[0].adjacent);
+        highlight(havenList[0].adjacent,resetResponse, "Select where the army from " + havenList[0].haven + " should go");
     }
     else if (playerColor == gameState.turnPlayer){
         console.log("in the else statement");
