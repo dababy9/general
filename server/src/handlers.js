@@ -31,15 +31,15 @@ const startGame = (gameID, session, sessionID, opponentSession, opponentSessionI
 };
 
 // Function that ends a game
-const endGame = (gameID, {reason, winner, vp}, io) => {
-
-    // Send game over message to both clients
-    io.to(gameID).emit('game-over', JSON.stringify({ reason, winner, vp }));
+const endGame = (gameID, result, io) => {
 
     // Erase gameID from both sessions
     const game = gameStore.get(gameID);
     sessionStore.get(game.blueSessionID).gameID = '';
     sessionStore.get(game.redSessionID).gameID = '';
+
+    // Send game over message to both clients
+    io.to(gameID).emit('game-over', JSON.stringify(Object.assign(result, { gameState: game.gameState })));
 
     // Delete game from memory
     gameStore.delete(gameID);
