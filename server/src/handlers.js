@@ -422,9 +422,8 @@ const endTurn = (game, session, io) => {
 
         // Update game state with new turn, and use result to determine initiative
         // True means initiative required, false means new turn player is determined automatically
-        const gameState = JSON.stringify(game.gameState);
-        if (game.switchTurn()) io.to(session.gameID).emit('initiative-ready', gameState);
-        else io.to(session.gameID).emit('new-turn', gameState);
+        if (game.switchTurn()) io.to(session.gameID).emit('initiative-ready', JSON.stringify(game.gameState));
+        else io.to(session.gameID).emit('new-turn', JSON.stringify(game.gameState));
     }
 };
 

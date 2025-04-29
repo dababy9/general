@@ -108,7 +108,7 @@ export function makeCPMenu (actionFunctions, app) {
 
     // Create text styles for the action buttons and descriptions
     const actionTextStyle = gameTextStyle(18);
-    const descriptionTextStyle = new PIXI.TextStyle({ fontFamily: 'normal', fontSize: 15, fill: '#000000', wordWrap: true, wordWrapWidth: 410 });
+    const descriptionTextStyle = new PIXI.TextStyle({ fontFamily: 'normal', fontSize: 15, fill: '#000000', wordWrap: true, wordWrapWidth: 390 });
 
     // Create main text for CP menu
     cpMenu.addChild(Object.assign(new PIXI.Text({ text: "Spend CP?", style: gameTextStyle(30) }), { x: 434, y: 115, zIndex: 86 }));
@@ -141,18 +141,18 @@ export function makeCPMenu (actionFunctions, app) {
             new PIXI.Text({ text: actions[i].label, style: actionTextStyle }),
             {x: x + actions[i].offset, y: y + 10, zIndex: 87 }
         );
-        
-        // Create description box
-        const descriptionBox = Object.assign(new PIXI.Graphics(), { zIndex: 85, visible: false })
-            .roundRect(300, 390, 400, 150, 10)
-            .fill('0xE4EFE7')
-            .stroke(2,0x000000);
 
         // Create description text
         const descriptionText = Object.assign(
             new PIXI.Text({ text: actions[i].text, style: descriptionTextStyle }),
             { x: 310, y: 400, zIndex: 86, visible: false }
         );
+
+        // Create description box
+        const descriptionBox = Object.assign(new PIXI.Graphics(), { zIndex: 85, visible: false })
+            .roundRect(300, 390, 400, descriptionText.height + 20, 10)
+            .fill('0xE4EFE7')
+            .stroke(2,0x000000);
 
         // Define event listeners for the button
         button.on('mouseover', () => { descriptionBox.visible = descriptionText.visible = true });

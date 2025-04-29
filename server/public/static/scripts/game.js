@@ -304,6 +304,9 @@ socket.on('initiative-ready', (data) => {
     // Update board
     updateBoard();
 
+    // Update initiative button text
+    initiativeText.text = "Click to roll for Initiative";
+
     // Show initiative button
     initiativeButton.visible = initiativeText.visible = true;
 });
@@ -689,7 +692,6 @@ const initiativeText = Board.makeBoardText(318, 247, 50, "Click to roll for Init
 
 // Add event listener to send initiative message and change text
 initiativeButton.on('pointerdown', () => {
-    initiativeButton.removeAllListeners();
     initiativeText.text = ' Waiting on Opponent...';
     socket.emit('game', 'initiative');
 });
@@ -761,7 +763,7 @@ function highlight (nodes, callback, message) {
 
     // Create array of highlights from array of nodes
     highlightedNodes = Array.from(nodes, x =>
-        Object.assign(new PIXI.Graphics(), { zIndex: 50, alpha: 0.5, eventMode: 'static', cursor: 'pointer' })
+        Object.assign(new PIXI.Graphics(), { zIndex: 15, alpha: 0.5, eventMode: 'static', cursor: 'pointer' })
             .circle(Objects.locations[x].x + 46, Objects.locations[x].y + 32, 57)
             .fill(0xFFDE21)
             .stroke({ width: 3, color: 0xF4BC1C })
