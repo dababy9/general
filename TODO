@@ -4,3 +4,9 @@
 - Change population changes to be animated numbers
 - Maybe also do with armies
 - Maybe add ring animation when firing
+
+
+BUGS
+- combat actions sometimes don't send the correct number of removed
+- CHMR -> you can move to contested node :(
+- change VP from support to match game board
