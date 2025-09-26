@@ -3,24 +3,19 @@ import java.util.Scanner;
 public class Part1 {
 
     public static String lookAndSay(String s){
-        String r = "";
+        StringBuilder r = new StringBuilder();
         char[] c = s.toCharArray();
-        int run;
-        char prev = 0;
-        for(int i = run = 0; i < c.length; i++, run++){
-            if(i != 0 && c[i] != prev){
-                r += Integer.toString(run);
-                r += prev;
+        int run = 0;
+        for(int i = 0; i < c.length; i++, run++){
+            if(i != 0 && c[i] != c[i-1]){
+                r.append(run).append(c[i-1]);
                 run = 0;
             }
-            prev = c[i];
         }
-        r += Integer.toString(run);
-        r += prev;
-        return r;
+        return r.append(run).append(c[c.length-1]).toString();
     }
 
-    public void run(){
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
@@ -32,9 +27,4 @@ public class Part1 {
             System.out.println("File does not exist.");
         }
     }
-
-    public static void main(String[] args){
-        Part1 run = new Part1();
-        run.run();
-    }
-} 
+}

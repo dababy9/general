@@ -3,7 +3,7 @@ import java.util.Scanner;
 import java.util.ArrayList;
 public class Part1 {
 
-    public void run(){
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
@@ -15,21 +15,16 @@ public class Part1 {
             for(int i : list)
                 containers[index++] = i;
             int maxCombo = (1 << containers.length) - 1;
-            int total = 0, target = 150;
+            int total = 0;
             for(int i = 1; i < maxCombo; i++){
                 int contained = 0;
                 for(int j = 0; j < containers.length; j++)
-                    if((i >> j) % 2 == 1) contained += containers[j];
-                if(contained == target) total++;
+                    if(((1 << j) & i) != 0) contained += containers[j];
+                if(contained == 150) total++;
             }
             System.out.println(total);
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
     }
-
-    public static void main(String[] args){
-        Part1 run = new Part1();
-        run.run();
-    }
-} 
+}

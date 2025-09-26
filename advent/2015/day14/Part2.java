@@ -3,60 +3,45 @@ import java.util.Scanner;
 import java.util.ArrayList;
 public class Part2 {
 
-    public class Reindeer {
+    public static class Reindeer {
         int rate, flyTime, restTime;
-        boolean flying = true;
-        int secLeft, totalDistance = 0, points = 0;
+        int t, distance = 0, points = 0;
 
-        public Reindeer(int r, int ft, int rt){
-            rate = r;
-            flyTime = secLeft = ft;
-            restTime = rt;
+        public Reindeer(String r, String ft, String rt){
+            rate = Integer.parseInt(r);
+            flyTime = t = Integer.parseInt(ft);
+            restTime = Integer.parseInt(rt);
         }
 
-        public void move(){
-            if(flying) totalDistance += rate;
-            if(--secLeft == 0){
-                flying = !flying;
-                secLeft = (flying ? flyTime : restTime);
-            }
+        public Reindeer move(){
+            if(--t >= 0) distance += rate;
+            if(t + restTime == 0) t = flyTime;
+            return this;
         }
     }
 
-    public void run(){
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
-            int raceTime = 2503;
             ArrayList<Reindeer> racers = new ArrayList<>();
             while(scan.hasNextLine()){
                 String[] line = scan.nextLine().split(" ");
-                int rate = Integer.parseInt(line[3]);
-                int flyTime = Integer.parseInt(line[6]);
-                int restTime = Integer.parseInt(line[13]);
-                racers.add(new Reindeer(rate, flyTime, restTime));
+                racers.add(new Reindeer(line[3], line[6], line[13]));
             }
-            for(int i = 0; i < raceTime; i++){
-                int furthestDist = 0;
-                for(Reindeer r : racers){
-                    r.move();
-                    if(r.totalDistance > furthestDist)
-                        furthestDist = r.totalDistance;
-                }
+            for(int i = 0; i < 2503; i++){
+                int max = 0;
                 for(Reindeer r : racers)
-                    if(r.totalDistance == furthestDist) r.points++;
+                    max = Math.max(r.move().distance, max);
+                for(Reindeer r : racers)
+                    if(r.distance == max) r.points++;
             }
             int maxPoints = 0;
             for(Reindeer r : racers)
-                if(r.points > maxPoints) maxPoints = r.points;
+                maxPoints = Math.max(maxPoints, r.points);
             System.out.println(maxPoints);
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
     }
-
-    public static void main(String[] args){
-        Part2 run = new Part2();
-        run.run();
-    }
-} 
+}

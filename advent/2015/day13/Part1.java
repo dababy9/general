@@ -1,99 +1,43 @@
 import java.io.File;
 import java.util.Scanner;
-import java.util.HashSet;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Arrays;
 public class Part1 {
 
-    HashMap<Couple, Integer> map = new HashMap<>();
-    String[] names;
-
-    public class Couple {
-        public String n1, n2;
-
-        public Couple(String s1, String s2){
-            if(s1.compareTo(s2) < 0){
-                n1 = s1;
-                n2 = s2;
-            } else {
-                n1 = s2;
-                n2 = s1;
-            }
-        }
-
-        @Override
-        public boolean equals(Object o){
-            if(o == null || getClass() != o.getClass()) return false;
-            Couple c = (Couple)o;
-            return n1.equals(c.n1) && n2.equals(c.n2);
-        }
-
-        @Override
-        public int hashCode(){
-            String hash = n1 + n2;
-            return hash.hashCode();
-        }
-    }
-
-    public int maxHappiness(String[] arr, int workingIndex){
-        int usedMask = 0;
-        for(int i = 0; i < arr.length; i++){
-            if(arr[i] == null) break;
-            for(int j = 0; j < names.length; j++)
-                if(arr[i].equals(names[j])) usedMask = usedMask ^ (1 << j);
-        }
-        if(workingIndex == arr.length-1){
-            String last = "";
-            for(int i = 0; i < names.length; i++)
-                if((usedMask & (1 << i)) == 0) last = names[i];
-            arr[workingIndex] = last;
-            int totalHappiness = 0;
-            for(int i = 0; i < arr.length-1; i++)
-                totalHappiness += map.get(new Couple(arr[i], arr[i+1]));
-            return totalHappiness + map.get(new Couple(arr[0], arr[arr.length-1]));
-        } else {
-            int maxValue = Integer.MIN_VALUE;
-            for(int i = 0; i < names.length; i++)
-                if((usedMask & (1 << i)) == 0){
-                    String[] newArr = new String[arr.length];
-                    System.arraycopy(arr, 0, newArr, 0, arr.length);
-                    newArr[workingIndex] = names[i];
-                    int happiness = maxHappiness(newArr, workingIndex + 1);
-                    if(happiness > maxValue) maxValue = happiness;
-                }
-            return maxValue;
-        }
-    }
-
-    public void run(){
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
-            HashSet<String> namesSet = new HashSet<>();
-            while(scan.hasNextLine()){
-                String[] line = scan.nextLine().split(" ");
-                namesSet.add(line[0]);
-                int happiness = Integer.parseInt(line[3]);
-                if(line[2].equals("lose")) happiness *= -1;
-                Couple c = new Couple(line[0], line[10].substring(0, line[10].length()-1));
-                if(map.containsKey(c))
-                    map.put(c, map.get(c) + happiness);
-                else
-                    map.put(c, happiness);
-            }
-            names = new String[namesSet.size()];
-            int i = 0;
-            for(String s : namesSet)
-                names[i++] = s;
-            String[] arrangement = new String[names.length];
-            arrangement[0] = names[0];
-            System.out.println(maxHappiness(arrangement, 1));
+            ArrayList<String[]> lines = new ArrayList<>();
+            while(scan.hasNextLine())
+                lines.add(scan.nextLine().split(" "));
+            int n = (int) Math.sqrt(lines.size()) + 1;
+            int[][] g = new int[n][n];
+            int index = 0;
+            for(int i = 0; i < n; i++)
+                for(int j = 0; j < n; j++){
+                    if(i == j) continue;
+                    String[] line = lines.get(index++);
+                    g[i][j] = g[j][i] += Integer.parseInt(line[3]) * (line[2].equals("gain") ? 1 : -1);
+                }
+            int[][] dp = new int[n][1<<n];
+            for(int i = 0; i < n; i++) Arrays.fill(dp[i], Integer.MIN_VALUE);
+            dp[0][1] = 0;
+            for(int mask = 1; mask < (1<<n); mask++)
+                for(int i = 0; i < n; i++){
+                    if(((1<<i) & mask) == 0) continue;
+                    for(int j = 0; j < n; j++){
+                        if(j == i || ((1<<j) & mask) == 0) continue;
+                        int prevMask = mask ^ (1<<i);
+                        if(dp[j][prevMask] > Integer.MIN_VALUE)
+                            dp[i][mask] = Math.max(dp[i][mask], dp[j][prevMask] + g[j][i]);
+                    }
+                }
+            int max = Integer.MIN_VALUE;
+            for(int i = 1; i < n; i++) max = Math.max(max, dp[i][(1<<n)-1] + g[0][i]);
+            System.out.println(max);
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
     }
-
-    public static void main(String[] args){
-        Part1 run = new Part1();
-        run.run();
-    }
-} 
+}

@@ -1,69 +1,50 @@
 import java.io.File;
 import java.util.Scanner;
-import java.util.LinkedList;
+import java.util.BitSet;
 public class Part2 {
 
-    char[][] grid;
+    public static int n;
 
-    public class Point {
-        int row, col;
-
-        public Point(int r, int c){
-            row = r;
-            col = c;
+    public static int countNeighbors(BitSet b, int index){
+        int count = 0;
+        int[] offsets = new int[]{1, n, n-1, n+1};
+        for(int i = 0; i < offsets.length; i++){
+            if(b.get(index - offsets[i])) count++;
+            if(b.get(index + offsets[i])) count++;
         }
-
-        public Point[] neighbors(){
-            Point[] result = new Point[8];
-            int index = 0;
-            for(int r = -1; r <= 1; r++)
-                for(int c = -1; c <= 1; c++)
-                    if(r != 0 || c != 0)
-                        result[index++] = new Point(row+r, col+c);
-            return result;
-        }
+        return count;
     }
 
-    public void step(){
-        char[][] newGrid = new char[grid.length][grid[0].length];
-        for(int r = 0; r < grid.length; r++)
-            for(int c = 0; c < grid[0].length; c++){
-                Point[] n = (new Point(r, c)).neighbors();
-                int adjOn = 0;
-                for(int i = 0; i < n.length; i++)
-                    try { if(grid[n[i].row][n[i].col] == '#') adjOn++; } catch(Exception e){}
-                if(grid[r][c] == '#' && (adjOn == 2 || adjOn == 3)) newGrid[r][c] = '#';
-                else if(adjOn == 3) newGrid[r][c] = '#';
-            }
-        grid = newGrid;
-        grid[0][0] = grid[0][grid[0].length-1] = grid[grid.length-1][0] = grid[grid.length-1][grid[0].length-1] = '#';
-    }
-
-    public void run(){
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
-            LinkedList<char[]> list = new LinkedList<>();
-            while(scan.hasNextLine())
-                list.add(scan.nextLine().toCharArray());
-            grid = new char[list.size()][list.get(0).length];
-            int index = 0;
-            for(char[] c : list)
-                grid[index++] = c;
-            for(int i = 0; i < 100; i++)
-                step();
-            int total = 0;
-            for(int r = 0; r < grid.length; r++)
-                for(int c = 0; c < grid[0].length; c++)
-                    if(grid[r][c] == '#') total++;
-            System.out.println(total);
+            StringBuilder s = new StringBuilder();
+            for(n = 2; scan.hasNextLine(); n++)
+                s.append(scan.nextLine());
+            BitSet b = new BitSet(n*n);
+            int index = n + 1;
+            int[] p = new int[]{n+1, n+n-2, (n-2)*n+1, (n-1)*n-2};
+            for(char c : s.toString().toCharArray()){
+                if(c == '#') b.set(index);
+                index += (index % n == n - 2) ? 3 : 1;
+            }
+            for(int i = 0; i < p.length; i++) b.set(p[i]);
+            for(int iterations = 0; iterations < 100; iterations++){
+                BitSet child = (BitSet)b.clone();
+                for(int i = 1; i < n-1; i++)
+                    for(int j = 1; j < n-1; j++){
+                        index = i * n + j;
+                        int neighbors = countNeighbors(b, index);
+                        if(b.get(index) && (neighbors < 2 || neighbors > 3)) child.flip(index);
+                        if(!b.get(index) && (neighbors == 3)) child.flip(index);
+                    }
+                for(int i = 0; i < p.length; i++) child.set(p[i]);
+                b = child;
+            }
+            System.out.println(b.cardinality());
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
     }
-
-    public static void main(String[] args){
-        Part2 run = new Part2();
-        run.run();
-    }
-} 
+}

@@ -2,38 +2,29 @@ import java.io.File;
 import java.util.Scanner;
 public class Part2 {
 
-    public void run(){
+    public static int p(String s, int i){
+        return Integer.parseInt(s.split(",")[i]);
+    }
+
+    public static int[] getRanges(String[] line, int start, int stop){
+        return new int[]{p(line[start], 0), p(line[stop], 0), p(line[start], 1), p(line[stop], 1)};
+    }
+
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
             char[][] map = new char[1000][1000];
             while(scan.hasNextLine()){
-                String line = scan.nextLine();
-                char op = 0;
-                int x1 = -1, y1 = -1, x2 = -1, y2 = -1;
-                if(line.split(" ")[0].equals("turn")){
-                    String[] pair1 = line.split(" ")[2].split(",");
-                    String[] pair2 = line.split(" ")[4].split(",");
-                    x1 = Integer.parseInt(pair1[0]);
-                    x2 = Integer.parseInt(pair2[0]);
-                    y1 = Integer.parseInt(pair1[1]);
-                    y2 = Integer.parseInt(pair2[1]);
-                    if(line.split(" ")[1].equals("on")){
-                        op = '1';
-                    } else {
-                        op = '0';
-                    }
-                } else {
-                    op = 'X';
-                    String[] pair1 = line.split(" ")[1].split(",");
-                    String[] pair2 = line.split(" ")[3].split(",");
-                    x1 = Integer.parseInt(pair1[0]);
-                    x2 = Integer.parseInt(pair2[0]);
-                    y1 = Integer.parseInt(pair1[1]);
-                    y2 = Integer.parseInt(pair2[1]);
-                }
-                for(int i = x1; i <= x2; i++)
-                    for(int j = y1; j <= y2; j++){
+                String line[] = scan.nextLine().split(" ");
+                char op = 'X';
+                int[] ranges;
+                if(line[0].equals("turn")){
+                    ranges = getRanges(line, 2, 4);
+                    op = line[1].equals("on") ? '1' : '0';
+                } else ranges = getRanges(line, 1, 3);
+                for(int i = ranges[0]; i <= ranges[1]; i++)
+                    for(int j = ranges[2]; j <= ranges[3]; j++){
                         switch(op){
                             case '1': map[i][j]++; break;
                             case '0': map[i][j] -= (map[i][j] == 0 ? 0 : 1); break;
@@ -49,10 +40,5 @@ public class Part2 {
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
-    }
-
-    public static void main(String[] args){
-        Part2 run = new Part2();
-        run.run();
     }
 } 

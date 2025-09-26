@@ -1,30 +1,21 @@
 import java.io.File;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 public class Part1 {
 
-    public void run(){
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
-            char[] file = scan.nextLine().toCharArray();
+            String line = scan.nextLine();
+            Pattern p = Pattern.compile("-?\\d+");
+            Matcher m = p.matcher(line);
             int sum = 0;
-            for(int i = 0; i < file.length; i++)
-                if(file[i] >= '0' && file[i] <= '9'){
-                    String num = "";
-                    if(file[i-1] == '-') num = "-";
-                    int j;
-                    for(j = i; j < file.length && file[j] >= '0' && file[j] <= '9'; j++) num += file[j];
-                    sum += Integer.parseInt(num);
-                    i = j-1;
-                }
+            while(m.find()) sum += Integer.parseInt(m.group());
             System.out.println(sum);
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
     }
-
-    public static void main(String[] args){
-        Part1 run = new Part1();
-        run.run();
-    }
-} 
+}

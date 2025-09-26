@@ -1,65 +1,31 @@
 import java.io.File;
 import java.util.Scanner;
-import java.util.HashSet;
+import java.util.BitSet;
 public class Part2 {
 
-    public class Point {
-        public int x, y;
-
-        public Point(int xx, int yy){
-            x = xx;
-            y = yy;
-        }
-
-        @Override
-        public boolean equals(Object o){
-            if(o == null || getClass() != o.getClass()) return false;
-            Point p = (Point)o;
-            return x == p.x && y == p.y;
-        }
-
-        @Override
-        public int hashCode(){
-            int hash = 7;
-            hash = 71 * hash + x;
-            hash = 71 * hash + y;
-            return hash;
-        }
-
-        public Point newPoint(char c){
-            Point p = null;
-            switch(c){
-                case '<': p = new Point(x-1, y); break;
-                case '>': p = new Point(x+1, y); break;
-                case 'v': p = new Point(x, y+1); break;
-                case '^': p = new Point(x, y-1); break;
-            }
-            return p;
-        }
-    }
-
-    public void run(){
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
-            HashSet<Point> set = new HashSet<>();
             char[] c = scan.nextLine().toCharArray();
-            Point p = new Point(0, 0), q = new Point(0, 0);
-            set.add(p);
-            for(int i = 0; i < c.length; i += 2){
-                p = p.newPoint(c[i]);
-                q = q.newPoint(c[i+1]);
-                set.add(p);
-                set.add(q);
+            int size = c.length * 2 + 10, total = 1;
+            int x1 = size / 2, y1 = size / 2, x2 = size / 2, y2 = size / 2;
+            BitSet b = new BitSet(size*size);
+            b.set(x1*size + y1);
+            for(int i = 0; i < c.length; i++){
+                switch(c[i]){
+                    case '>': if(i % 2 == 0) x1++; else x2++; break;
+                    case '<': if(i % 2 == 0) x1--; else x2--; break;
+                    case 'v': if(i % 2 == 0) y1++; else y2++; break;
+                    case '^': if(i % 2 == 0) y1--; else y2--; break;
+                }
+                int x = (i % 2 == 0) ? x1 : x2, y = (i % 2 == 0) ? y1 : y2;
+                if(!b.get(x*size + y)) total++;
+                b.set(x*size + y);
             }
-            System.out.println(set.size());
+            System.out.println(total);
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
     }
-
-    public static void main(String[] args){
-        Part2 run = new Part2();
-        run.run();
-    }
-} 
+}

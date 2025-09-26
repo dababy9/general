@@ -1,63 +1,30 @@
 import java.io.File;
 import java.util.Scanner;
-import java.util.HashSet;
+import java.util.BitSet;
 public class Part1 {
 
-    public class Point {
-        public int x, y;
-
-        public Point(int xx, int yy){
-            x = xx;
-            y = yy;
-        }
-
-        @Override
-        public boolean equals(Object o){
-            if(o == null || getClass() != o.getClass()) return false;
-            Point p = (Point)o;
-            return x == p.x && y == p.y;
-        }
-
-        @Override
-        public int hashCode(){
-            int hash = 7;
-            hash = 71 * hash + x;
-            hash = 71 * hash + y;
-            return hash;
-        }
-
-        public Point newPoint(char c){
-            Point p = null;
-            switch(c){
-                case '<': p = new Point(x-1, y); break;
-                case '>': p = new Point(x+1, y); break;
-                case 'v': p = new Point(x, y+1); break;
-                case '^': p = new Point(x, y-1); break;
-            }
-            return p;
-        }
-    }
-
-    public void run(){
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
-            HashSet<Point> set = new HashSet<>();
             char[] c = scan.nextLine().toCharArray();
-            Point p = new Point(0, 0);
-            set.add(p);
+            int size = c.length * 2 + 10, total = 1;
+            int x = size / 2, y = size / 2;
+            BitSet b = new BitSet(size*size);
+            b.set(x*size + y);
             for(int i = 0; i < c.length; i++){
-                p = p.newPoint(c[i]);
-                set.add(p);
+                switch(c[i]){
+                    case '>': x++; break;
+                    case '<': x--; break;
+                    case 'v': y++; break;
+                    case '^': y--; break;
+                }
+                if(!b.get(x*size + y)) total++;
+                b.set(x*size + y);
             }
-            System.out.println(set.size());
+            System.out.println(total);
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
     }
-
-    public static void main(String[] args){
-        Part1 run = new Part1();
-        run.run();
-    }
-} 
+}

@@ -1,13 +1,12 @@
 import java.io.File;
 import java.util.Scanner;
-import java.util.LinkedList;
+import java.util.ArrayList;
 public class Part2 {
-
-    public void run(){
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
-            LinkedList<Integer> list = new LinkedList<>();
+            ArrayList<Integer> list = new ArrayList<>();
             while(scan.hasNextLine())
                 list.add(Integer.parseInt(scan.nextLine()));
             int index = 0;
@@ -15,31 +14,20 @@ public class Part2 {
             for(int i : list)
                 containers[index++] = i;
             int maxCombo = (1 << containers.length) - 1;
-            int target = 150;
-            list = new LinkedList<>();
+            int total = 0, best = Integer.MAX_VALUE;
             for(int i = 1; i < maxCombo; i++){
-                int contained = 0, used = 0;
+                int contained = 0, used = Integer.bitCount(i);
                 for(int j = 0; j < containers.length; j++)
-                    if((i >> j) % 2 == 1){
-                        contained += containers[j];
-                        used++;
-                    }
-                if(contained == target) list.add(used++);
+                    if(((1 << j) & i) != 0) contained += containers[j];
+                if(contained == 150)
+                    if(used < best){
+                        best = used;
+                        total = 1;
+                    } else if(used == best) total++;
             }
-            int minValue = Integer.MAX_VALUE;
-            for(int i : list)
-                if(i < minValue) minValue = i;
-            int total = 0;
-            for(int i : list)
-                if(i == minValue) total++;
             System.out.println(total);
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
     }
-
-    public static void main(String[] args){
-        Part2 run = new Part2();
-        run.run();
-    }
-} 
+}

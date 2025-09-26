@@ -1,77 +1,37 @@
 import java.io.File;
 import java.util.Scanner;
-import java.util.HashSet;
-import java.util.ArrayList;
-import java.util.TreeMap;
 public class Part2 {
 
-    public class Player {
-        public int hp, dmg, armor;
+    public static int bDmg, bArm;
 
-        public Player(int h, int d, int a){
-            hp = h;
-            dmg = d;
-            armor = a;
-        }
-
-        public Player(Player p){
-            hp = p.hp;
-            dmg = p.dmg;
-            armor = p.armor;
-        }
+    public static boolean fight(int bHP, int pDmg, int pArm){
+        int pTurnDmg = Math.max(1, bDmg - pArm);
+        int bTurnDmg = Math.max(1, pDmg - bArm);
+        return Math.ceil(100.0/pTurnDmg) < Math.ceil((double)bHP/bTurnDmg);
     }
 
-    public boolean fight(Player p, Player b){
-        while(true){
-            b.hp -= (p.dmg - b.armor <= 0 ? 1 : p.dmg - b.armor);
-            if(b.hp <= 0) return true;
-            p.hp -= (b.dmg - p.armor <= 0 ? 1 : b.dmg - p.armor);
-            if(p.hp <= 0) return false;
-        }
-    }
-
-    public int ringDmg(int r1, int r2){
-        int result = 0;
-        if(r1 <= 3) result += r1;
-        if(r2 <= 3) result += r2;
-        return result;
-    }
-
-    public int ringArmor(int r1, int r2){
-        int result = 0;
-        if(r1 > 3) result += r1-3;
-        if(r2 > 3) result += r2-3;
-        return result;
-    }
-
-    public void run(){
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
-            Player boss = new Player(Integer.parseInt(scan.nextLine().split(" ")[2]), Integer.parseInt(scan.nextLine().split(" ")[1]), Integer.parseInt(scan.nextLine().split(" ")[1]));
-            Player p = new Player(100, 0, 0);
-            int[] wCosts = new int[]{8, 10, 25, 40, 74};
-            int[] aCosts = new int[]{0, 13, 31, 53, 75, 102};
-            int[] rCosts = new int[]{0, 25, 50, 100, 20, 40, 80};
-            int maxCost = 0;
-            for(int w = 0; w < wCosts.length; w++)
-                for(int a = 0; a < aCosts.length; a++)
-                    for(int r1 = 0; r1 < rCosts.length-1; r1++)
-                        for(int r2 = (r1 == 0 ? 0 : r1+1); r2 < rCosts.length; r2++){
-                            int cost = wCosts[w] + aCosts[a] + rCosts[r1] + rCosts[r2];
-                            if(cost < maxCost) continue;
-                            int dmg = w+4 + ringDmg(r1, r2);
-                            int armor = a + ringArmor(r1, r2);
-                            if(!fight(new Player(100, dmg, armor), new Player(boss)) && cost > maxCost) maxCost = cost;
+            int bHP = Integer.parseInt(scan.nextLine().split(" ")[2]);
+            bDmg = Integer.parseInt(scan.nextLine().split(" ")[1]);
+            bArm = Integer.parseInt(scan.nextLine().split(" ")[1]);
+            int[][] w = new int[][]{{8, 4}, {10, 5}, {25, 6}, {40, 7}, {74, 8}};
+            int[][] a = new int[][]{{0, 0}, {13, 1}, {31, 2}, {53, 3}, {75, 4}, {102, 5}};
+            int[][] r = new int[][]{{0, 0, 0}, {25, 1, 0}, {50, 2, 0}, {100, 3, 0}, {20, 0, 1}, {40, 0, 2}, {80, 0, 3}};
+            int worst = Integer.MIN_VALUE;
+            for(int i = 0; i < w.length; i++)
+                for(int j = 0; j < a.length; j++)
+                    for(int k = 0; k < r.length; k++)
+                        for(int l = k + (k == 0 ? 0 : 1); l < r.length; l++){
+                            int pDmg = w[i][1] + r[k][1] + r[l][1];
+                            int pArm = a[j][1] + r[k][2] + r[l][2];
+                            if(fight(bHP, pDmg, pArm)) worst = Math.max(worst, w[i][0] + a[j][0] + r[k][0] + r[l][0]);
                         }
-            System.out.println(maxCost);
+        System.out.println(worst);
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
     }
-
-    public static void main(String[] args){
-        Part2 run = new Part2();
-        run.run();
-    }
-} 
+}

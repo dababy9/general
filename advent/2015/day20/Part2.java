@@ -2,7 +2,7 @@ import java.io.File;
 import java.util.Scanner;
 public class Part2 {
 
-    public void run(){
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
@@ -20,10 +20,5 @@ public class Part2 {
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
-    }
-
-    public static void main(String[] args){
-        Part2 run = new Part2();
-        run.run();
     }
 } 

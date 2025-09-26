@@ -1,55 +1,36 @@
 import java.io.File;
 import java.util.Scanner;
 import java.util.HashSet;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
 public class Part1 {
 
-    public void run(){
+    public static class Pair {
+        public String from, to;
+        public int length;
+
+        public Pair(String f, String t){
+            from = f;
+            to = t;
+            length = f.length();
+        }
+    }
+    
+    public static void main(String[] args){
         try {
             File f = new File("input.txt");
             Scanner scan = new Scanner(f);
-            HashMap<String, LinkedList<String>> map = new HashMap<>();
-            for(String line = scan.nextLine(); line != ""; line = scan.nextLine()){
-                String[] s = line.split(" ");
-                LinkedList<String> list = map.get(s[0]);
-                if(list == null)
-                    list = new LinkedList<>();
-                list.add(s[2]);
-                map.put(s[0], list);
-            }
-            String seq = scan.nextLine();
+            ArrayList<Pair> rules = new ArrayList<>();
+            for(String[] lines = scan.nextLine().split(" "); lines.length > 1; lines = scan.nextLine().split(" "))
+                rules.add(new Pair(lines[0], lines[2]));
+            String input = scan.nextLine();
             HashSet<String> set = new HashSet<>();
-            for(int i = 0; i < seq.length(); i++){
-                LinkedList<String> list = map.get(seq.substring(i, i+1));
-                if(list != null){
-                    for(String replace : list){
-                        String newSeq = seq.substring(0, i);
-                        newSeq += replace;
-                        newSeq += seq.substring(i+1);
-                        set.add(newSeq);
-                    }
-                } else if(i+1 < seq.length()){
-                    list = map.get(seq.substring(i, i+2));
-                    if(list != null){
-                        for(String replace : list){
-                            String newSeq = seq.substring(0, i);
-                            newSeq += replace;
-                            newSeq += seq.substring(i+2);
-                            set.add(newSeq);
-                        }
-                        i++;
-                    }
-                }
+            for(Pair rule : rules){
+                for(int index = input.indexOf(rule.from); index > 0; index = input.indexOf(rule.from, index + 1))
+                    set.add(input.substring(0, index) + rule.to + input.substring(index + rule.length));
             }
             System.out.println(set.size());
         } catch(Exception e){
             System.out.println("File does not exist.");
         }
-    }
-
-    public static void main(String[] args){
-        Part1 run = new Part1();
-        run.run();
     }
 } 
