@@ -1,106 +1,64 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <sstream>
+#include <algorithm>
 using namespace std;
 
 struct Monkey {
-  vector<long long int> items;
-  int inspections = 0;
-  int t;
-  int f;
+	vector<long long> items;
+	int inspections = 0, tID, fID, div, opNum;
+	bool opAdd;
 };
 
-void round(int, Monkey*);
-void operation(int, long long int&);
-bool test(int, long long int);
+int lastNum(ifstream& fin){
+	string line;
+	getline(fin, line);
+	return stoi(line.substr(line.find_last_of(' ') + 1));
+}
 
 int main(){
-  ifstream fin("input.txt");
-  Monkey* m = new Monkey[8];
-  for(int i = 0; i < 8; i++){
-    string s;
-    fin >> s >> s >> s >> s;
-    char c;
-    long long int item;
-    while(fin >> item >> c && c == ',')
-      m[i].items.push_back(item);
-    m[i].items.push_back(item);
-    int monkeyID;
-    while(fin >> s && s != "monkey");
-    fin >> monkeyID;
-    m[i].t = monkeyID;
-    fin >> s >> s >> s >> s >> s >> monkeyID;
-    m[i].f = monkeyID;
-  }
-  for(int i = 0; i < 10000; i++){
-    for(int j = 0; j < 8; j++){
-      round(j, m);
-      m[j].inspections += m[j].items.size();
-      m[j].items.clear();
+	ifstream fin("input.txt");
+	vector<Monkey> monkeys;
+	string line;
+	int lcm = 1;
+    while(getline(fin, line)){
+        if(line.empty()) continue;
+        Monkey m;
+        getline(fin, line);
+        stringstream ss(line.substr(line.find(':') + 1));
+        long long x;
+        char comma;
+        while (ss >> x) {
+            m.items.push_back(x);
+            ss >> comma;
+        }
+        getline(fin, line);
+        m.opAdd = line.find('+') != string::npos;
+        string rhs = line.substr(line.find_last_of(' ') + 1);
+        m.opNum = (rhs == "old") ? -1 : stoi(rhs);
+        m.div = lastNum(fin);
+		lcm *= m.div;
+        m.tID = lastNum(fin);
+		m.fID = lastNum(fin);
+        monkeys.push_back(m);
     }
-  }
-  vector<int> hi;
-  for(int t = 0; t < 2; t++){
-    int imax = 0;
-    for(int i = 0; i < 8; i++)
-      if(m[i].inspections > m[imax].inspections)
-        imax = i;
-    hi.push_back(m[imax].inspections);
-    m[imax].inspections = 0;
-  }
-  cout << (long int)(hi[0])*hi[1] << endl;
-  hi.clear();
-  for(int i = 0; i < 8; i++)
-    m[i].items.clear();
-  delete [] m;
-  return 0;
-}
-
-void round(int mi, Monkey* m){
-  for(int i = 0; i < m[mi].items.size(); i++){
-    operation(mi, m[mi].items[i]);
-    if(test(mi, m[mi].items[i]))
-      m[m[mi].t].items.push_back(m[mi].items[i]);
-    else
-      m[m[mi].f].items.push_back(m[mi].items[i]);
-  }
-}
-
-void operation(int monkey, long long int& item){
-  if(monkey == 0)
-    item *= 5;
-  if(monkey == 1)
-    item = item*item;
-  if(monkey == 2)
-    item *= 7;
-  if(monkey == 3)
-    item++;
-  if(monkey == 4)
-    item += 3;
-  if(monkey == 5)
-    item += 5;
-  if(monkey == 6)
-    item += 8;
-  if(monkey == 7)
-    item += 2;
-  bool flag = false;
-  item = item%9699690;
-}
-
-bool test(int monkey, long long int item){
-  if(monkey == 0)
-    return item%11 == 0;
-  if(monkey == 1)
-    return item%2 == 0;
-  if(monkey == 2)
-    return item%5 == 0;
-  if(monkey == 3)
-    return item%17 == 0;
-  if(monkey == 4)
-    return item%19 == 0;
-  if(monkey == 5)
-    return item%7 == 0;
-  if(monkey == 6)
-    return item%3 == 0;
-  return item%13 == 0;
+	for(int n = 0; n < 10000; n++)
+		for(Monkey& m : monkeys){
+			for(long long item : m.items){
+				if(m.opAdd) item += (m.opNum < 0 ? item : m.opNum);
+				else item *= (m.opNum < 0 ? item : m.opNum);
+				item %= lcm;
+				if(item % m.div == 0) monkeys[m.tID].items.push_back(item);
+				else monkeys[m.fID].items.push_back(item);
+				m.inspections++;
+			}
+			m.items.clear();
+		}
+	vector<long long> inspections;
+	for(Monkey m : monkeys)
+		inspections.push_back(m.inspections);
+	sort(inspections.rbegin(), inspections.rend());
+	cout << inspections[0] * inspections[1] << endl;
+	return 0;
 }

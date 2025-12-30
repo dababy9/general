@@ -1,31 +1,19 @@
 #include <iostream>
 #include <fstream>
+#include <bit>
 using namespace std;
 
-bool same(string);
-
 int main(){
-  string s;
-  ifstream fin("input.txt");
-  fin >> s;
-  int total = 14;
-  for(int i = 13; i < s.length(); i++){
-    string sub = "";
-    for(int j = 13; j >= 0; j--)
-      sub += s[i-j];
-    if(!same(sub))
-      break;
-    total++;
-  }
-  cout << total << endl;
-  return 0;
-}
-
-bool same(string s){
-  string d = s;
-  for(int i = 0; i < s.length(); i++)
-    for(int j = 0; j < d.length(); j++)
-      if(i != j && s[i] == d[j])
-        return true;
-  return false;
+	string s;
+	ifstream fin("input.txt");
+	fin >> s;
+	int i;
+	for(i = 13; i < s.length(); i++){
+		unsigned long mask = 0;
+		for(int j = i - 13; j <= i; j++)
+			mask |= 1UL << s[j] - 'a';
+		if(__builtin_popcountl(mask) == 14) break;
+	}
+	cout << (i + 1) << endl;
+	return 0;
 }

@@ -1,96 +1,63 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <queue>
+#include <unordered_set>
+#include <cmath>
 using namespace std;
 
 struct Point {
-  int x, y;
+	int x, y;
+	bool operator==(const Point& other) const {
+		return x == other.x && y == other.y;
+	}
 };
 
-void pathfind(vector<string>, Point, vector<Point>);
-vector<Point> checkDir(vector<string>, Point);
-bool hasVisited(Point, vector<Point>);
-
-ostream& operator << (ostream& out, Point p){
-  return out << '(' << p.x << ", " << p.y << ')';
-}
-bool operator == (Point p1, Point p2){
-  return p1.x == p2.x && p1.y == p2.y;
-}
+struct PointHash {
+	size_t operator()(const Point& p) const {
+		return hash<int>()(p.x) ^ (hash<int>()(p.y) << 1);
+	}
+};
 
 int main(){
-  ifstream fin("input.txt");
-  string s;
-  vector<string> map;
-  while(fin >> s)
-    map.push_back(s);
-  vector<Point> starts;
-  Point finish;
-  for(int y = 0; y < map.size(); y++)
-    for(int x = 0; x < map[0].length(); x++){
-      if(map[y][x] == 'E'){
-        finish = {x, y};
-        map[y][x] = 'z';
-      }
-      if(map[y][x] == 'a')
-        starts.push_back({x, y});
-      if(map[y][x] == 'S'){
-        starts.push_back({x, y});
-        map[y][x] = 'a';
-      }
-    }
-  pathfind(map, finish, starts);
-  return 0;
-}
-
-void pathfind(vector<string> map, Point f, vector<Point> s){
-  bool found = false;
-  vector<Point> visited = s;
-  vector<bool> checked;
-  for(int i = 0; i < visited.size(); i++)
-    checked.push_back(false);
-  for(int steps = 1; !found; steps++){
-    int num = visited.size();
-    for(int i = 0; i < num; i++){
-      if(!checked[i]){
-        checked[i] = true;
-        Point curr = visited[i];
-        vector<Point> moves;
-        moves = checkDir(map, curr);
-        for(int j = 0; j < moves.size(); j++){
-          if(moves[j] == f){
-            cout << steps << endl;
-            found = true;
-            visited.clear();
-          }
-          if(!found && !hasVisited(moves[j], visited)){
-            visited.push_back(moves[j]);
-            checked.push_back(false);
-          }
-        }
-        moves.clear();
-      }
-    }
-  }
-}
-
-vector<Point> checkDir(vector<string> map, Point curr){
-  vector<Point> moves;
-  char currC = map[curr.y][curr.x];
-  if(curr.x-1 >= 0 && map[curr.y][curr.x-1] <= currC+1)
-    moves.push_back({curr.x-1, curr.y});
-  if(curr.x+1 < map[0].length() && map[curr.y][curr.x+1] <= currC+1)
-    moves.push_back({curr.x+1, curr.y});
-  if(curr.y-1 >= 0 && map[curr.y-1][curr.x] <= currC+1)
-    moves.push_back({curr.x, curr.y-1});
-  if(curr.y+1 < map.size() && map[curr.y+1][curr.x] <= currC+1)
-    moves.push_back({curr.x, curr.y+1});
-  return moves;
-}
-
-bool hasVisited(Point curr, vector<Point> prevLocs){
-  for(int i = 0; i < prevLocs.size(); i++)
-    if(prevLocs[i] == curr)
-      return true;
-  return false;
+	ifstream fin("input.txt");
+	string s;
+	vector<string> grid;
+	Point start;
+	for(int x = 0; getline(fin, s); x++){
+		size_t index = s.find('S');
+		if(index != string::npos) s[index] = 'a';
+		index = s.find('E');
+		if(index != string::npos){
+			s[index] = 'z';
+			start = {x, static_cast<int>(index)};
+		}
+		grid.push_back(s);
+	}
+	queue<Point> q;
+	q.push(start);
+	unordered_set<Point, PointHash> vis;
+	vis.insert(start);
+	int delta[4][2] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
+	for(int steps = 1; true; steps++){
+		queue<Point> adj;
+		while(!q.empty()){
+			Point p = q.front();
+			q.pop();
+			for(int i = 0; i < 4; i++){
+				Point q = {p.x + delta[i][0], p.y + delta[i][1]};
+				if(q.x < 0 || q.y < 0 || q.x >= grid.size() || q.y >= s.size()) continue;
+				if(grid[p.x][p.y] - grid[q.x][q.y] <= 1 && vis.find(q) == vis.end()){
+					if(grid[q.x][q.y] == 'a'){
+						cout << steps << endl;
+						return 0;
+					}
+					vis.insert(q);
+					adj.push(q);
+				}
+			}
+		}
+		q = adj;
+	}
+	return 0;
 }

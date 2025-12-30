@@ -2,40 +2,30 @@
 #include <fstream>
 using namespace std;
 
-char findSame(string, string, string);
-int calc(char);
+unsigned long long getMask(string s){
+	unsigned long long mask = 0;
+	for(char c : s)
+		mask |= 1ULL << ((c >= 'a') ? c - 'a' : c - 'A' + 26);
+	return mask;
+}
 
 int main(){
-  ifstream finNum("input.txt");
-  int n;
-  string dump;
-  for(n = 0; finNum >> dump; n++);
-  string* ruck = new string[n];
-  char* items = new char[n/3];
-  ifstream fin("input.txt");
-  for(n = 0; fin >> dump; n++)
-    ruck[n] = dump;
-  for(int i = 0; i < n; i += 3)
-    items[i/3] = findSame(ruck[i], ruck[i+1], ruck[i+2]);
-  int total = 0;
-  for(int i = 0; i < n/3; i++)
-    total += calc(items[i]);
-  cout << total << endl;
-  return 0;
-}
-
-char findSame(string s1, string s2, string s3){
-  for(int i = 0; i < s1.length(); i++)
-    for(int j = 0; j < s2.length(); j++)
-      if(s1[i] == s2[j])
-        for(int k = 0; k < s3.length(); k++)
-          if(s3[k] == s1[i])
-            return s1[i];
-  return ' ';
-}
-
-int calc(char c){
-  if(c >= 'a' && c <= 'z')
-    return c-'a'+1;
-  return c-'A'+27;
+	ifstream fin("input.txt");
+	int total = 0;
+	string s1, s2, s3;
+	while(getline(fin, s1)){
+		if(s1.empty()) continue;
+    	getline(fin, s2);
+    	getline(fin, s3);
+		unsigned long long mask1 = getMask(s1), mask2 = getMask(s2);
+		for(int i = 0; i < s3.size(); i++){
+			int id = (s3[i] >= 'a') ? s3[i] - 'a' : s3[i] - 'A' + 26;
+			if(mask1 & (1ULL << id) && mask2 & (1ULL << id)){
+				total += id + 1;
+				break;
+			}
+		}
+	}
+	cout << total << endl;
+	return 0;
 }
